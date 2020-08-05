@@ -68,6 +68,21 @@ import org.sakaiproject.util.FormattedText;
 import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.Web;
 
+
+//Out-Of-Office-Notification Feature
+import org.sakaiproject.api.app.messageforums.OutOfOfficeMessageManager;
+import org.sakaiproject.api.app.messageforums.OutOfOfficeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.time.LocalDate;
+import java.util.Date;
+import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.text.DateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+
 /**
  * UserPrefsTool is the Sakai end-user tool to view and edit one's preferences.
  */
@@ -219,7 +234,23 @@ public class UserPrefsTool
 
 	// SAK-23895
 	private boolean prefShowTabLabelOption = true;
-	
+
+
+	/*
+	 *  Out-Of-Office Notification Feature
+	 */
+	private int outOfOffice_selection;
+	private OutOfOfficeMessageManager outOfOfficeMessageManager;
+	private String selectedDate;
+	private Boolean isActive;
+	private String activeDate;
+	private Date selectedDateAsDate;
+	private String testString;
+	private Boolean dateNotValid = false;
+	private static final String date_En = "MM/dd/yyyy";
+	private static final String date_De = "dd/MM/yyyy";
+
+
 	// //////////////////////////////// PROPERTY GETTER AND SETTER ////////////////////////////////////////////
 
 	public boolean isPrefShowTabLabelOption() {
@@ -446,6 +477,60 @@ public class UserPrefsTool
 		}
 	}
 
+
+
+	/*
+	 * Out-Of-Office Notification
+	 */
+
+	public Date getselectedDateAsDate(){
+		return selectedDateAsDate;
+	}
+	public void setselectedDateAsDate(Date date1){
+		this.selectedDateAsDate = date1;
+	}
+
+
+	public int getOutOfOffice_selection()
+	{
+		return outOfOffice_selection;
+	}
+
+
+	public void setOutOfOfficeMessageManager(OutOfOfficeMessageManager outOfOfficeMessageManager){
+		this.outOfOfficeMessageManager = outOfOfficeMessageManager;
+	}
+
+
+	public void setSelectedDate(String selectedDate)  {
+		this.selectedDate = selectedDate;
+	}
+
+
+
+	public String getSelectedDate(){
+		return selectedDate;
+	}
+
+	public void setIsActive(Boolean isActive){
+		this.isActive = isActive;
+	}
+	public Boolean getIsActive(){
+		return isActive;
+	}
+
+	public void setActiveDate(String activeDate){
+		this.activeDate = activeDate;
+	}
+	public String getActiveDate(){
+		return activeDate;
+	}
+
+
+	public Boolean getDateNotValid(){
+		return dateNotValid;
+	}
+
 	// /////////////////////////////////////// CONSTRUCTOR ////////////////////////////////////////////
 	/**
 	 * no-arg constructor.
@@ -474,6 +559,8 @@ public class UserPrefsTool
 			else if (tablist[i].equals(Editor)) editor_selection=i+1;
 			else log.warn(tablist[i] + " is not valid!!! Please fix preference.pages property in sakai.properties");
 		}
+		//Out-Of-Office_Notification Feature
+		outOfOffice_selection = tablist.length +1; // set outOfOffice.jsp to last
 
 		initNotificationStructures();
 		log.debug("new UserPrefsTool()");
@@ -2498,5 +2585,97 @@ public class UserPrefsTool
 	public String getServiceName() {
 		return ServerConfigurationService.getString("ui.name", "Sakai");
 	}
-	
+
+	/*
+	 * Out-Of-Office Notification
+	 */
+
+
+	// dummy variable to check for active date
+	private String dummy = "";
+	public void setDummy(String dummy){
+		this.dummy = dummy;
+	}
+	public String getDummy(){
+		checkIfActive();
+		return dummy;
+	}
+
+
+	public String getCheckLocale() {
+		return msgs.getLocale().getLanguage();
+	}
+
+	public String checkLocale(){
+		Locale loc = msgs.getLocale();
+		return  loc.getLanguage();
+	}
+
+
+
+	public void checkIfActive(){
+		OutOfOfficeMessage message = outOfOfficeMessageManager.getOutOfOfficeMessage(sessionManager.getCurrentSessionUserId());
+		if (message != null){
+			setIsActive(true);
+			String language = msgs.getLocale().getLanguage();
+			if (language.contains("de")){
+				DateFormat dateFormat = new SimpleDateFormat(date_De);
+				setActiveDate(dateFormat.format(message.getUntilDate()));
+			}else{
+				DateFormat dateFormat = new SimpleDateFormat(date_En);
+				setActiveDate(dateFormat.format(message.getUntilDate()));
+			}
+		}else{
+			setIsActive(false);
+		}
+	}
+
+
+
+	public String processActionOutOfOfficeEdit(){
+		//refreshMode=false;
+		//cancelEdit();
+		// navigation page data are loaded through getter method as navigation is the default page for 'sakai.preferences' tool.
+		this.selectedDate = ""; // clear Input Text
+		this.dateNotValid = false;
+		return "outOfOffice";
+	}
+
+	public String processActionOutOfOfficeDelete(){
+		outOfOfficeMessageManager.deleteOutOfOfficeMessage();
+		this.selectedDate = ""; // clear Input Text
+		this.dateNotValid = false;
+		return "outOfOffice";
+	}
+
+	public String processActionOutOfOfficeSave() throws ParseException {
+		if (!selectedDate.equals("")){
+
+			String language = msgs.getLocale().getLanguage();
+			if (language.contains("de")) {
+				DateFormat dateFormat = new SimpleDateFormat(date_De);
+				Date date = dateFormat.parse(this.selectedDate);
+				this.selectedDateAsDate = date;
+			} else {
+				DateFormat dateFormat = new SimpleDateFormat(date_En);
+				Date date = dateFormat.parse(this.selectedDate);
+				this.selectedDateAsDate = date;
+			}
+			LocalDate today = LocalDate.now();
+			LocalDate dateUntil = selectedDateAsDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+			if (dateUntil.compareTo(today) < 0){
+				this.dateNotValid = true;
+			}else{
+				outOfOfficeMessageManager.saveOutOfOfficeMessage(selectedDateAsDate);
+				this.dateNotValid = false;
+			}
+
+			this.selectedDate = ""; // clear Input Text
+		}else{
+			this.dateNotValid = true;
+		}
+		return "outOfOffice";
+	}
+
+
 }

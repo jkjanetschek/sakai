@@ -115,6 +115,26 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+
+//Out-Of-Office Notification
+import org.sakaiproject.api.app.messageforums.OutOfOfficeMessage;
+import org.sakaiproject.api.app.messageforums.OutOfOfficeMessageManager;
+import org.sakaiproject.user.api.UserEdit;
+import org.sakaiproject.entity.api.Entity;
+import org.sakaiproject.user.api.User;
+import java.util.Date;
+import org.sakaiproject.event.api.SessionState;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import org.sakaiproject.event.api.UsageSessionService;
+import org.sakaiproject.tool.api.ToolSession;
+import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.entity.api.ResourcePropertiesEdit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 @Slf4j
 @ManagedBean(name="PrivateMessagesTool")
 @SessionScoped
@@ -414,7 +434,40 @@ public class PrivateMessagesTool {
   private boolean showProfileInfoMsg = false;
   @Getter
   private boolean showProfileLink = false;
-  
+
+
+  /*
+   *  Out-Of-Office Notification
+   */
+  private List selectedUser = new ArrayList();
+  private List outOfOfficeList = new ArrayList();
+  private List userInOutOfOfficeList = new ArrayList();
+
+  @ManagedProperty(value="#{Components[\"org.sakaiproject.api.app.messageforums.OutOfOfficeMessageManager\"]}")
+  private OutOfOfficeMessageManager outOfOfficeMessageManager;
+
+  private Locale locale;
+  private DateFormat dateFormat;
+  private static final String date_En = "MM/dd/yyyy";
+  private static final String date_De = "dd/MM/yyyy";
+
+  private static final Logger logger = LoggerFactory.getLogger(PrivateMessagesTool.class);
+
+  // Out-Of-Office Notification Getter & Setter
+  public List getSelectedUser() {
+    this.selectedUser = diplayUser();
+    return selectedUser;
+  }
+  public List getOutOfOfficeList(){
+    return outOfOfficeList;
+  }
+
+  public void setOutOfOfficeMessageManager(OutOfOfficeMessageManager outOfOfficeMessageManager){
+    this.outOfOfficeMessageManager = outOfOfficeMessageManager;
+  }
+
+
+
   public PrivateMessagesTool()
   {    
 	  showProfileInfoMsg = ServerConfigurationService.getBoolean("msgcntr.messages.showProfileInfo", true);
@@ -422,6 +475,34 @@ public class PrivateMessagesTool {
   }
 
   public void initializePrivateMessageArea() {
+
+
+    /*
+     * init Out-Of-Office Notification Feature
+     *  supported language: en, de
+     */
+
+    locale = getUserLocale();
+    String siteLocale = "";
+    logger.info("locale: " + locale.getLanguage());
+    try{
+      Site x =  siteService.getSite(toolManager.getCurrentPlacement().getContext());
+      ResourcePropertiesEdit props =  x.getPropertiesEdit();
+      siteLocale = props.getProperty("locale_string");
+      logger.info("siteLocale: " + siteLocale);
+    }catch(IdUnusedException e1){
+    }
+
+
+    if (locale.getLanguage().contains("de") || siteLocale != null && siteLocale.contains("de") ){
+      dateFormat = new SimpleDateFormat(date_De);
+      logger.info("is GERMAN");
+    }else{
+      dateFormat = new SimpleDateFormat(date_En);
+    }
+
+
+
     /** get area per request */
     area = prtMsgManager.getPrivateMessageArea();
 
@@ -449,6 +530,10 @@ public class PrivateMessagesTool {
           hiddenGroups.addAll(area.getHiddenGroups());
       }
     }
+
+
+
+
   }
   
   /**
@@ -4618,5 +4703,100 @@ public void processChangeSelectView(ValueChangeEvent eve)
                     .collect(Collectors.joining(", "));
       return "(" + role + ") " + groups;
     }
+
+
+
+
+  /*
+   *  Out-of-Office Notification
+   */
+
+
+
+
+  public List diplayUser(){
+    List selectedUserTmp = new ArrayList();
+    for (int i = 0; i < this.selectedComposeToList.size(); i++){
+      MembershipItem membershipItem = (MembershipItem) courseMemberMap.get(selectedComposeToList.get(i));
+    }
+    return selectedUserTmp;
+  }
+
+
+
+
+  private void addMessageToList(MembershipItem item){
+    User user = item.getUser();
+    String id = user.getId();
+    if(!userInOutOfOfficeList.contains(id)) {
+      OutOfOfficeMessage outOfOfficeMessage = outOfOfficeMessageManager.getOutOfOfficeMessage(id);
+      if (outOfOfficeMessage != null) {
+        Date date1 = outOfOfficeMessage.getUntilDate();  //java.util.Date
+        String formattedDate = dateFormat.format(date1);
+        String message = user.getDisplayName() + " " + rb.getString("pvt_outOfOffice") + " " + formattedDate;  //for now
+
+        this.outOfOfficeList.add(message);
+        userInOutOfOfficeList.add(id);
+      }
+    }
+  }
+
+
+
+  public void ajaxCalled(){
+    composeOutOfOfficeList2();
+  }
+
+  public void composeOutOfOfficeList2 () {
+    outOfOfficeList.clear();  //for now
+    userInOutOfOfficeList.clear();
+    for (int i = 0; i < this.selectedComposeToList.size(); i++) {
+
+      MembershipItem item = (MembershipItem) courseMemberMap.get(selectedComposeToList.get(i));
+      if (item.getType() == 4){ //User
+        addMessageToList(item);
+
+      }else if(item.getType() == 2){ //Role
+        String id = item.getRole().getId();
+        for (MembershipItem member :(List<MembershipItem>) totalComposeToList){
+          if (member.getType() == 4){
+            String roleTmp = member.getRole().getId();
+            if(roleTmp.equals(id)){
+              addMessageToList(member);
+            }
+          }
+        }
+      }else if(item.getType() == 1){ //all
+        for (MembershipItem member :(List<MembershipItem>) totalComposeToList){
+          if (member.getType() == 4){
+            addMessageToList(member);
+          }
+        }
+      }
+    }
+  }
+
+
+
+  private List notiList;
+  public List getNotiList(){
+    return notiList;
+  }
+  public void setNotiList(List list){
+    this.notiList = list;
+  }
+
+
+  public String ParameterJSF2(String parameterId){
+    ExternalContext context = FacesContext.getCurrentInstance()
+            .getExternalContext();
+    Map paramMap = context.getRequestParameterMap();
+    String result = (String) paramMap.get(parameterId);
+    if (result == null){
+      result = "Main"	+ toolManager.getCurrentPlacement().getId();
+    }
+    return result;
+  }
+
 
 }
