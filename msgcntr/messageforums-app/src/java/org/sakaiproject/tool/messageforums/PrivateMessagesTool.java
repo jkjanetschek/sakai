@@ -484,19 +484,17 @@ public class PrivateMessagesTool {
 
     locale = getUserLocale();
     String siteLocale = "";
-    logger.info("locale: " + locale.getLanguage());
     try{
       Site x =  siteService.getSite(toolManager.getCurrentPlacement().getContext());
       ResourcePropertiesEdit props =  x.getPropertiesEdit();
       siteLocale = props.getProperty("locale_string");
-      logger.info("siteLocale: " + siteLocale);
     }catch(IdUnusedException e1){
+      log.error(e.getMessage(), e);
     }
 
 
     if (locale.getLanguage().contains("de") || siteLocale != null && siteLocale.contains("de") ){
       dateFormat = new SimpleDateFormat(date_De);
-      logger.info("is GERMAN");
     }else{
       dateFormat = new SimpleDateFormat(date_En);
     }
