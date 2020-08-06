@@ -130,6 +130,9 @@ import org.sakaiproject.event.api.UsageSessionService;
 import org.sakaiproject.tool.api.ToolSession;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.entity.api.ResourcePropertiesEdit;
+import org.sakaiproject.util.ResourceLoaderHelper;
+import java.util.ResourceBundle;
+import org.apache.commons.lang.LocaleUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -479,7 +482,7 @@ public class PrivateMessagesTool {
 
     /*
      * init Out-Of-Office Notification Feature
-     *  supported language: en, de
+     *
      */
 
     locale = getUserLocale();
@@ -489,16 +492,27 @@ public class PrivateMessagesTool {
       ResourcePropertiesEdit props =  x.getPropertiesEdit();
       siteLocale = props.getProperty("locale_string");
     }catch(IdUnusedException e1){
-      log.error(e.getMessage(), e);
+      log.error(e1.getMessage(), e1);
     }
 
 
+    if (siteLocale == null){
+      logger.info("SiteLocale: NULL");
+      dateFormat = new SimpleDateFormat(rb.getString("pvt_outOfOfficeDateFormat"));
+    }else{
+      Locale tempLocale = LocaleUtils.toLocale(siteLocale);
+      ResourceLoaderHelper resourceLoaderHelper = new ResourceLoaderHelper();
+      ResourceBundle bundle= resourceLoaderHelper.loadBundleHelper(MESSAGECENTER_BUNDLE, tempLocale);
+      dateFormat = new SimpleDateFormat(bundle.getString("pvt_outOfOfficeDateFormat"));
+    }
+
+   /*
     if (locale.getLanguage().contains("de") || siteLocale != null && siteLocale.contains("de") ){
       dateFormat = new SimpleDateFormat(date_De);
     }else{
       dateFormat = new SimpleDateFormat(date_En);
     }
-
+  */
 
 
     /** get area per request */
@@ -4798,3 +4812,6 @@ public void processChangeSelectView(ValueChangeEvent eve)
 
 
 }
+
+
+
