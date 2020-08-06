@@ -451,10 +451,6 @@ public class PrivateMessagesTool {
 
   private Locale locale;
   private DateFormat dateFormat;
-  private static final String date_En = "MM/dd/yyyy";
-  private static final String date_De = "dd/MM/yyyy";
-
-  private static final Logger logger = LoggerFactory.getLogger(PrivateMessagesTool.class);
 
   // Out-Of-Office Notification Getter & Setter
   public List getSelectedUser() {
