@@ -150,7 +150,7 @@ public class MessageForumsFilePickerServlet extends JsfTool  implements HttpServ
 
         // set the information that can be removed from return URLs
         req.setAttribute(URL_PATH, m_path);
-        req.setAttribute(URL_EXT, ".jsp");
+        req.setAttribute(URL_EXT, JSF_FACELETS_EXT); //  to work with .xhtml
 
         // set the sakai request object wrappers to provide the native, not
         // Sakai set up, URL information

@@ -71,6 +71,11 @@
             <to-view-id>/prefs/editor.jsp</to-view-id>
             <redirect/>
         </navigation-case>
+        <navigation-case>
+            <from-outcome>outOfOffice</from-outcome>
+            <to-view-id>/prefs/outOfOffice.jsp</to-view-id>
+            <redirect/>
+        </navigation-case>
     </navigation-rule>
  	
 	<managed-bean>
@@ -95,6 +100,11 @@
 	        <property-name>userNotificationPreferencesRegistrationService</property-name>
 	        <value>#{Components["org.sakaiproject.user.api.UserNotificationPreferencesRegistrationService"]}</value>
 	    </managed-property>
+        <managed-property>
+            <description>Out of Office Manager</description>
+            <property-name>outOfOfficeMessageManager</property-name>
+            <value>#{Components["org.sakaiproject.api.app.messageforums.OutOfOfficeMessageManager"]}</value>
+        </managed-property>
 	</managed-bean>
    
 	<managed-bean>

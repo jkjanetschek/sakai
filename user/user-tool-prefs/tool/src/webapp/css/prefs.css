@@ -323,3 +323,24 @@
 select.multiLine {
     background: none;
 }
+
+
+.notValidDate{
+    background-color: #b42929; border: 1px solid #000500;	display: block;
+    width: 15%;
+    clear: both;
+    color: #000;
+    font-size: 1em;
+    margin: 5px 0px;
+    padding: 5px 5px 5px 25px;
+}
+
+.isActiveDate{
+    background-color: #6eca18; border: 1px solid #000000;	display: block;
+    width: 15%;
+    clear: both;
+    color: #000;
+    font-size: 1em;
+    margin: 5px 0px;
+    padding: 5px 5px 5px 25px;
+}

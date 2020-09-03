@@ -82,6 +82,7 @@ import java.text.ParseException;
 import java.text.DateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import org.sakaiproject.api.app.messageforums.ResourceLoaderHelper;
 
 /**
  * UserPrefsTool is the Sakai end-user tool to view and edit one's preferences.
@@ -247,6 +248,7 @@ public class UserPrefsTool
 	private Date selectedDateAsDate;
 	private String testString;
 	private Boolean dateNotValid = false;
+	private DateFormat dateFormat;
 	private static final String date_En = "MM/dd/yyyy";
 	private static final String date_De = "dd/MM/yyyy";
 
@@ -490,23 +492,18 @@ public class UserPrefsTool
 		this.selectedDateAsDate = date1;
 	}
 
-
 	public int getOutOfOffice_selection()
 	{
 		return outOfOffice_selection;
 	}
 
-
 	public void setOutOfOfficeMessageManager(OutOfOfficeMessageManager outOfOfficeMessageManager){
 		this.outOfOfficeMessageManager = outOfOfficeMessageManager;
 	}
 
-
 	public void setSelectedDate(String selectedDate)  {
 		this.selectedDate = selectedDate;
 	}
-
-
 
 	public String getSelectedDate(){
 		return selectedDate;
@@ -525,7 +522,6 @@ public class UserPrefsTool
 	public String getActiveDate(){
 		return activeDate;
 	}
-
 
 	public Boolean getDateNotValid(){
 		return dateNotValid;
@@ -564,6 +560,15 @@ public class UserPrefsTool
 
 		initNotificationStructures();
 		log.debug("new UserPrefsTool()");
+
+		/*
+		 *  Out-Of-Office Notification
+		 */
+
+		dateFormat = new SimpleDateFormat(msgs.getString("userPrefs_outOfOfficeDateFormat"));
+
+
+
 	}
 	
 	/**

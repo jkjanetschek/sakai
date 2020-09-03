@@ -130,7 +130,7 @@ import org.sakaiproject.event.api.UsageSessionService;
 import org.sakaiproject.tool.api.ToolSession;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.entity.api.ResourcePropertiesEdit;
-import org.sakaiproject.util.ResourceLoaderHelper;
+import org.sakaiproject.api.app.messageforums.ResourceLoaderHelper;
 import java.util.ResourceBundle;
 import org.apache.commons.lang.LocaleUtils;
 
@@ -449,6 +449,10 @@ public class PrivateMessagesTool {
   @ManagedProperty(value="#{Components[\"org.sakaiproject.api.app.messageforums.OutOfOfficeMessageManager\"]}")
   private OutOfOfficeMessageManager outOfOfficeMessageManager;
 
+
+  @ManagedProperty(value="#{Components[\"org.sakaiproject.api.app.messageforums.OutOfOfficeMessageManager\"]}")
+  private ResourceLoaderHelper resourceLoaderHelper;
+
   private Locale locale;
   private DateFormat dateFormat;
 
@@ -475,10 +479,8 @@ public class PrivateMessagesTool {
 
   public void initializePrivateMessageArea() {
 
-
     /*
      * init Out-Of-Office Notification Feature
-     *
      */
 
     locale = getUserLocale();
@@ -493,22 +495,14 @@ public class PrivateMessagesTool {
 
 
     if (siteLocale == null){
-      logger.info("SiteLocale: NULL");
       dateFormat = new SimpleDateFormat(rb.getString("pvt_outOfOfficeDateFormat"));
     }else{
       Locale tempLocale = LocaleUtils.toLocale(siteLocale);
-      ResourceLoaderHelper resourceLoaderHelper = new ResourceLoaderHelper();
       ResourceBundle bundle= resourceLoaderHelper.loadBundleHelper(MESSAGECENTER_BUNDLE, tempLocale);
       dateFormat = new SimpleDateFormat(bundle.getString("pvt_outOfOfficeDateFormat"));
     }
 
-   /*
-    if (locale.getLanguage().contains("de") || siteLocale != null && siteLocale.contains("de") ){
-      dateFormat = new SimpleDateFormat(date_De);
-    }else{
-      dateFormat = new SimpleDateFormat(date_En);
-    }
-  */
+
 
 
     /** get area per request */

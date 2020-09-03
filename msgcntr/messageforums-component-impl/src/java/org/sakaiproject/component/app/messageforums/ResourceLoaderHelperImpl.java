@@ -1,12 +1,11 @@
-package org.sakaiproject.util;
+package org.sakaiproject.component.app.messageforums;
 
 import org.sakaiproject.util.ResourceLoader;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import org.sakaiproject.thread_local.api.ThreadLocalManager;
 import org.sakaiproject.component.cover.ComponentManager;
-
-
+import org.sakaiproject.api.app.messageforums.ResourceLoaderHelper;
 
 /*
  *  helper class for Out-Of-Office Notification Feature
@@ -14,20 +13,23 @@ import org.sakaiproject.component.cover.ComponentManager;
  */
 
 
-public class ResourceLoaderHelper extends ResourceLoader{
+public class ResourceLoaderHelperImpl extends ResourceLoader implements ResourceLoaderHelper{
 
 
-    public ResourceLoaderHelper(){
+    public ResourceLoaderHelperImpl(){
         super();
     }
 
-    public ResourceLoaderHelper(String baseName){
+    public ResourceLoaderHelperImpl(String baseName){
         super(baseName);
     }
 
 
     private final static Object LOCK = new Object();
     private static ThreadLocalManager threadLocalManager;
+    public void setThreadLocalManager(ThreadLocalManager threadLocalManager){
+        this.threadLocalManager = threadLocalManager;
+    }
     protected static ThreadLocalManager getThreadLocalManager() {
         if (threadLocalManager == null) {
             synchronized (LOCK) {
@@ -39,8 +41,8 @@ public class ResourceLoaderHelper extends ResourceLoader{
 
 
     public ResourceBundle loadBundleHelper (String baseName, Locale loc){
-        String context = (String) getThreadLocalManager().get(org.sakaiproject.util.RequestFilter.CURRENT_CONTEXT);
-        ResourceLoaderHelper rb = new ResourceLoaderHelper(baseName);
+        String context = (String) getThreadLocalManager().get("org.sakaiproject.util.RequestFilter.context");
+        ResourceLoaderHelperImpl rb = new ResourceLoaderHelperImpl(baseName);
         return rb.loadBundle(context,loc);
     }
 
