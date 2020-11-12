@@ -73,6 +73,21 @@
             <groupId>org.sakaiproject.userauditservice</groupId>
             <artifactId>userauditservice-api</artifactId>
         </dependency>
+
+
+
+        <!-- JJ Custom -->
+        <dependency>
+            <groupId>org.sakaiproject.kernel</groupId>
+            <artifactId>sakai-kernel-impl</artifactId>
+            <version>${sakai.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.sakaiproject.shortenedurl</groupId>
+            <artifactId>shortenedurl-api</artifactId>
+        </dependency>
+
     </dependencies>
     <build>
         <resources>

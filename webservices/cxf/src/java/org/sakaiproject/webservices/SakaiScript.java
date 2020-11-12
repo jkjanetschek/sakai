@@ -1168,7 +1168,7 @@ public class SakaiScript extends AbstractWebService {
             authzGroupService.save(realmEdit);
 
         } catch (Exception e) {
-            log.error("WS removeAllMembersFromAuthzGroup(): " + e.getClass().getName() + " : " + e.getMessage());
+            log.error("WS removeAllMembersFromAuthzGroup(): save" + e.getClass().getName() + " : " + e.getMessage());
             return e.getClass().getName() + " : " + e.getMessage();
         }
         return "success";
@@ -4562,6 +4562,7 @@ public class SakaiScript extends AbstractWebService {
      * @return xml doc of the list of sites
      * @throws RuntimeException returns <exception /> string if exception encountered and logs it
      */
+
     @WebMethod
     @Path("/getSubSites")
     @Produces("text/plain")
@@ -4579,7 +4580,6 @@ public class SakaiScript extends AbstractWebService {
         } catch (Exception e) {
             log.error("WS getSubSites(): " + e.getClass().getName() + " : " + e.getMessage());
             return "<exception/>";
-
         }
     }
     

@@ -139,6 +139,53 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         return assignmentService.assignmentReference(id) != null;
     }
 
+
+
+
+    /*
+     *   JJ Custom Stuff
+     */
+
+    @EntityCustomAction(viewKey = "")
+    public String createAssignment(EntityReference ref, Map<String, Object> params){
+        String context = (String) params.get("context");
+        String title = (String) params.get("title");
+        String title = (String) params.get("description");
+
+        Long dueDate = Long.parseLong((String) params.get("dueDate"));
+        Long openDate = Long.parseLong((String) params.get("openDate"));
+        Long closeDate = Long.parseLong((String) params.get("closeDate"));
+
+
+        Instant dt = Instant.ofEpochMilli(dueTime);
+        Instant ot = Instant.ofEpochMilli(openTime);
+        Instant ct = Instant.ofEpochMilli(closeTime);
+
+
+        try{
+            Assignment assign = assignmentService.addAssignment(context);
+
+            assign.setTitle(title);
+            assign.setDueDate(dt);
+            assign.setOpenDate(ot);
+            assign.setCloseDate(ct);
+
+            assignmentService.updateAssignment(assign);
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+
+
+
+
+
+
+
+
     /*
      * (non-Javadoc)
      *
