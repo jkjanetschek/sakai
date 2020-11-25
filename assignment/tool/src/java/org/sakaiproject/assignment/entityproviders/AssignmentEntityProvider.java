@@ -77,6 +77,9 @@ import org.sakaiproject.user.api.UserDirectoryService;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.util.ResourceLoader;
 
+
+import java.net.URLEncoder;
+
 @Slf4j
 @Setter
 public class AssignmentEntityProvider extends AbstractEntityProvider implements EntityProvider,
@@ -146,38 +149,66 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
      *   JJ Custom Stuff
      */
 
-    @EntityCustomAction(viewKey = "")
+    @EntityCustomAction(action = "createAssignment",viewKey = "")
     public String createAssignment(EntityReference ref, Map<String, Object> params){
         String context = (String) params.get("context");
         String title = (String) params.get("title");
-        String title = (String) params.get("description");
+        String description = (String) params.get("instructions");
+        String group = (String) params.get("group");
 
         Long dueDate = Long.parseLong((String) params.get("dueDate"));
         Long openDate = Long.parseLong((String) params.get("openDate"));
         Long closeDate = Long.parseLong((String) params.get("closeDate"));
+        Instant dt = Instant.ofEpochMilli(dueDate);
+        Instant ot = Instant.ofEpochMilli(openDate);
+        Instant ct = Instant.ofEpochMilli(closeDate);
+
+        String fileName = (String) params.get("fileName");
+        String fileType = (String) params.get("fileType");
+        String attachmentData = (String) params.get("attachmentData");
+       // Base64 decode = new Base64();
 
 
-        Instant dt = Instant.ofEpochMilli(dueTime);
-        Instant ot = Instant.ofEpochMilli(openTime);
-        Instant ct = Instant.ofEpochMilli(closeTime);
+        Boolean isGroup = true;
+        Set<String> groups = new HashSet<>();
+        Set<String> attachments = new HashSet<>();
+
 
 
         try{
             Assignment assign = assignmentService.addAssignment(context);
+         //   String encodedURL = URLEncoder.encode(attachmentData, "UTF-8");
+
+
+            byte[] data = Base64.getDecoder().decode(attachmentData);
+
+            ResourcePropertiesEdit rpe = contentHostingService.newResourceProperties();
+            rpe.addProperty(rpe.PROP_DISPLAY_NAME, fileName);
+            ContentResource file = contentHostingService.addAttachmentResource(fileName, fileType, data,rpe);
+            Reference refAttachement = entityManager.newReference(file.getReference());
+            attachments.add(refAttachement.getReference());
+
+            //    String name, String type, byte[] content, ResourceProperties properties)
+
+            groups.add("/site/"+context+"/group/" + group);
 
             assign.setTitle(title);
             assign.setDueDate(dt);
             assign.setOpenDate(ot);
             assign.setCloseDate(ct);
 
+            assign.setIsGroup(isGroup);
+            assign.setGroups(groups);
+            assign.setTypeOfAccess(Assignment.Access.GROUP);
+            assign.setAttachments(attachments);
+
             assignmentService.updateAssignment(assign);
+            return assign.getId();
 
         }catch(Exception e){
-            e.printStackTrace();
+            return e.getClass().getName() + " : " + e.getMessage();
         }
-
     }
-
 
 
 
