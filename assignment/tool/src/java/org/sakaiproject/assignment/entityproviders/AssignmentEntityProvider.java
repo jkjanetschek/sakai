@@ -79,6 +79,11 @@ import org.sakaiproject.util.ResourceLoader;
 
 
 import java.net.URLEncoder;
+import org.sakaiproject.util.Xml;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.json.*;
 
 @Slf4j
 @Setter
@@ -146,14 +151,14 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
 
 
     /*
-     *   JJ Custom Stuff
+     *   JJ Custom Method: Create Assignment
      */
 
     @EntityCustomAction(action = "createAssignment",viewKey = "")
     public String createAssignment(EntityReference ref, Map<String, Object> params){
         String context = (String) params.get("context");
         String title = (String) params.get("title");
-        String description = (String) params.get("instructions");
+        String instructions = (String) params.get("instructions");
         String group = (String) params.get("group");
 
         Long dueDate = Long.parseLong((String) params.get("dueDate"));
@@ -173,12 +178,8 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         Set<String> groups = new HashSet<>();
         Set<String> attachments = new HashSet<>();
 
-
-
         try{
             Assignment assign = assignmentService.addAssignment(context);
-         //   String encodedURL = URLEncoder.encode(attachmentData, "UTF-8");
-
 
             byte[] data = Base64.getDecoder().decode(attachmentData);
 
@@ -196,10 +197,12 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             assign.setDueDate(dt);
             assign.setOpenDate(ot);
             assign.setCloseDate(ct);
+            assign.setInstructions(instructions);
+            assign.setDropDeadDate(dt);
 
             assign.setIsGroup(isGroup);
             assign.setGroups(groups);
-            assign.setTypeOfAccess(Assignment.Access.GROUP);
+            assign.setTypeOfAccess(Assignment.Access.SITE);
             assign.setAttachments(attachments);
 
             assignmentService.updateAssignment(assign);
@@ -211,6 +214,100 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
     }
 
 
+    /*
+     *   JJ Custom Method: Get Submissions for Assignment
+     */
+
+    @EntityCustomAction(action = "getSubmissions",viewKey = "")
+    public List getSubmissions(EntityReference ref, Map<String, Object> params){
+        List<String> results = new ArrayList();
+        String assignmentId = (String) params.get("assignmentId");
+        String retVal = null;
+        try {
+            Assignment assign = assignmentService.getAssignment(assignmentId);
+            Set<AssignmentSubmission> subs = assignmentService.getSubmissions(assign);
+
+
+
+            for (AssignmentSubmission thisSub : subs) {
+                JSONObject submission = new JSONObject();
+                submission.put("feedbackComment", thisSub.getFeedbackComment());
+                submission.put("feedbackText", thisSub.getFeedbackText());
+                submission.put("grade",thisSub.getGrade());
+                submission.put("status",assignmentService.getSubmissionStatus(thisSub.getId()));
+                submission.put("submittedText", thisSub.getSubmittedText());
+                submission.put("groupId", thisSub.getGroupId());
+
+                JSONArray submitters = new JSONArray();
+                for (AssignmentSubmissionSubmitter submitter : thisSub.getSubmitters()) {
+                    JSONObject submitterId = new JSONObject();
+                    submitterId.put("submitterId", submitter.getSubmitter());
+                    submitters.put(submitterId);
+                }
+                submission.put("submitters",submitters);
+
+                JSONArray attachements = new JSONArray();
+                for (String attachment : thisSub.getAttachments()) {
+                    Reference reference = entityManager.newReference(attachment);
+                    Entity ent = reference.getEntity();
+                    JSONObject attachement = new JSONObject();
+                    attachement.put("attachmentURL", ent.getUrl());
+                    attachements.put(attachement);
+
+                }
+                submission.put("attachements",attachements);
+                results.add(submission.toString());
+            }
+        }catch(Exception e){
+
+        }
+        return results;
+
+
+
+            /*
+             *   FRom SOAP
+             */
+            /*
+            Document dom = Xml.createDocument();
+            Node all = dom.createElement("submissions");
+            dom.appendChild(all);
+
+            for (AssignmentSubmission thisSub : subs) {
+                log.debug("got submission" + thisSub);
+                Element uElement = dom.createElement("submission");
+                uElement.setAttribute("feedback-comment", thisSub.getFeedbackComment());
+
+                uElement.setAttribute("feedback-text", thisSub.getFeedbackText());
+
+                uElement.setAttribute("grade", thisSub.getGrade());
+                uElement.setAttribute("status", assignmentService.getSubmissionStatus(thisSub.getId()));
+                uElement.setAttribute("submitted-text", thisSub.getSubmittedText());
+
+                for (AssignmentSubmissionSubmitter submitter : thisSub.getSubmitters()) {
+                    uElement.setAttribute("submitter-id", submitter.getSubmitter());
+                }
+
+                //Element attachments = dom.createElement("attachment");
+                for (String attachment : thisSub.getAttachments()) {
+                    //Element attachments = dom.createElement("attachment");
+                    Reference reference = entityManager.newReference(attachment);
+                    Entity ent = reference.getEntity();
+                    uElement.setAttribute("attachment-url", ent.getUrl());
+                    //all.appendChild();
+                }
+
+                all.appendChild(uElement);
+
+            }
+            retVal = Xml.writeDocumentToString(dom);
+        }catch (Exception e){
+
+        }
+
+        return retVal;
+        */
+    }
 
 
 
@@ -469,7 +566,6 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         } catch (PermissionException e) {
             throw new EntityNotFoundException("No access to site: " + siteId, siteId);
         }
-
         assignmentService.getAssignmentsForContext(siteId).stream().map(SimpleAssignment::new).forEach(rv::add);
         return rv;
     }
@@ -1198,6 +1294,11 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
 
         private String maxGradePoint;
 
+
+        //JJ Custom
+        private Boolean isGroup;
+
+
         public SimpleAssignment() {
         }
 
@@ -1208,6 +1309,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             if (a == null) {
                 return;
             }
+            this.isGroup = a.getIsGroup();
             this.id = a.getId();
             this.openTime = a.getOpenDate();
             this.openTimeString = a.getOpenDate().toString();
