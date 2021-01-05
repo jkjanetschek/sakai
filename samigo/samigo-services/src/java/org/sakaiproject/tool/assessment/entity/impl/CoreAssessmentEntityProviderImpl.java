@@ -54,7 +54,11 @@ import java.lang.IllegalArgumentException;
 import java.lang.SecurityException;
 import java.lang.IllegalStateException;
 
-
+import org.sakaiproject.tool.assessment.samlite.api.SamLiteService;
+import org.sakaiproject.entitybroker.entityprovider.annotations.EntityCustomAction;
+import org.sakaiproject.tool.assessment.samlite.api.QuestionGroup;
+import org.sakaiproject.util.FormattedText;
+import org.w3c.dom.Document;
 
 /**
  * Entity Provider impl for samigo core Assessments.
@@ -75,6 +79,14 @@ public class CoreAssessmentEntityProviderImpl implements CoreAssessmentEntityPro
   private SecurityService securityService;
   private GradingServiceAPI gradingService = null;
   public final static String ENTITY_PREFIX = CoreAssessmentEntityProvider.ENTITY_PREFIX;
+
+
+  /*
+   *  JJ Custom variables
+   */
+   private SamLiteService samLiteService;
+
+
   
   public String getEntityPrefix() {
       return ENTITY_PREFIX;
@@ -118,7 +130,7 @@ public class CoreAssessmentEntityProviderImpl implements CoreAssessmentEntityPro
     return props;
   }
 
-  private List<String> browseEntities(String siteId, String userId) {
+    private List<String> browseEntities(String siteId, String userId) {
       return new ArrayList<String>();
   }
 
@@ -135,16 +147,13 @@ public class CoreAssessmentEntityProviderImpl implements CoreAssessmentEntityPro
     }
 
     public Object getSampleEntity() {
-    	return null;    	
-    	
+    	return null;
     }
 
     public void updateEntity(EntityReference ref, Object entity, Map<String, Object> params) {
-
     }
     
     public void deleteEntity(EntityReference ref, Map<String, Object> params) {
-
     }
 
 
@@ -178,6 +187,41 @@ public class CoreAssessmentEntityProviderImpl implements CoreAssessmentEntityPro
   private DeveloperHelperService developerHelperService;
   public void setDeveloperHelperService(DeveloperHelperService developerHelperService) {
      this.developerHelperService = developerHelperService;
-}
+    }
+
+
+
+
+    /*
+     *  JJ Custom Actions
+     */
+
+    @EntityCustomAction(action = "createAssessmentFromText",viewKey = "")
+    public String createAssessmentFromText(EntityReference ref, Map<String, Object> params){
+      //  QuestionGroup questionGroup = samLiteService.parse(FormattedText.escapeHtml(title, false), FormattedText.escapeHtml(description, false), FormattedText.escapeHtml(textdata, false));
+
+        /*
+
+        if (questionGroup == null) {
+            throw new RuntimeException("WS TestsAndQuizzes.createAssessmentFromText(): SamLiteService.parse() returned a null QuestionGroup");
+        }
+
+        document = samLiteService.createDocument(questionGroup);
+        if (document == null) {
+            throw new RuntimeException("WS TestsAndQuizzes.createAssessmentFromText(): SamLiteService.createDocument() returned a null QTI Document");
+        }
+
+        return createAssessment(siteid, siteproperty, title, description, template, document);
+
+
+
+         */
+
+    }
+
+
+
+
+
 
 }

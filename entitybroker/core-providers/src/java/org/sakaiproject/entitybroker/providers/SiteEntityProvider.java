@@ -874,7 +874,7 @@ public class SiteEntityProvider extends AbstractEntityProvider implements CoreEn
         return transversalMap;
     }
 
-    //Helferfunktion
+
     protected void updateEntityReferences(String toolId, String toContext, Map transversalMap, Site newSite)
     {
         if (toolId.equalsIgnoreCase("sakai.iframe.site"))
@@ -907,7 +907,7 @@ public class SiteEntityProvider extends AbstractEntityProvider implements CoreEn
         }
     }
 
-    //Helferfunktion
+
     private void updateSiteInfoToolEntityReferences(Map transversalMap, Site newSite)
     {
         if(transversalMap != null && transversalMap.size() > 0 && newSite != null)

@@ -84,7 +84,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.json.*;
-
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 @Slf4j
 @Setter
 public class AssignmentEntityProvider extends AbstractEntityProvider implements EntityProvider,
@@ -108,6 +109,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
     private GradebookExternalAssessmentService gradebookExternalService;
     private ServerConfigurationService serverConfigurationService;
     private UserDirectoryService userDirectoryService;
+    private ContentHostingService dbContentService;
 
     // HTML is deliberately not handled here, so that it will be handled by RedirectingAssignmentEntityServlet
     public String[] getHandledOutputFormats() {
@@ -160,18 +162,29 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         String title = (String) params.get("title");
         String instructions = (String) params.get("instructions");
         String group = (String) params.get("group");
+        Boolean honorPledge = Boolean.parseBoolean((String)params.get("honorPledge"));
 
         Long dueDate = Long.parseLong((String) params.get("dueDate"));
         Long openDate = Long.parseLong((String) params.get("openDate"));
         Long closeDate = Long.parseLong((String) params.get("closeDate"));
+        Long visibleDate = Long.parseLong((String) params.get("visibleDate"));
         Instant dt = Instant.ofEpochMilli(dueDate);
         Instant ot = Instant.ofEpochMilli(openDate);
         Instant ct = Instant.ofEpochMilli(closeDate);
+        Instant vt = Instant.ofEpochMilli(visibleDate);
 
+
+        //Attachment
         String fileName = (String) params.get("fileName");
         String fileType = (String) params.get("fileType");
         String attachmentData = (String) params.get("attachmentData");
-       // Base64 decode = new Base64();
+
+       //Model Answer
+        String fileNameModelAnswer = (String) params.get("fileNameModelAnswer");
+        String fileTypeModelAnswer = (String) params.get("fileTypeModelAnswer");
+        String modelAnswerData = (String) params.get("modelAnswerData");
+        String modelAnswerText = (String) params.get("modelAnswerText");
+        String showTo = (String) params.get("showTo");
 
 
         Boolean isGroup = true;
@@ -181,15 +194,47 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         try{
             Assignment assign = assignmentService.addAssignment(context);
 
-            byte[] data = Base64.getDecoder().decode(attachmentData);
 
+            //Attachment
+            byte[] data = Base64.getDecoder().decode(attachmentData);
             ResourcePropertiesEdit rpe = contentHostingService.newResourceProperties();
             rpe.addProperty(rpe.PROP_DISPLAY_NAME, fileName);
             ContentResource file = contentHostingService.addAttachmentResource(fileName, fileType, data,rpe);
             Reference refAttachement = entityManager.newReference(file.getReference());
             attachments.add(refAttachement.getReference());
 
-            //    String name, String type, byte[] content, ResourceProperties properties)
+
+            //Model Answer
+            byte[] dataModelAnswer = Base64.getDecoder().decode(attachmentData);
+            ResourcePropertiesEdit rpeModelAnswer = contentHostingService.newResourceProperties();
+            rpeModelAnswer.addProperty(rpeModelAnswer.PROP_DISPLAY_NAME, fileName);
+           // ContentResource file = contentHostingService.addAttachmentResource(fileName, fileType, data,rpe);
+            InputStream inputStream = new ByteArrayInputStream(dataModelAnswer);
+            ContentResource fileModelAnswer = dbContentService.addAttachmentResource(fileNameModelAnswer, context, "Assignments", fileTypeModelAnswer, inputStream, rpeModelAnswer);   // String name, String site, String tool, String type, InputStream content,  ResourceProperties propertie
+            Reference refAttachementModel = entityManager.newReference(fileModelAnswer.getReference());
+            String attRefId = refAttachementModel.getReference();
+
+           // attachments.add(refAttachement.getReference());  //?????
+            String aId = assign.getId();
+            AssignmentModelAnswerItem mAnswer = assignmentSupplementItemService.newModelAnswer();
+            mAnswer.setAssignmentId(aId);
+            assignmentSupplementItemService.saveModelAnswer(mAnswer);
+            mAnswer.setText(modelAnswerText);
+            mAnswer.setShowTo(Integer.parseInt(showTo));
+           // mAnswer.setAttachmentSet
+
+
+            Set<AssignmentSupplementItemAttachment> sAttachments = new HashSet<AssignmentSupplementItemAttachment>();
+            AssignmentSupplementItemAttachment mAttach = assignmentSupplementItemService.newAttachment();
+            mAttach.setAssignmentSupplementItemWithAttachment(mAnswer);
+            mAttach.setAttachmentId(attRefId);
+            assignmentSupplementItemService.saveAttachment(mAttach);
+            sAttachments.add(mAttach);
+
+            assignmentSupplementItemService.saveModelAnswer(mAnswer);
+
+
+
 
             groups.add("/site/"+context+"/group/" + group);
 
@@ -199,11 +244,15 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             assign.setCloseDate(ct);
             assign.setInstructions(instructions);
             assign.setDropDeadDate(dt);
+            assign.setVisibleDate(vt);
+            assign.setHonorPledge(honorPledge);
 
             assign.setIsGroup(isGroup);
             assign.setGroups(groups);
-            assign.setTypeOfAccess(Assignment.Access.SITE);
+            assign.setTypeOfAccess(Assignment.Access.GROUP);
             assign.setAttachments(attachments);
+
+            assign.setTypeOfGrade(Assignment.GradeType.UNGRADED_GRADE_TYPE);
 
             assignmentService.updateAssignment(assign);
             return assign.getId();
@@ -264,49 +313,29 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         return results;
 
 
+    }
 
-            /*
-             *   FRom SOAP
-             */
-            /*
-            Document dom = Xml.createDocument();
-            Node all = dom.createElement("submissions");
-            dom.appendChild(all);
+// context=" + context + "&assignmentTitle=" + assignmentTitle + "&fileNameModelAnswer=" + fileNameModelAnswer + "&fileTypeModelAnswer=" + fileTypeModelAnswer + "&modelAnswerData=" + encodedURLModelAnswer;
 
-            for (AssignmentSubmission thisSub : subs) {
-                log.debug("got submission" + thisSub);
-                Element uElement = dom.createElement("submission");
-                uElement.setAttribute("feedback-comment", thisSub.getFeedbackComment());
+    @EntityCustomAction(action = "uploadModelAnswerRetrospect",viewKey = "")
+    public List uploadModelAnswerRetrospect(EntityReference ref, Map<String, Object> params){
+        List<String> results = new ArrayList();
 
-                uElement.setAttribute("feedback-text", thisSub.getFeedbackText());
+        String context = (String) params.get("context");
+        String assignmentTitle = (String) params.get("assignmentTitle");
+        String fileNameModelAnswer = (String) params.get("fileNameModelAnswer");
+        String fileTypeModelAnswer = (String) params.get("fileTypeModelAnswer");
+        String modelAnswerData = (String) params.get("modelAnswerData");
 
-                uElement.setAttribute("grade", thisSub.getGrade());
-                uElement.setAttribute("status", assignmentService.getSubmissionStatus(thisSub.getId()));
-                uElement.setAttribute("submitted-text", thisSub.getSubmittedText());
-
-                for (AssignmentSubmissionSubmitter submitter : thisSub.getSubmitters()) {
-                    uElement.setAttribute("submitter-id", submitter.getSubmitter());
-                }
-
-                //Element attachments = dom.createElement("attachment");
-                for (String attachment : thisSub.getAttachments()) {
-                    //Element attachments = dom.createElement("attachment");
-                    Reference reference = entityManager.newReference(attachment);
-                    Entity ent = reference.getEntity();
-                    uElement.setAttribute("attachment-url", ent.getUrl());
-                    //all.appendChild();
-                }
-
-                all.appendChild(uElement);
-
-            }
-            retVal = Xml.writeDocumentToString(dom);
-        }catch (Exception e){
+        Collection<Assignment> collection = assignmentService.getAssignmentsForContext(context);
+        Iterator it = collection.iterator();
+        while (it.hasNext()){
+            Assignment assignment =  it.next();
 
         }
 
-        return retVal;
-        */
+
+        return results;
     }
 
 
