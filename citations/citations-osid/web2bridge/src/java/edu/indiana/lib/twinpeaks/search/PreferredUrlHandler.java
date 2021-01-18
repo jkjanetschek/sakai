@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import javax.xml.parsers.*;
 
 import org.w3c.dom.*;
-import org.w3c.dom.html.*;
+//import org.w3c.dom.html.*;
 import org.xml.sax.*;
 
 import edu.indiana.lib.twinpeaks.util.DomUtils;
