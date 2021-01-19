@@ -33,6 +33,7 @@ import static org.sakaiproject.assignment.api.AssignmentServiceConstants.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.fileupload.FileItem;
 
+import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentReferenceReckoner;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.MultiGroupRecord;
@@ -157,17 +158,35 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         String instructions = (String) params.get("instructions");
         String group = (String) params.get("group");
         Boolean honorPledge = Boolean.parseBoolean((String)params.get("honorPledge"));
-        String typeOfSubmission = (String) params.get("typeOfSubmission");
 
         Long dueDate = Long.parseLong((String) params.get("dueDate"));
         Long openDate = Long.parseLong((String) params.get("openDate"));
         Long closeDate = Long.parseLong((String) params.get("closeDate"));
         Long visibleDate = Long.parseLong((String) params.get("visibleDate"));
+
         Instant dt = Instant.ofEpochMilli(dueDate);
         Instant ot = Instant.ofEpochMilli(openDate);
         Instant ct = Instant.ofEpochMilli(closeDate);
         Instant vt = Instant.ofEpochMilli(visibleDate);
 
+        //Submission Type
+        String typeOfSubmissionString = (String) params.get("typeOfSubmission");
+        Assignment.SubmissionType typeOfSubmission =  null;
+        if(typeOfSubmissionString.contains("1")){
+            typeOfSubmission = Assignment.SubmissionType.TEXT_AND_ATTACHMENT_ASSIGNMENT_SUBMISSION;
+        }else if(typeOfSubmissionString.contains("2")){
+            typeOfSubmission = Assignment.SubmissionType.ATTACHMENT_ONLY_ASSIGNMENT_SUBMISSION;
+        }else if(typeOfSubmissionString.contains("3")){
+            typeOfSubmission = Assignment.SubmissionType.TEXT_AND_ATTACHMENT_ASSIGNMENT_SUBMISSION;
+        }else if(typeOfSubmissionString.contains("4")){
+            typeOfSubmission = Assignment.SubmissionType.NON_ELECTRONIC_ASSIGNMENT_SUBMISSION;
+        }else if(typeOfSubmissionString.contains("5")){
+            typeOfSubmission = Assignment.SubmissionType.SINGLE_ATTACHMENT_SUBMISSION;
+        }
+
+        //Resubmission
+        String selectedNumberResubs = (String) params.get("selectedNumberResubs");
+        String resubmissionDate = (String) params.get("resubmissionDate");
 
         //Attachment
         String fileName = (String) params.get("fileName");
@@ -175,7 +194,9 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         String attachmentData = (String) params.get("attachmentData");
 
        //Model Answer
-        Boolean addModelAnswer = (Boolean) params.get("addModelAnswer");
+        String addModelAnswerString = (String) params.get("addModelAnswer");
+        Boolean addModelAnswer = Boolean.parseBoolean(addModelAnswerString);
+
         String fileNameModelAnswer = null;
         String fileTypeModelAnswer = null;
         String modelAnswerData = null;
@@ -189,14 +210,12 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
              showTo = (String) params.get("showTo");
         }
 
-
         Boolean isGroup = true;
         Set<String> groups = new HashSet<>();
         Set<String> attachments = new HashSet<>();
 
         try{
             Assignment assign = assignmentService.addAssignment(context);
-
 
             //Attachment
             byte[] data = Base64.getDecoder().decode(attachmentData);
@@ -206,7 +225,6 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             Reference refAttachement = entityManager.newReference(file.getReference());
             attachments.add(refAttachement.getReference());
             String aId = assign.getId();
-
 
             //Model Answer
             if(addModelAnswer){
@@ -224,18 +242,19 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             assign.setDropDeadDate(dt);
             assign.setVisibleDate(vt);
             assign.setHonorPledge(honorPledge);
-
             assign.setIsGroup(isGroup);
             assign.setGroups(groups);
             assign.setTypeOfAccess(Assignment.Access.GROUP);
             assign.setAttachments(attachments);
-
             assign.setTypeOfSubmission(typeOfSubmission);
 
-
-
-
-
+            //properties
+            Map<String, String> properties = new HashMap<>();
+            if(resubmissionDate != null){
+                properties.put(AssignmentConstants.ALLOW_RESUBMIT_CLOSETIME,resubmissionDate);
+                properties.put(AssignmentConstants.ALLOW_RESUBMIT_NUMBER, selectedNumberResubs);
+            }
+            assign.setProperties(properties);
             assign.setTypeOfGrade(Assignment.GradeType.UNGRADED_GRADE_TYPE);
 
             assignmentService.updateAssignment(assign);
@@ -259,8 +278,6 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         try {
             Assignment assign = assignmentService.getAssignment(assignmentId);
             Set<AssignmentSubmission> subs = assignmentService.getSubmissions(assign);
-
-
 
             for (AssignmentSubmission thisSub : subs) {
                 JSONObject submission = new JSONObject();
@@ -286,7 +303,6 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
                     JSONObject attachement = new JSONObject();
                     attachement.put("attachmentURL", ent.getUrl());
                     attachements.put(attachement);
-
                 }
                 submission.put("attachements",attachements);
                 results.add(submission.toString());
@@ -295,8 +311,6 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
 
         }
         return results;
-
-
     }
 
 
@@ -326,13 +340,9 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
                         String aId = assignment.getId();
                         saveModelAnswer(context,aId, modelAnswerData, fileNameModelAnswer,  fileTypeModelAnswer,  modelAnswerText,  "4");
                     }
-
                 }
-
             }
         }
-
-
         return "success";
     }
 
