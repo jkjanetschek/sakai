@@ -156,13 +156,16 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         String context = (String) params.get("context");
         String title = (String) params.get("title");
         String instructions = (String) params.get("instructions");
-        String group = (String) params.get("group");
         Boolean honorPledge = Boolean.parseBoolean((String)params.get("honorPledge"));
+
+        String group = (String) params.get("group");
+        Boolean isGroup = Boolean.parseBoolean((String)params.get("isGroup"));
 
         Long dueDate = Long.parseLong((String) params.get("dueDate"));
         Long openDate = Long.parseLong((String) params.get("openDate"));
         Long closeDate = Long.parseLong((String) params.get("closeDate"));
         Long visibleDate = Long.parseLong((String) params.get("visibleDate"));
+
 
         Instant dt = Instant.ofEpochMilli(dueDate);
         Instant ot = Instant.ofEpochMilli(openDate);
@@ -210,28 +213,43 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
              showTo = (String) params.get("showTo");
         }
 
-        Boolean isGroup = true;
+      //  Boolean isGroup = true;
         Set<String> groups = new HashSet<>();
         Set<String> attachments = new HashSet<>();
 
         try{
             Assignment assign = assignmentService.addAssignment(context);
+            String aId = assign.getId();
 
             //Attachment
-            byte[] data = Base64.getDecoder().decode(attachmentData);
-            ResourcePropertiesEdit rpe = contentHostingService.newResourceProperties();
-            rpe.addProperty(rpe.PROP_DISPLAY_NAME, fileName);
-            ContentResource file = contentHostingService.addAttachmentResource(fileName, fileType, data,rpe);
-            Reference refAttachement = entityManager.newReference(file.getReference());
-            attachments.add(refAttachement.getReference());
-            String aId = assign.getId();
+            if(attachmentData != null){
+                byte[] data = Base64.getDecoder().decode(attachmentData);
+                ResourcePropertiesEdit rpe = contentHostingService.newResourceProperties();
+                rpe.addProperty(rpe.PROP_DISPLAY_NAME, fileName);
+                ContentResource file = contentHostingService.addAttachmentResource(fileName, fileType, data,rpe);
+                Reference refAttachement = entityManager.newReference(file.getReference());
+                attachments.add(refAttachement.getReference());
+
+                assign.setAttachments(attachments);
+            }
+
+
 
             //Model Answer
             if(addModelAnswer){
                 saveModelAnswer(context,aId, modelAnswerData,  fileNameModelAnswer,  fileTypeModelAnswer,  modelAnswerText,  showTo);
             }
 
-            groups.add("/site/"+context+"/group/" + group);
+
+            if(!group.equals("null")){
+                groups.add("/site/"+context+"/group/" + group);
+                assign.setGroups(groups);
+                assign.setIsGroup(isGroup);
+                assign.setTypeOfAccess(Assignment.Access.GROUP);
+            }else {
+                assign.setTypeOfAccess(Assignment.Access.SITE);
+            }
+
             assign.setAuthor(sessionManager.getCurrentSessionUserId());
             assign.setPosition(0);
             assign.setTitle(title);
@@ -242,10 +260,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             assign.setDropDeadDate(dt);
             assign.setVisibleDate(vt);
             assign.setHonorPledge(honorPledge);
-            assign.setIsGroup(isGroup);
-            assign.setGroups(groups);
-            assign.setTypeOfAccess(Assignment.Access.GROUP);
-            assign.setAttachments(attachments);
+
             assign.setTypeOfSubmission(typeOfSubmission);
 
             //properties
@@ -264,6 +279,62 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             return e.getClass().getName() + " : " + e.getMessage();
         }
     }
+
+
+    @EntityCustomAction(action = "editAssignment",viewKey = "")
+    public String editAssignment(EntityReference ref, Map<String, Object> params){
+
+        Long dueDate = Long.parseLong((String) params.get("dueDate"));
+        Long openDate = Long.parseLong((String) params.get("openDate"));
+        Long closeDate = Long.parseLong((String) params.get("closeDate"));
+        Long visibleDate = Long.parseLong((String) params.get("visibleDate"));
+        String selectedAssignment = (String) params.get("selectedAssignment");
+        String context = (String) params.get("context");
+
+        Instant dt = Instant.ofEpochMilli(dueDate);
+        Instant ot = Instant.ofEpochMilli(openDate);
+        Instant ct = Instant.ofEpochMilli(closeDate);
+        Instant vt = Instant.ofEpochMilli(visibleDate);
+
+
+
+        Site site;
+        try {
+            site = siteService.getSiteVisit(context);
+        } catch (IdUnusedException e) {
+            throw new EntityNotFoundException("Invalid siteId: " + context, context);
+        } catch (PermissionException e) {
+            throw new EntityNotFoundException("No access to site: " + context, context);
+        }
+
+       // List<Assignment> assignments = new ArrayList();
+
+        String response = null;
+        Collection<Assignment> assignments= assignmentService.getAssignmentsForContext(context);
+        Iterator it = assignments.iterator();
+        while(it.hasNext()){
+            Assignment as = (Assignment) it.next();
+            if(as.getTitle().equals(selectedAssignment)){
+                try{
+                    as.setDueDate(dt);
+                    as.setOpenDate(ot);
+                    as.setCloseDate(ct);
+                    as.setVisibleDate(vt);
+                    assignmentService.updateAssignment(as);
+                    response += "\n" + as.getId() + " updated";
+                }catch (Exception e){
+                    return e.getClass().getName() + " : " + e.getMessage();
+                }
+
+            }
+        }
+
+
+        return response;
+
+    }
+
+
 
 
     /*
@@ -403,7 +474,6 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         }catch (Exception e){
 
         }
-
     }
 
 
@@ -1394,6 +1464,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
 
         //JJ Custom
         private Boolean isGroup;
+        private Instant visibleTime;
 
 
         public SimpleAssignment() {
@@ -1406,7 +1477,12 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             if (a == null) {
                 return;
             }
+
+            //JJ Custom
             this.isGroup = a.getIsGroup();
+            this.visibleTime = a.getVisibleDate();
+
+
             this.id = a.getId();
             this.openTime = a.getOpenDate();
             this.openTimeString = a.getOpenDate().toString();
