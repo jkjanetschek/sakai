@@ -74,17 +74,6 @@
     class="org.sakaiproject.tool.assessment.shared.impl.assessment.SecureDeliveryServiceImpl"
     init-method="init">
   </bean>
-
-
-
-  <bean
-          parent="org.sakaiproject.entitybroker.entityprovider.AbstractEntityProvider"
-          class="org.sakaiproject.tool.assessment.entity.impl.CoreAssessmentEntityProviderImpl">
-    <property name="samLiteService" ref="rg.sakaiproject.tool.assessment.samlite.api.SamLiteService" />
-
-  </bean>
-
-
 </beans>
 
 
