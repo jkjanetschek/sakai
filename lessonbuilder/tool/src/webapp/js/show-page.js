@@ -1382,7 +1382,8 @@ $(document).ready(function() {
 			var itemId = row.find(".question-id").text();
 			$("#questionEditId").val(itemId);
 			
-			var questionText = row.find(".questionText").text();
+			$("#activeQuestion").val(row.find(".raw-question-text").prop("name"));
+			var questionText = row.find(".raw-question-text").val();
 			$("#question-text-input").val(questionText);
 			
 			resetMultipleChoiceAnswers();
@@ -3011,6 +3012,10 @@ function checkSubpageForm() {
 		$('#subpage-error').text(msg("simplepage.page_notblank"));
 		$('#subpage-error-container').show();
 		return false;
+	} else if(/[\[\]{}\\|\^\`]/.test($('#subpage-title').val())) {
+		$('#subpage-error').text(msg("simplepage.subpage_invalid_chars"));
+		$('#subpage-error-container').show();
+		return false;
 	}else {
 		$('#subpage-error-container').hide();
 		return true;
@@ -3355,7 +3360,9 @@ function prepareQuestionDialog() {
 
 	updateMultipleChoiceAnswers();
 	updateShortanswers();
-	
+
+	$("input[name='" + $("#activeQuestion").val() + "'").val($("#question-text-input").val());
+
 	// RSF bugs out if we don't undisable these before submitting
 	$("#multipleChoiceSelect").prop("disabled", false);
 	$("#shortanswerSelect").prop("disabled", false);

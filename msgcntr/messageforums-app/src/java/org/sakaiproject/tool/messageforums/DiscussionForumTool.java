@@ -241,6 +241,7 @@ public class DiscussionForumTool {
   private static final String FORUMS_TOOL_ID = "sakai.forums";
 
   private static final String MESSAGECENTER_BUNDLE = "org.sakaiproject.api.app.messagecenter.bundle.Messages";
+  private static final ResourceLoader rb = new ResourceLoader(MESSAGECENTER_BUNDLE);
 
   private static final String INSUFFICIENT_PRIVILEGES_TO_EDIT_TEMPLATE_SETTINGS = "cdfm_insufficient_privileges";
   private static final String INSUFFICIENT_PRIVILEGES_TO_EDIT_TEMPLATE_ORGANIZE = "cdfm_insufficient_privileges";
@@ -1920,7 +1921,7 @@ public class DiscussionForumTool {
     	}
     	
         topic.setBaseForum(selectedForum.getForum());
-        if(selectedForum.getForum().getRestrictPermissionsForGroups()){
+        if(selectedForum.getForum().getRestrictPermissionsForGroups() && ServerConfigurationService.getBoolean("msgcntr.restricted.group.perms", false)){
             topic.setRestrictPermissionsForGroups(true);
         }
         if(topic.getCreatedBy()==null&&this.forumManager.getAnonRole()==true){
@@ -6825,12 +6826,10 @@ public class DiscussionForumTool {
 		 */
 	    public static String getResourceBundleString(String key) 
 	    {
-	        final ResourceLoader rb = new ResourceLoader(MESSAGECENTER_BUNDLE);
 	        return rb.getString(key);
 	    }
 
 	    public static String getResourceBundleString(String key, Object[] args) {
-	    	final ResourceLoader rb = new ResourceLoader(MESSAGECENTER_BUNDLE);
 	    	return rb.getFormattedMessage(key, args);
 	    }
 
@@ -8012,7 +8011,9 @@ public class DiscussionForumTool {
             if (currentGroup.getCreateForumForGroup()==true) {
                 groupSelected = true;
                 DiscussionForum forum = forumManager.createForum();
-                forum.setRestrictPermissionsForGroups(forumTemplate.getForum().getRestrictPermissionsForGroups());
+                if (ServerConfigurationService.getBoolean("msgcntr.restricted.group.perms", false)) {
+                    forum.setRestrictPermissionsForGroups(forumTemplate.getForum().getRestrictPermissionsForGroups());
+                }
                 forum.setModerated(forumTemplate.getForum().getModerated());
                 forum.setAutoMarkThreadsRead(forumTemplate.getForum().getAutoMarkThreadsRead());
                 forum.setPostFirst(forumTemplate.getForum().getPostFirst());
@@ -8099,7 +8100,9 @@ public class DiscussionForumTool {
                 selectedTopic = createTopic(topicTempate.getTopic().getBaseForum().getId());
                 selectedTopic.setGradeAssign(topicTempate.getGradeAssign());
                 DiscussionTopic thisTopic = selectedTopic.getTopic();
-                thisTopic.setRestrictPermissionsForGroups(topicTempate.getTopic().getRestrictPermissionsForGroups());
+                if (ServerConfigurationService.getBoolean("msgcntr.restricted.group.perms", false)) {
+                   thisTopic.setRestrictPermissionsForGroups(topicTempate.getTopic().getRestrictPermissionsForGroups());
+                }
                 thisTopic.setTitle(topicTempate.getTopic().getTitle() + " - " + currentGroup.getGroup().getTitle());
                 thisTopic.setShortDescription(topicTempate.getTopic().getShortDescription());
                 thisTopic.setExtendedDescription(topicTempate.getTopic().getExtendedDescription());

@@ -2031,21 +2031,21 @@ public class AssignmentAction extends PagedResourceActionII {
                 context.put("returnedFeedback", Boolean.TRUE);
                 state.removeAttribute(RETURNED_FEEDBACK);
             }
+            if (assignment.getContentReview()) {
+                context.put("plagiarismStudentPreview", state.getAttribute("plagiarismStudentPreview"));
+                context.put("plagiarismFileTypes", state.getAttribute("plagiarismFileTypes"));
+                context.put("plagiarismFileSize", state.getAttribute("plagiarismFileSize"));
+                context.put("plagiarismNote", state.getAttribute("plagiarismNote"));
+                context.put("name_plagiarism_eula_agreement", SUBMISSION_REVIEW_SERVICE_EULA_AGREEMENT);
+                context.put("value_plagiarism_eula_agreement", state.getAttribute(SUBMISSION_REVIEW_SERVICE_EULA_AGREEMENT));
+                context.put("plagiarismEULALink", state.getAttribute("eulaServiceLink"));
+                context.put("name_check_plagiarism_eula_agreement", SUBMISSION_REVIEW_CHECK_SERVICE_EULA_AGREEMENT);
+            }
         }
 
-        context.put("text", state.getAttribute(PREVIEW_SUBMISSION_TEXT));
-        if(assignment.getContentReview()) {
-	        	context.put("plagiarismStudentPreview", state.getAttribute("plagiarismStudentPreview"));
-	        	context.put("plagiarismFileTypes", state.getAttribute("plagiarismFileTypes"));
-	        	context.put("plagiarismFileSize", state.getAttribute("plagiarismFileSize"));
-	        	context.put("plagiarismNote", state.getAttribute("plagiarismNote"));
-	        	context.put("name_plagiarism_eula_agreement", SUBMISSION_REVIEW_SERVICE_EULA_AGREEMENT);
-	        	context.put("value_plagiarism_eula_agreement", state.getAttribute(SUBMISSION_REVIEW_SERVICE_EULA_AGREEMENT));
-	        	context.put("plagiarismEULALink", state.getAttribute("eulaServiceLink"));
-	        	context.put("name_check_plagiarism_eula_agreement", SUBMISSION_REVIEW_CHECK_SERVICE_EULA_AGREEMENT);
-        }
+        context.put("text", state.getAttribute(VIEW_SUBMISSION_TEXT));
         Map<String, Reference> submissionAttachmentReferences = new HashMap<>();
-        stripInvisibleAttachments(state.getAttribute(PREVIEW_SUBMISSION_ATTACHMENTS)).forEach(r -> submissionAttachmentReferences.put(r.getId(), r));
+        stripInvisibleAttachments(state.getAttribute(ATTACHMENTS)).forEach(r -> submissionAttachmentReferences.put(r.getId(), r));
         context.put("submissionAttachmentReferences", submissionAttachmentReferences);
         context.put("contentTypeImageService", contentTypeImageService);
 
@@ -2122,19 +2122,19 @@ public class AssignmentAction extends PagedResourceActionII {
                 context.put("returnedFeedback", Boolean.TRUE);
                 state.removeAttribute(RETURNED_FEEDBACK);
             }
+            if (assignment.getContentReview()) {
+                context.put("plagiarismStudentPreview", state.getAttribute("plagiarismStudentPreview"));
+                context.put("plagiarismFileTypes", state.getAttribute("plagiarismFileTypes"));
+                context.put("plagiarismFileSize", state.getAttribute("plagiarismFileSize"));
+                context.put("plagiarismNote", state.getAttribute("plagiarismNote"));
+                context.put("name_plagiarism_eula_agreement", SUBMISSION_REVIEW_SERVICE_EULA_AGREEMENT);
+                context.put("value_plagiarism_eula_agreement", state.getAttribute(SUBMISSION_REVIEW_SERVICE_EULA_AGREEMENT));
+                context.put("plagiarismEULALink", state.getAttribute("eulaServiceLink"));
+                context.put("name_check_plagiarism_eula_agreement", SUBMISSION_REVIEW_CHECK_SERVICE_EULA_AGREEMENT);
+            }
         }
 
         context.put("text", state.getAttribute(PREVIEW_SUBMISSION_TEXT));
-        if(assignment.getContentReview()) {
-	        	context.put("plagiarismStudentPreview", state.getAttribute("plagiarismStudentPreview"));
-	        	context.put("plagiarismFileTypes", state.getAttribute("plagiarismFileTypes"));
-	        	context.put("plagiarismFileSize", state.getAttribute("plagiarismFileSize"));
-	        	context.put("plagiarismNote", state.getAttribute("plagiarismNote"));
-	        	context.put("name_plagiarism_eula_agreement", SUBMISSION_REVIEW_SERVICE_EULA_AGREEMENT);
-	        	context.put("value_plagiarism_eula_agreement", state.getAttribute(SUBMISSION_REVIEW_SERVICE_EULA_AGREEMENT));
-	        	context.put("plagiarismEULALink", state.getAttribute("eulaServiceLink"));
-	        	context.put("name_check_plagiarism_eula_agreement", SUBMISSION_REVIEW_CHECK_SERVICE_EULA_AGREEMENT);
-        }
 
         Map<String, Reference> submissionAttachmentReferences = new HashMap<>();
         stripInvisibleAttachments(state.getAttribute(PREVIEW_SUBMISSION_ATTACHMENTS)).forEach(r -> submissionAttachmentReferences.put(r.getId(), r));
@@ -2433,6 +2433,15 @@ public class AssignmentAction extends PagedResourceActionII {
             if (realm != null) {
                 context.put("activeUserIds", realm.getUsers());
             }
+
+            // for sorting assignment groups using the standard comparator
+            Map<String, List<String>> groupTitleMap = new HashMap<>(assignments.size());
+            AssignmentComparator groupComparator = new AssignmentComparator(null, SORTED_BY_GROUP_TITLE, Boolean.TRUE.toString());
+            for (Assignment asn : assignments) {
+                groupTitleMap.put(asn.getId(), getSortedAsnGroupTitles(asn, site, groupComparator));
+            }
+            context.put("asnGroupTitleMap", groupTitleMap);
+
         } catch (Exception ignore) {
             log.warn(this + ":build_list_assignments_context " + ignore.getMessage());
             log.warn(this + ignore.getMessage() + " siteId= " + contextString);
@@ -2459,6 +2468,12 @@ public class AssignmentAction extends PagedResourceActionII {
         return template + TEMPLATE_LIST_ASSIGNMENTS;
 
     } // build_list_assignments_context
+
+    private List<String> getSortedAsnGroupTitles(Assignment asn, Site site, AssignmentComparator groupComparator) {
+        List<Group> asnGroups = asn.getGroups().stream().map(id -> site.getGroup(id)).collect(Collectors.toList());
+        asnGroups.sort(groupComparator);
+        return asnGroups.stream().map(Group::getTitle).collect(Collectors.toList());
+    }
 
     private Set<String> getSubmittersIdSet(List<AssignmentSubmission> submissions) {
         return submissions.stream().map(AssignmentSubmission::getSubmitters).flatMap(Set::stream).map(AssignmentSubmissionSubmitter::getSubmitter).collect(Collectors.toSet());
@@ -4415,6 +4430,18 @@ public class AssignmentAction extends PagedResourceActionII {
             context.put("attachmentReferences", attachmentReferences);
 
             supplementItemIntoContext(state, context, assignment, null);
+
+            // for sorting assignment groups using the standard comparator
+            String contextString = (String) state.getAttribute(STATE_CONTEXT_STRING);
+            try {
+                Site site = siteService.getSite(contextString);
+                AssignmentComparator groupComparator = new AssignmentComparator(null, SORTED_BY_GROUP_TITLE, Boolean.TRUE.toString());
+                String groupTitles = StringUtils.join(getSortedAsnGroupTitles(assignment, site, groupComparator), ", ");
+                context.put("asnGroupTitles", groupTitles.isEmpty() ? rb.getString("gen.viewallgroupssections") : groupTitles);
+            }
+            catch (IdUnusedException e) {
+                // ignore
+            }
         }
 
         if (taggingManager.isTaggable() && assignment != null) {
@@ -9521,6 +9548,17 @@ public class AssignmentAction extends PagedResourceActionII {
                                 && Instant.now().plus(1, ChronoUnit.DAYS).isBefore(a.getDueDate())) {
                             assignmentDueReminderService.scheduleDueDateReminder(a.getId());
                         }
+
+                        // Restore gradebook item only if assignment was previously associated
+                        if (StringUtils.equals(a.getProperties().get(NEW_ASSIGNMENT_ADD_TO_GRADEBOOK), GRADEBOOK_INTEGRATION_ASSOCIATE)) {
+                            String siteId = (String) state.getAttribute(STATE_CONTEXT_STRING);
+                            String title = a.getTitle();
+                            String associateGradebookAssignment = null; // Stored in properties, but we need to pass null so the gradebook integration algorithm creates the item rather than updating the (non-existing) original
+                            String addToGradebook = GRADEBOOK_INTEGRATION_ADD; // Stored in properties as "associate" already, but we need to pass "add" to recreate the original
+                            long category = -1L; // We have to default to no category because the original gradebook item was hard deleted and category ID is not stored in assignment properties
+                            initIntegrateWithGradebook(state, siteId, title, associateGradebookAssignment, a, title, a.getDueDate(), a.getTypeOfGrade(), a.getMaxGradePoint().toString(),
+                                                        addToGradebook, associateGradebookAssignment, a.getTypeOfAccess().toString(), category);
+                        }
                     }
                 } catch (IdUnusedException | PermissionException e) {
                     addAlert(state, rb.getFormattedMessage("youarenot_editAssignment", id));
@@ -10168,27 +10206,29 @@ public class AssignmentAction extends PagedResourceActionII {
             // Restrict file picker configuration if using content-review (Turnitin):
             String assignmentRef = (String) state.getAttribute(VIEW_SUBMISSION_ASSIGNMENT_REFERENCE);
             assignment = getAssignment(assignmentRef, "doAttachments", state);
-            assignmentUser = userDirectoryService.getCurrentUser().getDisplayName();
-            if (assignment.getContentReview()) {
-                state.setAttribute(FilePickerHelper.FILE_PICKER_MAX_ATTACHMENTS, FilePickerHelper.CARDINALITY_MULTIPLE);
-                state.setAttribute(FilePickerHelper.FILE_PICKER_SHOW_URL, Boolean.FALSE);
+            if (assignment != null) {
+                assignmentUser = userDirectoryService.getCurrentUser().getDisplayName();
+                if (assignment.getContentReview()) {
+                    state.setAttribute(FilePickerHelper.FILE_PICKER_MAX_ATTACHMENTS, FilePickerHelper.CARDINALITY_MULTIPLE);
+                    state.setAttribute(FilePickerHelper.FILE_PICKER_SHOW_URL, Boolean.FALSE);
+                }
+
+                if (assignment.getTypeOfSubmission() == Assignment.SubmissionType.SINGLE_ATTACHMENT_SUBMISSION) {
+                    singleAttachment = true;
+                }
+
+                // need also to upload local file if any
+                doAttachUpload(data, false);
+
+                // TODO: file picker to save in dropbox? -ggolden
+                // User[] users = { userDirectoryService.getCurrentUser() };
+                // state.setAttribute(ResourcesAction.STATE_SAVE_ATTACHMENT_IN_DROPBOX, users);
+
+                // Always omit inline attachments. Even if content-review is not enabled,
+                // this could be a resubmission to an assignment that was previously content-review enabled,
+                // in which case the file will be present and should be omitted.
+                omitInlineAttachments = true;
             }
-
-            if (assignment.getTypeOfSubmission() == Assignment.SubmissionType.SINGLE_ATTACHMENT_SUBMISSION) {
-                singleAttachment = true;
-            }
-
-            // need also to upload local file if any
-            doAttachUpload(data, false);
-
-            // TODO: file picker to save in dropbox? -ggolden
-            // User[] users = { userDirectoryService.getCurrentUser() };
-            // state.setAttribute(ResourcesAction.STATE_SAVE_ATTACHMENT_IN_DROPBOX, users);
-
-            // Always omit inline attachments. Even if content-review is not enabled,
-            // this could be a resubmission to an assignment that was previously content-review enabled,
-            // in which case the file will be present and should be omitted.
-            omitInlineAttachments = true;
         } else if (MODE_INSTRUCTOR_NEW_EDIT_ASSIGNMENT.equals(mode)) {
             setNewAssignmentParameters(data, false);
             assignmentTitle = (String) state.getAttribute(NEW_ASSIGNMENT_TITLE);

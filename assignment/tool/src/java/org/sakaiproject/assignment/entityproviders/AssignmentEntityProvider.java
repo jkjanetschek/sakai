@@ -784,6 +784,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
     public class GraderUser {
 
         private String displayName;
+        private String sortName;
         private String id;
 
         public GraderUser(User sakaiUser) {
@@ -791,8 +792,15 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             super();
 
             this.displayName = sakaiUser.getDisplayName();
+            this.sortName = sakaiUser.getSortName();
             this.id = sakaiUser.getId();
         }
+    }
+
+    private Map<String, GraderUser> getGraderUsersForSite(Site site) {
+
+        return userDirectoryService.getUsers(site.getUsersIsAllowed(SECURE_ADD_ASSIGNMENT_SUBMISSION))
+            .stream().collect(Collectors.toMap(User::getId, GraderUser::new));
     }
 
     @EntityCustomAction(action = "gradable", viewKey = EntityView.VIEW_LIST)
@@ -822,28 +830,18 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             throw new EntityNotFoundException("No site found", siteId, e);
         }
 
-        Map<String, GraderUser> students = new HashMap<>();
-        try {
-            for (String studentId : site.getUsersIsAllowed(SECURE_ADD_ASSIGNMENT_SUBMISSION)) {
-                students.put(studentId, new GraderUser(userDirectoryService.getUser(studentId)));
-            }
-        } catch (UserNotDefinedException e) {
-            throw new EntityException("Failed to setup user", siteId);
-        }
-
         SimpleAssignment simpleAssignment = new SimpleAssignment(assignment);
 
         // A list of mappings of submission id to student id list
         List<SimpleSubmission> submissions
-            = assignment.getSubmissions().stream().map(as -> new SimpleSubmission(as, simpleAssignment.isAnonymousGrading())).collect(Collectors.toList());
-
-        Map<String, Object> data = new HashMap<>();
+            = assignment.getSubmissions().stream().map(as -> new SimpleSubmission(as, simpleAssignment)).collect(Collectors.toList());
 
         List<SimpleGroup> groups = site.getGroups().stream().map(SimpleGroup::new).collect(Collectors.toList());
 
+        Map<String, Object> data = new HashMap<>();
         data.put("gradable", simpleAssignment);
         data.put("submissions", submissions);
-        data.put("students", students);
+        data.put("students", getGraderUsersForSite(site));
         data.put("groups", groups);
         data.put("showOfficialPhoto", serverConfigurationService.getBoolean("assignment.show.official.photo", true));
         String lOptions = serverConfigurationService.getString("assignment.letterGradeOptions", "A+,A,A-,B+,B,B-,C+,C,C-,D+,D,D-,E,F");
@@ -906,17 +904,8 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             }
         }));
 
-        Map<String, GraderUser> students = new HashMap<>();
-        try {
-            for (String studentId : site.getUsersIsAllowed(SECURE_ADD_ASSIGNMENT_SUBMISSION)) {
-                students.put(studentId, new GraderUser(userDirectoryService.getUser(studentId)));
-            }
-        } catch (UserNotDefinedException e) {
-            throw new EntityException("Failed to setup user", courseId);
-        }
-
         Map<String, Object> data = new HashMap<>();
-        data.put("students", students);
+        data.put("students", getGraderUsersForSite(site));
         data.put("grades", grades);
 
         return new ActionReturn(data);
@@ -1014,10 +1003,9 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
 
         submission = assignmentToolUtils.gradeSubmission(submission, gradeOption, options, alerts);
 
-        boolean anonymousGrading = assignmentService.assignmentUsesAnonymousGrading(assignment);
-
         if (submission != null) {
-            return new ActionReturn(new SimpleSubmission(submission, anonymousGrading));
+            boolean anonymousGrading = assignmentService.assignmentUsesAnonymousGrading(assignment);
+            return new ActionReturn(new SimpleSubmission(submission, new SimpleAssignment(assignment)));
         } else {
             throw new EntityException("Failed to set grade on " + submissionId, "", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
@@ -1594,6 +1582,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
 
         private String id;
         private String displayName;
+        private String sortName;
 
         public SimpleSubmitter(AssignmentSubmissionSubmitter ass, boolean anonymousGrading) {
 
@@ -1602,9 +1591,12 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             this.id = ass.getSubmitter();
             try {
                 if (!anonymousGrading) {
-                    this.displayName = userDirectoryService.getUser(this.id).getDisplayName();
+                    User user = userDirectoryService.getUser(this.id);
+                    this.displayName = user.getDisplayName();
+                    this.sortName = user.getSortName();
                 } else {
                     this.displayName = ass.getSubmission().getId() + " " + rb.getString("grading.anonymous.title");
+                    this.sortName = this.displayName;
                 }
             } catch (UserNotDefinedException e) {
                 this.displayName = this.id;
@@ -1632,13 +1624,15 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         private String groupId;
         private Set<String> feedbackAttachments;
         private Map<String, String> properties = new HashMap<>();
+        private Instant assignmentCloseTime;
 
-        public SimpleSubmission(AssignmentSubmission as, boolean anonymousGrading) {
+        public SimpleSubmission(AssignmentSubmission as, SimpleAssignment sa) {
 
             super();
 
             this.id = as.getId();
             this.gradableId = as.getAssignment().getId();
+            this.assignmentCloseTime = sa.getCloseTime();
             this.submitted = as.getSubmitted();
             if (this.submitted) {
                 this.submittedText = as.getSubmittedText();
@@ -1649,7 +1643,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
                 this.submittedAttachments = as.getAttachments();
             }
             this.submitters
-                = as.getSubmitters().stream().map(ass -> new SimpleSubmitter(ass, anonymousGrading)).collect(Collectors.toList());
+                = as.getSubmitters().stream().map(ass -> new SimpleSubmitter(ass, sa.isAnonymousGrading())).collect(Collectors.toList());
             this.groupId = as.getGroupId();
             this.userSubmission = as.getUserSubmission();
             this.returned = as.getReturned();

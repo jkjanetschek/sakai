@@ -29,6 +29,8 @@ import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -42,6 +44,9 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import lombok.ToString;
+
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.sakaiproject.rubrics.logic.listener.MetadataListener;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -53,6 +58,7 @@ import lombok.NonNull;
 
 @AllArgsConstructor
 @Data
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 @Entity
 @EntityListeners(MetadataListener.class)
 @JsonPropertyOrder({"id", "evaluator_id", "evaluated_item_id", "evaluated_item_owner_id", "overallComment",
@@ -91,6 +97,10 @@ public class Evaluation implements Modifiable, Serializable {
     @OneToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "rbc_eval_criterion_outcomes")
     private List<CriterionOutcome> criterionOutcomes;
+
+    @Enumerated
+    @Column(nullable = false)
+    private EvaluationStatus status = EvaluationStatus.DRAFT;
 
     @Embedded
     private Metadata metadata;

@@ -1202,7 +1202,7 @@ public class DiscussionForumManagerImpl extends HibernateDaoSupport implements
     if (saveForum)
     {
       forum.addTopic(topic);
-      forumManager.saveDiscussionForum(forum, forum.getDraft(), false, currentUser); // event already logged by saveDiscussionForumTopic()
+      forum = forumManager.saveDiscussionForum(forum, forum.getDraft(), false, currentUser); // event already logged by saveDiscussionForumTopic()
       //sak-5146 forumManager.saveDiscussionForum(forum);
     }
 
@@ -2538,11 +2538,11 @@ public class DiscussionForumManagerImpl extends HibernateDaoSupport implements
 		this.memoryService = memoryService;
 	}
 
-	public String getAllowedGroupForRestrictedForum(final Long forumId, final String permissionName) {
+	public List<String> getAllowedGroupForRestrictedForum(final Long forumId, final String permissionName) {
 		return forumManager.getAllowedGroupForRestrictedForum(forumId, permissionName);
 	}
 
-	public String getAllowedGroupForRestrictedTopic(final Long topicId, final String permissionName) {
+	public List<String> getAllowedGroupForRestrictedTopic(final Long topicId, final String permissionName) {
 		return forumManager.getAllowedGroupForRestrictedTopic(topicId, permissionName);
 	}
 

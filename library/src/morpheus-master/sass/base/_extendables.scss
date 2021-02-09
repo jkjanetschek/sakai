@@ -68,6 +68,7 @@
 		padding: 0 $standard-space;
 	} @else {
 		display: block;
+		clear: both;
 		margin: $standard-spacing 0;
 		padding: $standard-spacing;
 	}
@@ -334,6 +335,7 @@
 							$button-shadow,
 							$button-hover-shadow,
 							$button-active-shadow);
+	margin-right: $standard-space;
 }
 
 button.btn-primary, .act .active {

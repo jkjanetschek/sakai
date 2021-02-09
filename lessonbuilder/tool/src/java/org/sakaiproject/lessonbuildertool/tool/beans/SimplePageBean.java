@@ -3710,11 +3710,13 @@ public class SimplePageBean {
 
 	    if (mimeType == null || mimeType.equals("")) {
 		String s = item.getSakaiId();
-		int j = s.lastIndexOf(".");
-		if (j >= 0)
-		    s = s.substring(j+1);
-		mimeType = ContentTypeImageService.getContentType(s);
-		// log.info("type " + s + ">" + mimeType);
+		    if (s != null) {
+		        int j = s.lastIndexOf(".");
+		        if (j >= 0)
+			        s = s.substring(j+1);
+		        mimeType = ContentTypeImageService.getContentType(s);
+		        // log.info("type " + s + ">" + mimeType);
+		    }
 	    }
 
 	    // if still nothing, call it octet-stream just so we don't return null
@@ -5135,10 +5137,16 @@ public class SimplePageBean {
 				return false;
 			    break;
 			case SimplePageItem.BLTI:
-			    if (bltiEntity != null)
-				entity = bltiEntity.getEntity(item.getSakaiId());
-			    if (entity == null || entity.notPublished())
-				return false;
+			    if (bltiEntity != null) {
+			      entity = bltiEntity.getEntity(item.getSakaiId());
+			    }
+			    if (entity == null || entity.notPublished()) {
+			      return false;
+			    } else {
+			      // After checking that it exists reset to null so that groups are
+			      // checked internal to Lessons
+			      entity = null;
+			    }
 			}
 		    }
 		} finally {
@@ -7520,6 +7528,9 @@ public class SimplePageBean {
 					foundAnswer = true;
 					break;
 				}
+			}
+			if(totalTokens == 0 && !theirResponse.isEmpty()) {
+				foundAnswer = true;
 			}
 			if(foundAnswer) {
 				correct = true;

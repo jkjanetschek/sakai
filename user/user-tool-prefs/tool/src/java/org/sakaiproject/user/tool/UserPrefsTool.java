@@ -93,7 +93,7 @@ public class UserPrefsTool
 {
 
 	/** * Resource bundle messages */
-	ResourceLoader msgs = new ResourceLoader("user-tool-prefs");
+	private static final ResourceLoader msgs = new ResourceLoader("user-tool-prefs");
 
 	/** The string to get whether privacy status should be visible */
 	private static final String ENABLE_PRIVACY_STATUS = "enable.privacy.status";

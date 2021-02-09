@@ -22,6 +22,7 @@
 package org.sakaiproject.tool.assessment.ui.listener.author;
 
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,6 +46,7 @@ import javax.faces.event.ActionEvent;
 import javax.faces.event.ActionListener;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -119,6 +121,7 @@ public class ItemAddListener
     implements ActionListener {
 
   private static final TagService tagService= (TagService) ComponentManager.get( TagService.class );
+  public static final int MAX_FEEDBACK_CHARS = 4000;
     //private static ContextUtil cu;
   //private String scalename; // used for multiple choice Survey
   private boolean error = false;
@@ -197,7 +200,16 @@ public class ItemAddListener
 		error=true;
 	    }
 	}
-    
+
+	if(StringUtils.length(item.getCorrFeedback()) > MAX_FEEDBACK_CHARS || StringUtils.length(item.getIncorrFeedback()) > MAX_FEEDBACK_CHARS
+			|| StringUtils.length(item.getGeneralFeedback()) > MAX_FEEDBACK_CHARS
+			|| (CollectionUtils.isNotEmpty(item.getMultipleChoiceAnswers()) && item.getMultipleChoiceAnswers().stream().anyMatch(mc -> StringUtils.length(mc.getFeedback()) > MAX_FEEDBACK_CHARS))
+			|| (CollectionUtils.isNotEmpty(item.getMatchItemBeanList()) && item.getMatchItemBeanList().stream().anyMatch(mi -> StringUtils.length(mi.getCorrMatchFeedback()) > MAX_FEEDBACK_CHARS || StringUtils.length(mi.getIncorrMatchFeedback()) > MAX_FEEDBACK_CHARS))) {
+		String feedbackTooLong = ContextUtil.getLocalizedString("org.sakaiproject.tool.assessment.bundle.AuthorMessages", "feedbackTooLong");
+		context.addMessage(null, new FacesMessage(MessageFormat.format(feedbackTooLong, new Object[]{MAX_FEEDBACK_CHARS})));
+		error = true;
+	}
+
     if(error) { 
     	return;
     }
@@ -1111,26 +1123,22 @@ public class ItemAddListener
         	delegate.saveFavoriteColumnChoices(favorite);
         }
 
-        QuestionPoolService qpdelegate = new QuestionPoolService();
-	// removed the old pool-item mappings
-          if ( (bean.getOrigPool() != null) && (!bean.getOrigPool().equals(""))) {
-            qpdelegate.removeQuestionFromPool(item.getItemId(),
-            		Long.valueOf(bean.getOrigPool()));
-          }
-
-        // if assign to pool, add the item to the pool
-        if ( (bean.getSelectedPool() != null) && !bean.getSelectedPool().equals("")) {
-        	// if the item is already in the pool then do not add.
-          // This is a scenario where the item might already be in the pool:
-          // create an item in an assessemnt and assign it to p1
-          // copy item from p1 to p2. 
-          // now the item is already in p2. and if you want to edit the original item in the assessment, and reassign it to p2, you will get a duplicate error. 
-
-          if (!qpdelegate.hasItem(item.getItemIdString(),
-                                 Long.valueOf(bean.getSelectedPool()))) {
-            qpdelegate.addItemToPool(item.getItemId(),
-            					Long.valueOf(bean.getSelectedPool()));
-          }
+        if(assessmentBean.getAssessment() instanceof AssessmentFacade) {
+	        QuestionPoolService qpdelegate = new QuestionPoolService();
+		// removed the old pool-item mappings
+	        if (StringUtils.isNotEmpty(bean.getOrigPool())
+	                && StringUtils.isNotEmpty(bean.getSelectedPool())
+	                && !bean.getSelectedPool().equals(bean.getOrigPool())
+	                && qpdelegate.hasItem(item.getItemIdString(), Long.valueOf(bean.getOrigPool()))) {
+	            qpdelegate.removeQuestionFromPool(item.getItemId(), Long.valueOf(bean.getOrigPool()));
+	        }
+	
+	        // if assign to pool, add the item to the pool
+	        if (StringUtils.isNotEmpty(bean.getSelectedPool())
+	                && !qpdelegate.hasItem(item.getItemIdString(), Long.valueOf(bean.getSelectedPool()))) {
+	            // if the item is already in the pool then do not add.
+	            qpdelegate.addItemToPool(item.getItemId(), Long.valueOf(bean.getSelectedPool()));
+	        }
         }
 
         // #1a - goto editAssessment.jsp, so reset assessmentBean
@@ -2009,11 +2017,11 @@ public class ItemAddListener
 			}
 
 			// loop through all variables and formulas to create all answers for the ItemText object
+			String choiceLabel = AnswerBean.getChoiceLabels()[0]; // choice label doesn't matter for calculated questions; use a static value just to make the constructor happy below
 			for (CalculatedQuestionAnswerIfc curVarFormula : list) {
 				String match = curVarFormula.getMatch();
 				Long curSequence = curVarFormula.getSequence();
 				boolean isCorrect = curSequence.equals(sequence);
-				String choiceLabel = AnswerBean.getChoiceLabels()[curSequence.intValue()];
 				boolean foundAnswer = false;
 				for (AnswerIfc curAnswer : answerSet) {
 					if (curAnswer.getSequence().equals(sequence)) {
