@@ -23,6 +23,8 @@ package uk.ac.cam.caret.sakai.rwiki.component.dao.impl;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.HibernateException;
@@ -102,6 +104,7 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 
 		final StringBuffer expression = new StringBuffer();
 		final List criteriaList = new ArrayList();
+/*
 		criteriaList.add(realm);
 		criteriaList.add("%" + criteria.toLowerCase() + "%");
 		criteriaList.add("%" + criteria.toLowerCase() + "%");
@@ -129,6 +132,48 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 		{
 			types[i] = StringType.INSTANCE;
 		}
+*/
+
+
+	/*
+	 *   JJ search
+	 */
+		Pattern idPattern = Pattern.compile("((((\\S+)\\s+and\\s+(\\S+))*)((\\S*)))",Pattern.CASE_INSENSITIVE);
+		Matcher matcher = idPattern.matcher(criteria);
+
+		criteriaList.add(realm);
+		criteriaList.add("%" + criteria.toLowerCase() + "%");
+		criteriaList.add("%" + criteria.toLowerCase() + "%");
+		int t = 3;
+
+		while(matcher.find()){
+			if(!matcher.group(0).isEmpty()){
+				if(matcher.group(3) != null){
+					System.out.println(matcher.group(4) + ":"+ matcher.group(5) );
+
+					expression.append(" or lower(c.content) like ? and lower(c.content) like ? ");
+					criteriaList.add("%" + matcher.group(4).toLowerCase() + "%");
+					criteriaList.add("%" + matcher.group(5).toLowerCase() + "%");
+					t += 2;
+
+				}else if(matcher.group(7) != null){
+					System.out.println(matcher.group(7));
+					expression.append(" or lower(c.content) like ? ");
+					criteriaList.add("%" + matcher.group(7).toLowerCase() + "%");
+					t++;
+				}
+			}
+		}
+		final Type[] types = new Type[t];
+		for (int i = 0; i < t; i++)
+		{
+			types[i] = StringType.INSTANCE;
+		}
+
+
+
+
+
 
 		HibernateCallback<List> callback = session -> session
 				.createQuery("select distinct r " +
@@ -138,6 +183,7 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 				.list();
 		return new ListProxy(getHibernateTemplate().execute(callback), this);
 	}
+
 
 	public void update(RWikiCurrentObject rwo, RWikiHistoryObject rwho) {
 		// should have already checked
