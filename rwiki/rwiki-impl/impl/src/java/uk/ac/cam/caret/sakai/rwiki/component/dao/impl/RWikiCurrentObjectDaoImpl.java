@@ -138,7 +138,10 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 	/*
 	 *   JJ search
 	 */
-		Pattern idPattern = Pattern.compile("((((\\S+)\\s+and\\s+(\\S+))*)((\\S*)))",Pattern.CASE_INSENSITIVE);
+		// ((((\S+)\s+and\s+(\S+))*)((\S*)))
+		// ((\S+)\s+and\s+(\S+))*(\S*)\s*
+		// ((\S+)\s+and\s+(\S+))*(\S+)*\s*
+		Pattern idPattern = Pattern.compile("((\\S+)\\s+and\\s+(\\S+))*(\\S+)*\\s*",Pattern.CASE_INSENSITIVE);
 		Matcher matcher = idPattern.matcher(criteria);
 
 		criteriaList.add(realm);
@@ -148,18 +151,15 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 
 		while(matcher.find()){
 			if(!matcher.group(0).isEmpty()){
-				if(matcher.group(3) != null){
-					System.out.println(matcher.group(4) + ":"+ matcher.group(5) );
-
+				if(matcher.group(1) != null){
 					expression.append(" or lower(c.content) like ? and lower(c.content) like ? ");
-					criteriaList.add("%" + matcher.group(4).toLowerCase() + "%");
-					criteriaList.add("%" + matcher.group(5).toLowerCase() + "%");
+					criteriaList.add("%" + matcher.group(2).toLowerCase() + "%");
+					criteriaList.add("%" + matcher.group(3).toLowerCase() + "%");
 					t += 2;
 
-				}else if(matcher.group(7) != null){
-					System.out.println(matcher.group(7));
+				}else if(matcher.group(4) != null){
 					expression.append(" or lower(c.content) like ? ");
-					criteriaList.add("%" + matcher.group(7).toLowerCase() + "%");
+					criteriaList.add("%" + matcher.group(4).toLowerCase() + "%");
 					t++;
 				}
 			}
@@ -169,9 +169,6 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 		{
 			types[i] = StringType.INSTANCE;
 		}
-
-
-
 
 
 
