@@ -138,44 +138,144 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 	/*
 	 *   JJ search
 	 */
-		// ((((\S+)\s+and\s+(\S+))*)((\S*)))
-		// ((\S+)\s+and\s+(\S+))*(\S*)\s*
-		// ((\S+)\s+and\s+(\S+))*(\S+)*\s*
-		Pattern idPattern = Pattern.compile("((\\S+)\\s+and\\s+(\\S+))*(\\S+)*\\s*",Pattern.CASE_INSENSITIVE);
+
+		// ((!)*(\S+)\s+and\s+(!)*(\S+))*(!)*(\S+)*\s*
+		// ((!)?(\S+)\s+and\s+(!)?(\S+))*(!)?(\S+)*\s*
+
+
+		//(!)?(\S+)\s+and\s+(!)?(\S+))*(\1*and\s+(\S+))*(!)?(\S+)*\s*
+		// ((!)?(\S+)\s+and\s+(!)?(\S+))*(\1?\s+(and\s+(\S+))*)*(!)?(\S+)*\s*
+		// (?<and>(!)?(\S+)\s+and\s+(!)?(\S+))*((?P=and)*\s+and\s+(\S+))*(!)?(\S+)*\s*
+
+
+		// (?<test>\S+ and \S+)*(?<s>(?(R&test)| and \S+))?
+
+		// (?<and>((!)?(\S+)\s+and\s+(!)?(\S+)))*((?(R&and)|(\s+and\s+(\S+))))?((?(7)(\s+and\s+(\S+)(*ACCEPT))*|\s+and\s+(\S+)))(!)?(\S+)*\s*
+
+
+		//(?<and>(!)?(\S+)\s+and\s+(!)?(\S+))*((?P=and)*\s+and\s+(\S+)(*ACCEPT))*(!)?(\S+)*\s*
+
+		Pattern idPattern = Pattern.compile("((!)?(\\S+)\\s+and\\s+(!)?(\\S+))*(!)?(\\S+)*\\s*",Pattern.CASE_INSENSITIVE);    // ((!)?(\S+)\s+and\s+(!)?(\S+))*(!)?(\S+)*\s*
 		Matcher matcher = idPattern.matcher(criteria);
 
 		criteriaList.add(realm);
-		criteriaList.add("%" + criteria.toLowerCase() + "%");
-		criteriaList.add("%" + criteria.toLowerCase() + "%");
-		int t = 3;
+		int t = 1;
+
+
+		Boolean searchParam = false;
+		Boolean notParam = false;
+		Boolean onlyNotSearch = true;
+		final StringBuffer expressionNotOperator = new StringBuffer();
+		final List criteriaListTmp = new ArrayList();
+		final List criteriaListTmp2 = new ArrayList();
+		final List criteriaListTmp3 = new ArrayList();
+
+
+		criteriaListTmp2.add("%" + criteria.toLowerCase() + "%");
+		criteriaListTmp2.add("%" + criteria.toLowerCase() + "%");
+
+
+		final StringBuffer expression2 = new StringBuffer();
+		String query = "select distinct r from RWikiCurrentObjectImpl as r, RWikiCurrentObjectContentImpl as c where r.realm = ? ";
+
 
 		while(matcher.find()){
 			if(!matcher.group(0).isEmpty()){
+				//check for and operator
 				if(matcher.group(1) != null){
-					expression.append(" or lower(c.content) like ? and lower(c.content) like ? ");
-					criteriaList.add("%" + matcher.group(2).toLowerCase() + "%");
-					criteriaList.add("%" + matcher.group(3).toLowerCase() + "%");
-					t += 2;
+					//check flags
+					if(!searchParam){
+						searchParam = true;
+					}
+					if(onlyNotSearch){
+						onlyNotSearch = false;
+					}
 
-				}else if(matcher.group(4) != null){
-					expression.append(" or lower(c.content) like ? ");
-					criteriaList.add("%" + matcher.group(4).toLowerCase() + "%");
+
+
+					// check for ! at left param
+					if(matcher.group(2) != null){
+						expression.append(" or lower(c.content) not like ?");
+					}else {
+						expression.append(" or lower(c.content) like ?");
+					}
+					// check for ! at right param
+					if(matcher.group(4) != null){
+						expression.append(" and lower(c.content) not like ? ");
+					}else {
+						expression.append(" and lower(c.content) like ? ");
+					}
+					criteriaListTmp3.add("%" + matcher.group(3).toLowerCase() + "%");
+					criteriaListTmp3.add("%" + matcher.group(5).toLowerCase() + "%");
+					t += 2;
+				//check for single search param
+				}else if(matcher.group(7) != null) {
+
+					//check for !
+					if(matcher.group(6) != null){
+						if(!notParam){
+							notParam = true;
+						}
+						expressionNotOperator.append(" and lower(c.content) not like ? ");
+						criteriaListTmp.add("%" + matcher.group(7).toLowerCase() + "%");
+					}else{
+						if(!searchParam){
+							searchParam = true;
+						}
+						if(onlyNotSearch){
+							onlyNotSearch = false;
+						}
+
+
+						criteriaListTmp3.add("%" + matcher.group(7).toLowerCase() + "%");
+						expression.append(" or lower(c.content) like ? ");
+					}
 					t++;
 				}
 			}
 		}
+
+
+
+		if(!onlyNotSearch){
+			query += "and ( lower(r.name) like ? or lower(c.content) like ? ";
+			criteriaListTmp2.forEach(s -> {criteriaList.add(s);});
+			t += 2;
+		}
+
+		if(!criteriaListTmp3.isEmpty()){
+			criteriaListTmp3.forEach(s -> {criteriaList.add(s);});
+			//criteriaList.add(criteriaListTmp);
+		}
+
+		if(!criteriaListTmp.isEmpty()){
+			criteriaListTmp.forEach(s -> {criteriaList.add(s);});
+			//criteriaList.add(criteriaListTmp);
+		}
+
+
+		if(searchParam){
+			query += " " + expression.toString() + " )";
+		}else if(!onlyNotSearch){
+			query += " )";
+		}
+		if(notParam){
+			query += " " + expressionNotOperator.toString();
+		}
+
+		query += " and r.id = c.rwikiid order by r.name";
+
+
+
 		final Type[] types = new Type[t];
 		for (int i = 0; i < t; i++)
 		{
 			types[i] = StringType.INSTANCE;
 		}
 
-
-
+		String finalQuery = query;
 		HibernateCallback<List> callback = session -> session
-				.createQuery("select distinct r " +
-						"from RWikiCurrentObjectImpl as r, RWikiCurrentObjectContentImpl as c " +
-						"where r.realm = ? and ( lower(r.name) like ? or lower(c.content) like ? " + expression.toString() + " ) and r.id = c.rwikiid order by r.name")
+				.createQuery(finalQuery)
 				.setParameters(criteriaList.toArray(), types)
 				.list();
 		return new ListProxy(getHibernateTemplate().execute(callback), this);
