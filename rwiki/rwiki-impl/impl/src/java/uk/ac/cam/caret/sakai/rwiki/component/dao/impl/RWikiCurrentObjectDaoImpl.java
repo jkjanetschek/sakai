@@ -106,8 +106,6 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 		final StringBuffer expression = new StringBuffer();
 		final List criteriaList = new ArrayList();
 
-
-
 		// capture 1 is needed for regex to work but is ignored for now!!
 		Pattern idPattern = Pattern.compile("(\\A\\s*and)*(?<and>(!)?(\\S+)\\s+and\\s+(!)?(\\S+))*(\\k<and>*and\\s+(!)?(\\S+))*(!)?(\\S+)*\\s*",Pattern.CASE_INSENSITIVE);
 		Matcher matcher = idPattern.matcher(criteria);
@@ -128,8 +126,6 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 
 		String query = "select distinct r from RWikiCurrentObjectImpl as r, RWikiCurrentObjectContentImpl as c where r.realm = ? and ";
 		criteriaListTmp.add(realm);
-
-
 
 
 		while(matcher.find()){
@@ -279,10 +275,6 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 		}
 
 		query += " and r.id = c.rwikiid order by r.name";
-
-
-
-
 
 		final Type[] types = new Type[t];
 		for (int i = 0; i < t; i++)
