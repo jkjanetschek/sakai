@@ -101,12 +101,10 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 
 	public List findByGlobalNameAndContents(final String criteria, final String user, final String realm) {
 
-		//String[] criterias = criteria.split("\\s\\s*");
-
 		final StringBuffer expression = new StringBuffer();
 		final List criteriaList = new ArrayList();
 
-		// capture 1 is needed for regex to work but is ignored for now!!
+		// capture group 1 is needed for regex to work (edge case: leading and) but is ignored for now!!
 		Pattern idPattern = Pattern.compile("(\\A\\s*and)*(?<and>(!)?(\\S+)\\s+and\\s+(!)?(\\S+))*(\\k<and>*and\\s+(!)?(\\S+))*(!)?(\\S+)*\\s*",Pattern.CASE_INSENSITIVE);
 		Matcher matcher = idPattern.matcher(criteria);
 
@@ -120,13 +118,8 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 		final StringBuffer expressionNotOperator = new StringBuffer();
 		final List criteriaListTmp = new ArrayList();
 		final List criteriaListTmp2 = new ArrayList();
-		final List criteriaListTmp3 = new ArrayList();
-
-
 
 		String query = "select distinct r from RWikiCurrentObjectImpl as r, RWikiCurrentObjectContentImpl as c where r.realm = ? and ";
-		criteriaListTmp.add(realm);
-
 
 		while(matcher.find()){
 			if(!matcher.group(0).isEmpty()){
@@ -137,116 +130,76 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 					if (onlyNotSearch) {
 						onlyNotSearch = false;
 					}
-
-
 					// left param --> check for!
 					if (matcher.group(3) != null) {
 						//check if first
 						if(firstParam){
-
 							expression.append("(lower(c.content) not like ? and lower(r.name) not like ?)");
-
 							firstParam = false;
 						}else{
-
 							expression.append(" or (lower(c.content) not like ? and lower(r.name) not like ?)");
-
 						}
 					} else {
 						if(firstParam){
-
 							expression.append(" (lower(c.content) like ? or lower(r.name) like ?)");
-
-
 							firstParam = false;
 						}else {
-
 							expression.append(" or (lower(c.content) like ? or lower(r.name) like ?)");
-
-
 						}
 					}
-
 					//  right param --> check for!
 					if (matcher.group(5) != null) {
-
 						expression.append(" and (lower(c.content) not like ? and lower(r.name) not like ?) ");
-
 					} else {
-
 						expression.append(" and (lower(c.content) like ? or lower(r.name) like ?) ");
-
 					}
-					criteriaListTmp2.add("%" + matcher.group(4).toLowerCase() + "%");
-					criteriaListTmp2.add("%" + matcher.group(4).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(4).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(4).toLowerCase() + "%");
 
-					criteriaListTmp2.add("%" + matcher.group(6).toLowerCase() + "%");
-					criteriaListTmp2.add("%" + matcher.group(6).toLowerCase() + "%");
-
-
+					criteriaListTmp.add("%" + matcher.group(6).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(6).toLowerCase() + "%");
 					t += 4;
 
 				// check for trailing and operator
 				}else if(matcher.group(7) != null){
 					//check for !
 					if(matcher.group(8) != null){
-
 						expression.append(" and (lower(c.content) not like ? and lower(r.name) not like ?) ");
-
 					}else {
-
 						expression.append(" and (lower(c.content)  like ? or lower(r.name) like ?) ");
-
 					}
-					criteriaListTmp2.add("%" + matcher.group(9).toLowerCase() + "%");
-					criteriaListTmp2.add("%" + matcher.group(9).toLowerCase() + "%");
-
+					criteriaListTmp.add("%" + matcher.group(9).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(9).toLowerCase() + "%");
 					t+= 2;
-
-
 					//check for single search param
 				}else if(matcher.group(11) != null) {
-
 					//check for !
 					if(matcher.group(10) != null){
-
 						if(firstNotSearchParam){
-
 							expressionNotOperator.append("(lower(c.content) not like ? and lower(r.name) not like ?) ");
-
-
-							criteriaListTmp3.add("%" + matcher.group(11).toLowerCase() + "%");
-							criteriaListTmp3.add("%" + matcher.group(11).toLowerCase() + "%");
+							criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
+							criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
 
 							//criteriaListTmp3_1.add("%" + matcher.group(11).toLowerCase() + "%");
 							firstNotSearchParam = false;
 						}else {
-
-
 							expressionNotOperator.append(" or (lower(c.content) not like ? and lower(r.name) not like ?) ");
 
-							criteriaListTmp3.add("%" + matcher.group(11).toLowerCase() + "%");
-							criteriaListTmp3.add("%" + matcher.group(11).toLowerCase() + "%");
-
+							criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
+							criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
 						}
-
 					}else{
 						if(onlyNotSearch){
 							onlyNotSearch = false;
 						}
 						if(firstParam){
-
 							expression.append("  (lower(c.content) like ? or lower(r.name) like ?) ");
-
 							firstParam = false;
 						}else {
-
-
 							expression.append(" or (lower(c.content) like ? or lower(r.name) like ?) ");
 						}
-						criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
-						criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
-
+						criteriaListTmp.add("%" + matcher.group(11).toLowerCase() + "%");
+						criteriaListTmp.add("%" + matcher.group(11).toLowerCase() + "%");
 					}
 					t+= 2;
 				}
@@ -257,11 +210,11 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 
 		if(!onlyNotSearch){
 			query += " ( " + expression.toString();
-			criteriaListTmp2.forEach(s -> {criteriaList.add(s);});
+			criteriaListTmp.forEach(s -> {criteriaList.add(s);});
 
-			if(!criteriaListTmp3.isEmpty()){
+			if(!criteriaListTmp2.isEmpty()){
 				query += " and ( " + expressionNotOperator.toString() + ")) ";
-				criteriaListTmp3.forEach(s -> {criteriaList.add(s);});
+				criteriaListTmp2.forEach(s -> {criteriaList.add(s);});
 
 			}else{
 				query += ") ";
@@ -269,7 +222,7 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 
 		}else {
 			query += "( " + expressionNotOperator.toString() + " )";
-			criteriaListTmp3.forEach(s -> {criteriaList.add(s);});
+			criteriaListTmp2.forEach(s -> {criteriaList.add(s);});
 
 
 		}
