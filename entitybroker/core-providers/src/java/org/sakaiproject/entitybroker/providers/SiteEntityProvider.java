@@ -736,6 +736,8 @@ public class SiteEntityProvider extends AbstractEntityProvider implements CoreEn
     private ContentHostingService contentHostingService;
     private EntityManager entityManager;
     private ShortenedUrlService shortenedUrlService;
+
+    // public void importToolContent(String oSiteId, Site site, Map<String, List<String>> toolOptions, boolean bypassSecurity)  --> possible alternative
     @EntityCustomAction(viewKey = "")
     public String copySiteContent(EntityReference ref, Map<String, Object> params) {
         String destinationsiteid = (String) params.get("toCourseId");
@@ -993,7 +995,9 @@ public class SiteEntityProvider extends AbstractEntityProvider implements CoreEn
 
 
 
-
+    /*
+     *   end JJ Custom stuff
+     */
 
 
 

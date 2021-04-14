@@ -8301,6 +8301,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 					Entity oResource = (Entity) oResources.get(i);
 					String oId = oResource.getId();
 
+					toBeImported = false;
 					if (resourceIds != null && resourceIds.size() > 0)
 					{
 						// only import those with ids inside the list

@@ -446,11 +446,12 @@ public class PrivateMessagesTool {
   private List outOfOfficeList = new ArrayList();
   private List userInOutOfOfficeList = new ArrayList();
 
+  @Setter
   @ManagedProperty(value="#{Components[\"org.sakaiproject.api.app.messageforums.OutOfOfficeMessageManager\"]}")
   private OutOfOfficeMessageManager outOfOfficeMessageManager;
 
-
-  @ManagedProperty(value="#{Components[\"org.sakaiproject.api.app.messageforums.OutOfOfficeMessageManager\"]}")
+  @Setter
+  @ManagedProperty(value="#{Components[\"org.sakaiproject.api.app.messageforums.ResourceLoaderHelper\"]}")
   private ResourceLoaderHelper resourceLoaderHelper;
 
   private Locale locale;
