@@ -320,6 +320,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
                     as.setOpenDate(ot);
                     as.setCloseDate(ct);
                     as.setVisibleDate(vt);
+                    as.setDropDeadDate(dt);
                     assignmentService.updateAssignment(as);
                     response += "\n" + as.getId() + " updated";
                 }catch (Exception e){
@@ -379,7 +380,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
                 results.add(submission.toString());
             }
         }catch(Exception e){
-
+            log.error(e.getClass().getName() + " : " + e.getMessage());
         }
         return results;
     }
@@ -403,6 +404,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         while (it.hasNext()){
             Assignment assignment = (Assignment) it.next();
             if(assignment.getTitle().contains(assignmentTitle)){
+
                 Set<String> groups = assignment.getGroups();
                 Iterator it2 = groups.iterator();
                 while (it2.hasNext()){

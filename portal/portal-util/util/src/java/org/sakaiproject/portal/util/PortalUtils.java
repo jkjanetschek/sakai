@@ -206,7 +206,7 @@ public class PortalUtils
 				}
 			}
 		}
-		
+
 		if (tabsMoreTerms != null) {
 			Iterator<String> i = tabsMoreTerms.iterator();
 			while (i.hasNext())

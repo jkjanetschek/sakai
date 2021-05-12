@@ -20,6 +20,7 @@
 
 package org.sakaiproject.entitybroker.providers;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,6 +50,8 @@ import org.sakaiproject.authz.api.RoleAlreadyDefinedException;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.component.cover.ComponentManager;
+import org.sakaiproject.component.section.sakai.CourseImpl;
+import org.sakaiproject.component.section.sakai.CourseSectionImpl;
 import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.entity.api.ResourcePropertiesEdit;
 import org.sakaiproject.entitybroker.EntityReference;
@@ -78,6 +81,10 @@ import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.IdUsedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.javax.PagingPosition;
+import org.sakaiproject.section.api.SectionManager;
+import org.sakaiproject.section.api.coursemanagement.Course;
+import org.sakaiproject.section.api.coursemanagement.CourseSection;
+import org.sakaiproject.section.api.coursemanagement.Meeting;
 import org.sakaiproject.site.api.Group;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SitePage;
@@ -126,6 +133,8 @@ public class SiteEntityProvider extends AbstractEntityProvider implements CoreEn
     private UserEntityProvider userEntityProvider;
     private ServerConfigurationService serverConfigurationService;
     private SecurityService securityService;
+
+    private SectionManager sectionManager;  //dependency added
 
     public static String PREFIX = "site";
 
@@ -674,7 +683,7 @@ public class SiteEntityProvider extends AbstractEntityProvider implements CoreEn
     }
 
     /*
-     *   JJ CUstom copySite
+     *   JJ custom
      */
 
 
@@ -691,6 +700,16 @@ public class SiteEntityProvider extends AbstractEntityProvider implements CoreEn
             Site siteEdit = siteService.addSite(newCourseId, site);
             siteEdit.setTitle(title);
             siteService.save(siteEdit);
+
+
+            //remove sections
+            Collection<CourseSection> sections =  sectionManager.getSections(newCourseId);
+            if(!sections.isEmpty() || sections != null){
+                Set<String> sectionUuids = new HashSet<String>();
+                sections.forEach( s ->{	sectionUuids.add(s.getUuid());});
+                sectionManager.disbandSections(sectionUuids);
+            }
+
 
 
         } catch (IdInvalidException e) {
@@ -992,6 +1011,66 @@ public class SiteEntityProvider extends AbstractEntityProvider implements CoreEn
 
         return Xml.writeDocumentToString(dom);
     }
+
+
+
+    @EntityCustomAction(viewKey = "")
+    public String createSection(EntityReference ref,Map<String, Object> params){
+
+
+        String title = (String) params.get("title");
+
+
+
+
+        String courseUuid = "/site/test1001";
+        Collection<CourseSection> sections = new ArrayList<CourseSection>();
+
+
+      //  sectionManager.addSections(courseUuid,  sections);  addSections(String courseUuid, Collection<CourseSection> sections)
+        /*
+        sectionManager.addSection(courseUuid,  "TESTTESTTEST",
+                 "test",  5,
+                 null,  null,
+                 null,  false,
+                false ,  false,  false,
+         false,  false,  false);
+         */
+
+
+        Site site = getSiteById("test1001");
+        Course course = new CourseImpl(site);
+        CourseSection courseSection = new CourseSectionImpl(course, "Section#1", null, "test", 5, null,  null, null, false ,  false,  false,  false,  false, false , false );
+        Collection<CourseSection> sectionsCollection = new ArrayList<CourseSection>();
+        sectionsCollection.add(courseSection);
+        sectionManager.addSections(courseUuid,  sectionsCollection);
+
+
+
+        return "success";
+    }
+
+    /*
+
+    String courseUuid, String title,
+		String category, Integer maxEnrollments,
+		String location, Time startTime,
+		Time endTime, boolean monday,
+		boolean tuesday, boolean wednesday, boolean thursday,
+		boolean friday, boolean saturday, boolean sunday)
+
+
+            CourseSection courseSection = new CourseSection(( course,  title,  uuid,  category,
+                 maxEnrollments, String location, Time startTime,
+                Time endTime, boolean monday, boolean tuesday,
+        boolean wednesday, boolean thursday, boolean friday, boolean saturday,
+        boolean sunday));
+
+
+
+     */
+
+
 
 
 

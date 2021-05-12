@@ -74,7 +74,6 @@
         </property>
         <property name="threadLocalManager" ref="org.sakaiproject.thread_local.api.ThreadLocalManager" />
         <property name="config" value="AUTOMATIC_DEFAULT"/>
-        
     </bean>
 
 

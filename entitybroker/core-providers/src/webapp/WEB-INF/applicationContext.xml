@@ -26,7 +26,7 @@
         <property name="contentHostingService" ref="org.sakaiproject.content.api.ContentHostingService" />
         <property name="entityManager" ref="org.sakaiproject.entity.api.EntityManager" />
         <property name="shortenedUrlService" ref="org.sakaiproject.shortenedurl.api.ShortenedUrlService" />
-
+        <property name="sectionManager" ref="org.sakaiproject.section.api.SectionManager" />
     </bean>
 
     <bean parent="org.sakaiproject.entitybroker.entityprovider.AbstractEntityProvider"

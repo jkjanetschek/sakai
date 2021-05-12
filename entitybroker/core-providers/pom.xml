@@ -87,6 +87,14 @@
             <groupId>org.sakaiproject.shortenedurl</groupId>
             <artifactId>shortenedurl-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.sakaiproject.edu-services.sections</groupId>
+            <artifactId>sections-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.sakaiproject.edu-services.sections</groupId>
+            <artifactId>sections-model</artifactId>
+        </dependency>
 
     </dependencies>
     <build>
