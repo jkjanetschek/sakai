@@ -104,7 +104,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
     private GradebookExternalAssessmentService gradebookExternalService;
     private ServerConfigurationService serverConfigurationService;
     private UserDirectoryService userDirectoryService;
-    private ContentHostingService dbContentService;
+   // private ContentHostingService dbContentService;
 
     // HTML is deliberately not handled here, so that it will be handled by RedirectingAssignmentEntityServlet
     public String[] getHandledOutputFormats() {
@@ -309,7 +309,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
 
        // List<Assignment> assignments = new ArrayList();
 
-        String response = null;
+        String response;
         Collection<Assignment> assignments= assignmentService.getAssignmentsForContext(context);
         Iterator it = assignments.iterator();
         while(it.hasNext()){
@@ -453,7 +453,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             rpeModelAnswer.addProperty(rpeModelAnswer.PROP_DISPLAY_NAME, fileNameModelAnswer);
             // ContentResource file = contentHostingService.addAttachmentResource(fileName, fileType, data,rpe);
             InputStream inputStream = new ByteArrayInputStream(dataModelAnswer);
-            ContentResource fileModelAnswer = dbContentService.addAttachmentResource(fileNameModelAnswer, context, "Assignments", fileTypeModelAnswer, inputStream, rpeModelAnswer);   // String name, String site, String tool, String type, InputStream content,  ResourceProperties propertie
+            ContentResource fileModelAnswer = contentHostingService.addAttachmentResource(fileNameModelAnswer, context, "Assignments", fileTypeModelAnswer, inputStream, rpeModelAnswer);   // String name, String site, String tool, String type, InputStream content,  ResourceProperties propertie
             Reference refAttachementModel = entityManager.newReference(fileModelAnswer.getReference());
             String attRefId = refAttachementModel.getReference();
 
