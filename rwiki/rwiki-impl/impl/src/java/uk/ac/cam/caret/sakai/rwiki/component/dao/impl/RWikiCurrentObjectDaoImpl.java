@@ -104,8 +104,8 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 		final StringBuffer expression = new StringBuffer();
 		final List criteriaList = new ArrayList();
 
-		// capture group 1 is needed for regex to work (edge case: leading and) but is ignored for now!!
-		Pattern idPattern = Pattern.compile("(\\A\\s*and)*(?<and>(!)?(\\S+)\\s+and\\s+(!)?(\\S+))*(\\k<and>*and\\s+(!)?(\\S+))*(!)?(\\S+)*\\s*",Pattern.CASE_INSENSITIVE);
+
+		Pattern idPattern = Pattern.compile("(?<and>(!)?(\\S+)\\s+and\\s+(!)?(\\S+))*((?<!^)\\k<and>*and\\s+(!)?(\\S+))*(!)?(\\S+)*\\s*",Pattern.CASE_INSENSITIVE);
 		Matcher matcher = idPattern.matcher(criteria);
 
 		criteriaList.add(realm);
@@ -131,7 +131,7 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 						onlyNotSearch = false;
 					}
 					// left param --> check for!
-					if (matcher.group(3) != null) {
+					if (matcher.group(2) != null) {
 						//check if first
 						if(firstParam){
 							expression.append("(lower(c.content) not like ? and lower(r.name) not like ?)");
@@ -148,45 +148,45 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 						}
 					}
 					//  right param --> check for!
-					if (matcher.group(5) != null) {
+					if (matcher.group(4) != null) {
 						expression.append(" and (lower(c.content) not like ? and lower(r.name) not like ?) ");
 					} else {
 						expression.append(" and (lower(c.content) like ? or lower(r.name) like ?) ");
 					}
-					criteriaListTmp.add("%" + matcher.group(4).toLowerCase() + "%");
-					criteriaListTmp.add("%" + matcher.group(4).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(3).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(3).toLowerCase() + "%");
 
-					criteriaListTmp.add("%" + matcher.group(6).toLowerCase() + "%");
-					criteriaListTmp.add("%" + matcher.group(6).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(5).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(5).toLowerCase() + "%");
 					t += 4;
 
 				// check for trailing and operator
-				}else if(matcher.group(7) != null){
+				}else if(matcher.group(6) != null){
 					//check for !
-					if(matcher.group(8) != null){
+					if(matcher.group(7) != null){
 						expression.append(" and (lower(c.content) not like ? and lower(r.name) not like ?) ");
 					}else {
 						expression.append(" and (lower(c.content)  like ? or lower(r.name) like ?) ");
 					}
-					criteriaListTmp.add("%" + matcher.group(9).toLowerCase() + "%");
-					criteriaListTmp.add("%" + matcher.group(9).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(8).toLowerCase() + "%");
+					criteriaListTmp.add("%" + matcher.group(8).toLowerCase() + "%");
 					t+= 2;
 					//check for single search param
-				}else if(matcher.group(11) != null) {
+				}else if(matcher.group(10) != null) {
 					//check for !
-					if(matcher.group(10) != null){
+					if(matcher.group(9) != null){
 						if(firstNotSearchParam){
 							expressionNotOperator.append("(lower(c.content) not like ? and lower(r.name) not like ?) ");
-							criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
-							criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
+							criteriaListTmp2.add("%" + matcher.group(10).toLowerCase() + "%");
+							criteriaListTmp2.add("%" + matcher.group(10).toLowerCase() + "%");
 
 							//criteriaListTmp3_1.add("%" + matcher.group(11).toLowerCase() + "%");
 							firstNotSearchParam = false;
 						}else {
 							expressionNotOperator.append(" or (lower(c.content) not like ? and lower(r.name) not like ?) ");
 
-							criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
-							criteriaListTmp2.add("%" + matcher.group(11).toLowerCase() + "%");
+							criteriaListTmp2.add("%" + matcher.group(10).toLowerCase() + "%");
+							criteriaListTmp2.add("%" + matcher.group(10).toLowerCase() + "%");
 						}
 					}else{
 						if(onlyNotSearch){
@@ -198,8 +198,8 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 						}else {
 							expression.append(" or (lower(c.content) like ? or lower(r.name) like ?) ");
 						}
-						criteriaListTmp.add("%" + matcher.group(11).toLowerCase() + "%");
-						criteriaListTmp.add("%" + matcher.group(11).toLowerCase() + "%");
+						criteriaListTmp.add("%" + matcher.group(10).toLowerCase() + "%");
+						criteriaListTmp.add("%" + matcher.group(10).toLowerCase() + "%");
 					}
 					t+= 2;
 				}
