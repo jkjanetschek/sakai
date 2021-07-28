@@ -32,6 +32,7 @@ import org.hibernate.SessionFactory;
 import static org.sakaiproject.assignment.api.AssignmentConstants.EVENT_ADD_ASSIGNMENT;
 import static org.sakaiproject.assignment.api.AssignmentConstants.EVENT_UPDATE_ASSIGNMENT_ACCESS;
 import static org.sakaiproject.assignment.api.AssignmentServiceConstants.SECURE_ACCESS_ASSIGNMENT;
+import static org.sakaiproject.assignment.api.AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT;
 
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.Assignment;
@@ -71,7 +72,7 @@ public class AddAssignmentBullhornHandler extends AbstractBullhornHandler {
 
     @Override
     public List<String> getHandledEvents() {
-        return Arrays.asList(EVENT_ADD_ASSIGNMENT, EVENT_UPDATE_ASSIGNMENT_ACCESS);
+        return Arrays.asList(EVENT_ADD_ASSIGNMENT, EVENT_UPDATE_ASSIGNMENT_ACCESS,EVENT_AVAILABLE_ASSIGNMENT);
     }
 
     @Override
@@ -89,6 +90,7 @@ public class AddAssignmentBullhornHandler extends AbstractBullhornHandler {
             Assignment assignment = assignmentService.getAssignment(assignmentId);
             switch (e.getEvent()) {
                 case EVENT_ADD_ASSIGNMENT:
+                case EVENT_AVAILABLE_ASSIGNMENT:
                     return Optional.of(handleAdd(from, siteId, assignmentId, assignment, countCache));
                 case EVENT_UPDATE_ASSIGNMENT_ACCESS:
                     return Optional.of(handleUpdateAccess(from, ref, siteId, assignmentId, assignment, countCache));

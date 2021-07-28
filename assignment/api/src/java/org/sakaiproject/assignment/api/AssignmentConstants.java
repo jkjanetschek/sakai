@@ -42,6 +42,10 @@ public final class AssignmentConstants {
      * Event for adding an assignment.
      */
     public static final String EVENT_ADD_ASSIGNMENT = "asn.new.assignment";
+    /**
+     * MCI custon event
+     */
+    public static final String EVENT_AVAILABLE_ASSIGNMENT = "asn.available.assignment";
 
     /**********************************************************************************************************************************************************************************************************************************************************
      * EVENT STRINGS
