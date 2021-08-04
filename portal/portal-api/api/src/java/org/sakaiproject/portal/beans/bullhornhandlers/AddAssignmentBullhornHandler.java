@@ -34,6 +34,7 @@ import static org.sakaiproject.assignment.api.AssignmentConstants.EVENT_UPDATE_A
 import static org.sakaiproject.assignment.api.AssignmentServiceConstants.SECURE_ACCESS_ASSIGNMENT;
 import static org.sakaiproject.assignment.api.AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT;
 
+import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.authz.api.AuthzGroupService;
@@ -110,24 +111,29 @@ public class AddAssignmentBullhornHandler extends AbstractBullhornHandler {
         List<BullhornData> bhEvents = new ArrayList<>();
 
         Instant openTime = assignment.getOpenDate();
-        if (openTime == null || openTime.isBefore(Instant.now())) {
-            Site site = siteService.getSite(siteId);
-            String title = assignment.getTitle();
-            Set<String> groupIds = assignment.getGroups();
-            Collection<String> groupsUsers = authzGroupService.getAuthzUsersInGroups(groupIds);
 
-            // Get all the members of the site with read ability
-            for (String to : site.getUsersIsAllowed(SECURE_ACCESS_ASSIGNMENT)) {
-                //  If this is a grouped assignment, is 'to' in one of the groups?
-                if (groupIds.size() == 0 || groupsUsers.contains(to)) {
-                    if (!from.equals(to) && !securityService.isSuperUser(to)) {
-                        String url = assignmentService.getDeepLink(siteId, assignmentId, to);
-                        bhEvents.add(new BullhornData(from, to, siteId, title, url));
-                        countCache.remove(to);
+        if (!(AssignmentConstants.Status.DRAFT == assignmentService.getAssignmentCannonicalStatus(assignmentId))){
+
+            if (openTime == null || openTime.isBefore(Instant.now())) {
+                Site site = siteService.getSite(siteId);
+                String title = assignment.getTitle();
+                Set<String> groupIds = assignment.getGroups();
+                Collection<String> groupsUsers = authzGroupService.getAuthzUsersInGroups(groupIds);
+
+                // Get all the members of the site with read ability
+                for (String to : site.getUsersIsAllowed(SECURE_ACCESS_ASSIGNMENT)) {
+                    //  If this is a grouped assignment, is 'to' in one of the groups?
+                    if (groupIds.size() == 0 || groupsUsers.contains(to)) {
+                        if (!from.equals(to) && !securityService.isSuperUser(to)) {
+                            String url = assignmentService.getDeepLink(siteId, assignmentId, to);
+                            bhEvents.add(new BullhornData(from, to, siteId, title, url));
+                            countCache.remove(to);
+                        }
                     }
                 }
             }
         }
+
 
         return bhEvents;
     }

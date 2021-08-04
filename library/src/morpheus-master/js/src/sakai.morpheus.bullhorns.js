@@ -68,6 +68,9 @@
 
   var createBunches = function (allAlerts, prefix) {
 
+
+    allAlerts.filter(a => console.log(a));
+
     const alerts = allAlerts.filter(a => a.event.startsWith(prefix));
 
     var map = new Map();
@@ -106,9 +109,12 @@
       toolName =  i18n.lessonsTool;
     } else if ("profile" === tool) {
       toolName = i18n.socialAlerts;
-    }
+    }else if("content" === tool){
+      toolName = i18n.contentTool;
+     }
 
-    return `
+
+  return `
       <div class="card portal-bullhorn-bunch">
         <div class="card-header" id="${tool}-${startDate}-header">
             <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#${tool}-${startDate}-panel"
@@ -204,6 +210,8 @@
         messageTemplate = i18n.wallPost;
       } else if ("profile.wall.item.comment.new" === alert.event) {
         messageTemplate = i18n.postComment;
+      }else if("content.available" === alert.event){
+        messageTemplate = i18n.contentCreated;
       }
 
       if (social) {
@@ -237,10 +245,20 @@
             cache: false,
           }).then(function (data) {
 
+            console.log(data.toString());
+
             if (data.message && data.message === 'NO_ALERTS') {
               return portal.wrapNoAlertsString(data.i18n.noAlerts);
             } else {
               var markup = '<div id="portal-bullhorn-alerts" class="accordion">';
+
+
+              markup += `
+                  <div id="portal-bullhorn-clear-all">
+                   <a href="javascript:;" onclick="portal.clearAllBullhornAlerts('${data.i18n.noAlerts}');">${data.i18n.clearAll}</a>
+                   </div>
+                   `;
+
 
               var allBunches = [];
               createBunches(data.alerts, "annc").forEach(alerts => allBunches.push({ type: "announcements", alerts: alerts }));
@@ -248,6 +266,7 @@
               createBunches(data.alerts, "commons").forEach(alerts => allBunches.push({ type: "commons", alerts: alerts }));
               createBunches(data.alerts, "lessonbuilder").forEach(alerts => allBunches.push({ type: "lessonbuilder", alerts: alerts }));
               createBunches(data.alerts, "profile").forEach(alerts => allBunches.push({ type: "profile", alerts: alerts }));
+              createBunches(data.alerts, "content").forEach(alerts => allBunches.push({ type: "content", alerts: alerts }));
 
               allBunches.forEach(b => {
                 b.latest = b.alerts.reduce((acc, a) => { return (a.eventDate.epochSecond > acc) ? a.eventDate.epochSecond : acc; }, 0);
@@ -256,14 +275,14 @@
               allBunches.sort((a,b) => { return b.latest - a.latest; });
 
               allBunches.forEach(b => { markup += getBunchMarkup(b, data.i18n) });
-
+/*
               markup += `
                   <div id="portal-bullhorn-clear-all">
                     <a href="javascript:;" onclick="portal.clearAllBullhornAlerts('${data.i18n.noAlerts}');">${data.i18n.clearAll}</a>
                   </div>
                 </div>
               `;
-
+*/
               return markup;
             }
           }, function (xhr, status, error) { api.set('content.text', status + ': ' + error); });
