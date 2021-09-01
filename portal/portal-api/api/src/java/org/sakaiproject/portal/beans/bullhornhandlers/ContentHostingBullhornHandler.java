@@ -5,10 +5,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.SessionFactory;
 import org.sakaiproject.content.api.ContentHostingService;
+import org.sakaiproject.content.api.ContentResource;
 import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.event.api.Event;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
+import org.sakaiproject.exception.TypeException;
 import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.portal.api.BullhornData;
 import org.sakaiproject.user.api.User;
@@ -21,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+
+
 
 import static org.sakaiproject.assignment.api.AssignmentConstants.EVENT_ADD_ASSIGNMENT;
 import static org.sakaiproject.assignment.api.AssignmentConstants.EVENT_UPDATE_ASSIGNMENT_ACCESS;
@@ -100,12 +104,18 @@ public class ContentHostingBullhornHandler extends AbstractBullhornHandler{
                 boolean hidden = false;
                 ///URL: /content/group/Seite/../../../ we are only interested in the points
                 //maybe better to move to an other class
+
+
+
                 for (int i = pathPartsContent.length - 1; i >= 3; i--) {
                     String pathSubString = contentUrl;
                     String checkPath = pathSubString.substring(0, pathSubString.indexOf(pathPartsContent[i]));
                     ResourceProperties resourceProperties = null;
+
+
                     try{
                         resourceProperties = contentHostingService.getProperties(checkPath);
+
                     }catch( PermissionException | IdUnusedException  ex){
                         log.error("Caught exception while accessing properties of ContentHostingService", ex);
                     }
@@ -119,15 +129,26 @@ public class ContentHostingBullhornHandler extends AbstractBullhornHandler{
                     hidden = false;
                 }
 
+                //JJ: to determine if Availability of uploaded item = hidden || visible
+                ContentResource resource = null;
+                try{
+                    resource = contentHostingService.getResource(contentUrl);
+                }catch (TypeException ex){
+                    log.error(ex.getMessage(),ex);
+                }
+
                 if (contentHostingService.isAvailable(contentUrl) &&(!hidden) &&(!contentHostingService.isCollection(contentUrl)) ) {
                     String [] title = ref.split("/");
                     titel = title[title.length - 1];
                     for (User u : securityService.unlockUsers(ContentHostingService.AUTH_RESOURCE_READ, ref)) {
                         if (!u.getId().equals(from) && !securityService.isSuperUser(u.getId())) {
-                            String url = contentHostingService.getUrl(contentUrl);
-                            bhEvents.add(new BullhornData(from, u.getId(), context, titel, url));
-                            // doAcademicInsert(from, u.getId(), event, ref, titel, context, e.getEventTime(), url);
-                            countCache.remove(u.getId());
+                            if(resource.isAvailable() || (resource != null && resource.isHidden() && securityService.unlock(u.getId(),ContentHostingService.AUTH_RESOURCE_HIDDEN,ref))){
+
+                                String url = contentHostingService.getUrl(contentUrl);
+                                bhEvents.add(new BullhornData(from, u.getId(), context, titel, url));
+                                // doAcademicInsert(from, u.getId(), event, ref, titel, context, e.getEventTime(), url);
+                                countCache.remove(u.getId());
+                            }
                         }
                     }
 

@@ -314,12 +314,26 @@ public class BaseEventDelayHandler implements EventDelayHandler, ScheduledInvoca
 	
 				securityService.pushAdvisor(new SecurityAdvisor() {
 				    public SecurityAdvice isAllowed(String userId, String function, String reference) {
-				            if (securityService.unlock(event.getUserId(), function, reference)) {
-				                return SecurityAdvice.ALLOWED;
-				             }
-				            return SecurityAdvice.PASS;
-				         }
-				    });
+				    	//JJ: try to fix permission bug in announcements
+
+						if(event.getUserId().equals(userId)){
+							if (securityService.unlock(event.getUserId(), function, reference)) {
+								return SecurityAdvice.ALLOWED;
+							}
+							return SecurityAdvice.PASS;
+						}
+						return SecurityAdvice.PASS;
+
+
+						/*  VANILLA
+						if (securityService.unlock(event.getUserId(), function, reference)) {
+							return SecurityAdvice.ALLOWED;
+						}
+						return SecurityAdvice.PASS;
+						*/
+
+					 }
+				});
 	
 				eventService.post(event, user);
 			}

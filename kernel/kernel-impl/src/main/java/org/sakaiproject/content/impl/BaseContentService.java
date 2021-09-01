@@ -4513,6 +4513,8 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 
 	} // findResource
 
+
+
 	/**
 	 * check permissions for removeResource().
 	 * 

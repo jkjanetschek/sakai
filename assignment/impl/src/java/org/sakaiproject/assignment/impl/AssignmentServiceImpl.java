@@ -980,8 +980,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                 }
 
                 String reference = AssignmentReferenceReckoner.reckoner().assignment(assignment).reckon().getReference();
-                // event for tracking
-                eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_ADD_ASSIGNMENT, reference, true));
+                // Custom MCI code
+                // event for tracking csw delete line because it is now intuitive that a duplicate generates an add event
+                //eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_ADD_ASSIGNMENT, reference, true));
             }
         }
         return assignment;
@@ -1003,6 +1004,11 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
         eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_REMOVE_ASSIGNMENT, reference, true));
 
+        //Custom MCI code
+        //check if there is a openDate in the future; maybe we must delete a future event
+        if (assignment.getOpenDate() != null && !assignment.getOpenDate().isBefore(Instant.now())) {
+            eventTrackingService.cancelDelays(reference, AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT);
+        }
         // remove any realm defined for this resource
         try {
             authzGroupService.removeAuthzGroup(reference);
@@ -1031,6 +1037,11 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
 
         // we post the same event as remove assignment
         eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_REMOVE_ASSIGNMENT, reference, true));
+        // Custom MCI code
+        //check if there is a openDate in the future; maybe we must delete a future event
+        if (assignment.getOpenDate() != null && !assignment.getOpenDate().isBefore(Instant.now())) {
+            eventTrackingService.cancelDelays(reference, AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT);
+        }
     }
 
     // TODO removing related content from other tools shouldn't be the concern for assignments service

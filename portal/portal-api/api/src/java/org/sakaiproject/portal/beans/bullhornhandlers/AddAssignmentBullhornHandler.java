@@ -89,6 +89,7 @@ public class AddAssignmentBullhornHandler extends AbstractBullhornHandler {
             Assignment assignment = assignmentService.getAssignment(assignmentId);
             switch (e.getEvent()) {
                 case EVENT_ADD_ASSIGNMENT:
+                case EVENT_AVAILABLE_ASSIGNMENT:
                     return bhAlreadyExists(ref) ? Optional.empty() : Optional.of(handleAdd(from, siteId, assignmentId, assignment, countCache));
                 case EVENT_UPDATE_ASSIGNMENT_ACCESS:
                     return Optional.of(handleUpdateAccess(from, ref, siteId, assignmentId, assignment, countCache));
@@ -99,7 +100,7 @@ public class AddAssignmentBullhornHandler extends AbstractBullhornHandler {
             log.error("Failed to find either the assignment or the site", ex);
         }
 
-        return Optional.empty();
+         return Optional.empty();
     }
 
     private List<BullhornData> handleAdd(String from, String siteId, String assignmentId, Assignment assignment, Cache<String, Long> countCache) 

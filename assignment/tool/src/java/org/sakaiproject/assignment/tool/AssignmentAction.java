@@ -113,6 +113,7 @@ import org.sakaiproject.site.api.ToolConfiguration;
 import org.sakaiproject.taggable.api.TaggingHelperInfo;
 import org.sakaiproject.taggable.api.TaggingManager;
 import org.sakaiproject.taggable.api.TaggingProvider;
+import org.sakaiproject.time.api.Time;
 import org.sakaiproject.time.api.TimeService;
 import org.sakaiproject.time.api.UserTimeService;
 import org.sakaiproject.tool.api.*;
@@ -7416,7 +7417,14 @@ public class AssignmentAction extends PagedResourceActionII {
             // read input data if the mode is not preview mode
             setNewAssignmentParameters(data, true);
         }
-
+/*
+        boolean isGroupSubmit = "1".equals((String) state.getAttribute(NEW_ASSIGNMENT_GROUP_SUBMIT));
+        if (isGroupSubmit) {
+            if (!siteService.allowUpdateSite(siteId)) {
+                addAlert(state, rb.getFormattedMessage("group.editsite.nopermission"));
+            }
+        }
+*/
         String assignmentId = params.getString("assignmentId");
 
         // whether this is an editing which changes non-point graded assignment to point graded assignment?
@@ -7682,7 +7690,6 @@ public class AssignmentAction extends PagedResourceActionII {
                         }
 
                     }
-
                 } //if
 
                 // save supplement item information
@@ -7720,20 +7727,39 @@ public class AssignmentAction extends PagedResourceActionII {
                         }
 
                         if (!aOldAccess.equals(a.getTypeOfAccess())) {
-                            // site-group access setting changed
-                            eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_UPDATE_ASSIGNMENT_ACCESS, assignmentReference, true));
+
+                            // JJ: SAK-45992
+                            if(!IsFutureOpenDate(openTime)){
+                                // site-group access setting changed
+                                eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_UPDATE_ASSIGNMENT_ACCESS, assignmentReference, true));
+                            }
                         } else {
                             Collection aGroups = a.getGroups();
                             if (!(aOldGroups == null && aGroups == null)
                                     && !(aOldGroups != null && aGroups != null && aGroups.containsAll(aOldGroups) && aOldGroups.containsAll(aGroups))) {
-                                //group changed
-                                eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_UPDATE_ASSIGNMENT_ACCESS, assignmentReference, true));
+
+                                // JJ: SAK-45992
+                                if(!IsFutureOpenDate(openTime)){
+                                    //group changed
+                                    eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_UPDATE_ASSIGNMENT_ACCESS, assignmentReference, true));
+                                }
+
+
                             }
                         }
 
+                        // Custom MCI Code
                         if (oldOpenTime != null && !oldOpenTime.equals(a.getOpenDate())) {
+                            //cancel not fired event
+                            eventTrackingService.cancelDelays(assignmentReference, AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT);
                             // open time change
-                            eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_UPDATE_ASSIGNMENT_OPENDATE, assignmentReference, true));
+                            Time time = timeService.newTime(openTime.toEpochMilli());
+                            eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_UPDATE_ASSIGNMENT_OPENDATE, assignmentId, true));
+                            //SAK-44623
+                            if (a.getOpenDate().isAfter(Instant.now())) {
+                                eventTrackingService.delay(eventTrackingService.newEvent(AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT, assignmentReference,
+                                        true), time);
+                            }
                         }
 
                         if (oldDueTime != null && !oldDueTime.equals(a.getDueDate())) {
@@ -7748,10 +7774,57 @@ public class AssignmentAction extends PagedResourceActionII {
                     }
                 }
             }
-            if (newAssignment) {
-                // post new assignment event since it is fully initialized by now
-                eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_ADD_ASSIGNMENT, assignmentReference, true));
+
+
+
+
+
+            // SAK-45967
+            if(!a.getDraft() && newAssignment == false){
+
+                Collection aGroups = a.getGroups();
+                if(aGroups.size() != 0){
+                    // JJ: SAK-45992
+                    if(!IsFutureOpenDate(openTime)){
+                        eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_UPDATE_ASSIGNMENT_ACCESS, assignmentReference, true));
+                    }else{
+                        //cannot find appropriate function for Instant in eventTrackingService => use deprecated funtion in timeService
+                        Time time = timeService.newTime(openTime.toEpochMilli());
+                        log.info("delay Event");
+                        eventTrackingService.delay(eventTrackingService.newEvent(AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT, assignmentReference,
+                                true), time);
+                    }
+
+
+                }else{
+                    newAssignment = true;
+                }
             }
+
+
+            // Custom MCI Code
+            if (newAssignment) {
+                if (openTime == null || !(openTime.isAfter(Instant.now()))) {
+                    // post new assignment event since it is fully initialized by now
+                    eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_ADD_ASSIGNMENT, assignmentReference, true));
+                } else {
+                    //cannot find appropriate function for Instant in eventTrackingService => use deprecated funtion in timeService
+                    Time time = timeService.newTime(openTime.toEpochMilli());
+                    log.info("delay Event");
+                    eventTrackingService.delay(eventTrackingService.newEvent(AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT, assignmentReference,
+                            true), time);
+                }
+            }
+        }
+    }
+
+
+    private Boolean IsFutureOpenDate(Instant openTime){
+
+        if(openTime == null || !(openTime.isAfter(Instant.now()))){
+            return false;
+        }else{
+            return true;
         }
     }
 
