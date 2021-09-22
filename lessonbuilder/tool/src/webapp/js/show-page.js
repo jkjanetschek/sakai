@@ -1417,15 +1417,27 @@ $(document).ready(function() {
 				
 				row.find(".questionMultipleChoiceAnswer").each(function(index, el) {
 					var id = $(el).find(".questionMultipleChoiceAnswerId").text();
-					var text = $(el).find(".questionMultipleChoiceAnswerText").text();
+					/*
+					var text = $(el).find(".questionMultipleChoiceAnswerText").val();
+					*/
+					//JJ: Try to fix bug SAK-46296
+					var text = $(el).find(".raw-questionAnswer-text").val();
+
 					var correct = $(el).find(".questionMultipleChoiceAnswerCorrect").text();
-					
+
+
+					console.log("val: " + text);
+					var text2 = $(el).find(".raw-questionAnswer-text").text();
+					console.log("text: " + text2);
+
 					var answerSlot;
 					if(index === 0) {
 						answerSlot = $("#copyableMultipleChoiceAnswerDiv").first();
 					}else {
 						answerSlot = addMultipleChoiceAnswer();
 					}
+
+
 					
 					answerSlot.find(".question-multiplechoice-answer-id").val(id);
 					answerSlot.find(".question-multiplechoice-answer").val(text);

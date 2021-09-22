@@ -3209,6 +3209,8 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 						makeCsrf(questionForm, "csrf4");
 
 						UIInput.make(questionForm, "multipleChoiceId", "#{simplePageBean.questionId}", String.valueOf(i.getId()));
+
+
 						
 						String[] options = new String[answers.size()];
 						String initValue = null;
@@ -3232,7 +3234,8 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 						for(int j = 0; j < answers.size(); j++) {
 							UIBranchContainer answerContainer = UIBranchContainer.make(questionForm, "multipleChoiceAnswer:", String.valueOf(j));
 							UISelectChoice multipleChoiceInput = UISelectChoice.make(answerContainer, "multipleChoiceAnswerRadio", multipleChoiceSelect.getFullID(), j);
-							
+
+
 							multipleChoiceInput.decorate(new UIFreeAttributeDecorator("id", multipleChoiceInput.getFullID()));
 							UIOutput.make(answerContainer, "multipleChoiceAnswerText", Integer.toString(j+1) + " : " + answers.get(j).getText())
 								.decorate(new UIFreeAttributeDecorator("for", multipleChoiceInput.getFullID()));
@@ -3244,7 +3247,8 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 								multipleChoiceInput.decorate(new UIDisabledDecorator());
 							}
 						}
-						 
+
+
 						UICommand answerButton = UICommand.make(questionForm, "answerMultipleChoice", messageLocator.getMessage("simplepage.answer_question"), "#{simplePageBean.answerMultipleChoiceQuestion}");
 						if(!isAvailable || response != null) {
 						    if (canSeeAll)
@@ -3359,6 +3363,9 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 								UIOutput.make(answerContainer, "questionMultipleChoiceAnswerId", String.valueOf(answers.get(j).getId()));
 								UIOutput.make(answerContainer, "questionMultipleChoiceAnswerText", answers.get(j).getText());
 								UIOutput.make(answerContainer, "questionMultipleChoiceAnswerCorrect", String.valueOf(answers.get(j).isCorrect()));
+
+								//JJ: try to fix bug SAK-SAK-46296
+								UIInput.make(answerContainer, "raw-questionAnswer-text",  null, answers.get(j).getText());
 							}
 							
 							UIOutput.make(tableRow, "questionShowPoll", String.valueOf(i.getAttribute("questionShowPoll")));
