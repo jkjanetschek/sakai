@@ -314,8 +314,10 @@ public class BaseEventDelayHandler implements EventDelayHandler, ScheduledInvoca
 	
 				securityService.pushAdvisor(new SecurityAdvisor() {
 				    public SecurityAdvice isAllowed(String userId, String function, String reference) {
-				    	//JJ: try to fix permission bug in announcements
 
+				    	//JJ: Fix Version 1 permission bug (AssignmentServiceImpl.getDeepLink()) in delayed announcements.
+						// this causes bug in delayed assignment for Groups
+						/*
 						if(event.getUserId().equals(userId)){
 							if (securityService.unlock(event.getUserId(), function, reference)) {
 								return SecurityAdvice.ALLOWED;
@@ -323,6 +325,23 @@ public class BaseEventDelayHandler implements EventDelayHandler, ScheduledInvoca
 							return SecurityAdvice.PASS;
 						}
 						return SecurityAdvice.PASS;
+						*/
+
+						//JJ: Fix version 2
+						if(userId != null && userId != ""){
+							if(event.getUserId().equals(userId)){
+								if (securityService.unlock(event.getUserId(), function, reference)) {
+									return SecurityAdvice.ALLOWED;
+								}
+								return SecurityAdvice.PASS;
+							}
+							return SecurityAdvice.PASS;
+						}else {
+							if (securityService.unlock(event.getUserId(), function, reference)) {
+								return SecurityAdvice.ALLOWED;
+							}
+							return SecurityAdvice.PASS;
+						}
 
 
 						/*  VANILLA

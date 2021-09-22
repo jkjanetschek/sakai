@@ -100,6 +100,8 @@
 
     const formattedStartDate = formatDate({epochSecond: startDate});
 
+
+
     var toolName =  i18n.announcementsTool;   
     if ("assignments" === tool) {
       toolName =  i18n.assignmentsTool;
@@ -194,7 +196,7 @@
 
     bunch.alerts.forEach(alert => {
 
-      if ("asn.new.assignment" === alert.event || "asn.revise.access" === alert.event) {
+      if ("asn.new.assignment" === alert.event || "asn.revise.access" === alert.event || "asn.available.assignment" === alert.event) {
         messageTemplate = i18n.assignmentCreated;
       } else if ("asn.grade.submission" === alert.event) {
         messageTemplate = i18n.assignmentSubmissionGraded;
@@ -210,7 +212,7 @@
         messageTemplate = i18n.wallPost;
       } else if ("profile.wall.item.comment.new" === alert.event) {
         messageTemplate = i18n.postComment;
-      }else if("content.available" === alert.event){
+      }else if("content.available" === alert.event || "content.upd.visibility" === alert.event){
         messageTemplate = i18n.contentCreated;
       }
 
@@ -245,7 +247,7 @@
             cache: false,
           }).then(function (data) {
 
-            console.log(data.toString());
+
 
             if (data.message && data.message === 'NO_ALERTS') {
               return portal.wrapNoAlertsString(data.i18n.noAlerts);
