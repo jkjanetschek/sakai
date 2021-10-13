@@ -70,6 +70,7 @@ import org.sakaiproject.entity.cover.EntityManager;
 import org.sakaiproject.entitybroker.EntityBroker;
 import org.sakaiproject.entitybroker.exception.EntityNotFoundException;
 import org.sakaiproject.entitybroker.entityprovider.extension.ActionReturn;
+import org.sakaiproject.event.api.Event;
 import org.sakaiproject.event.api.NotificationService;
 import org.sakaiproject.event.api.SessionState;
 import org.sakaiproject.event.api.EventTrackingService;
@@ -244,6 +245,8 @@ public class AnnouncementAction extends PagedResourceActionII
    
    private FormattedText formattedText;
 
+   private TimeService timeService;
+
    
    private static final String DEFAULT_TEMPLATE="announcement/chef_announcements";
 
@@ -254,6 +257,7 @@ public class AnnouncementAction extends PagedResourceActionII
         userDirectoryService = ComponentManager.get(UserDirectoryService.class);
         serverConfigurationService = ComponentManager.get(ServerConfigurationService.class);
         formattedText = ComponentManager.get(FormattedText.class);
+        timeService = ComponentManager.get(TimeService.class);
     }
    /*
 	 * Returns the current order
@@ -2868,26 +2872,46 @@ public class AnnouncementAction extends PagedResourceActionII
 				
 				channel.commitMessage(msg, noti, "org.sakaiproject.announcement.impl.SiteEmailNotificationAnnc");
 
-				if (!state.getIsNewAnnouncement())
-				{
+
+				if (!state.getIsNewAnnouncement()) {
 					state.setEdit(null);
-				} // if-else
-				
-				// for event tracking
-				if (titleChanged)
-				{
-					// title changed
-					eventTrackingService.post(eventTrackingService.newEvent(AnnouncementService.EVENT_ANNC_UPDATE_TITLE, msg.getReference(), true));
-				}
-				if (accessChanged)
-				{
-					// access changed
-					eventTrackingService.post(eventTrackingService.newEvent(AnnouncementService.EVENT_ANNC_UPDATE_ACCESS, msg.getReference(), true));
-				}
-				if (availabilityChanged)
-				{
-					// availablity changed
-					eventTrackingService.post(eventTrackingService.newEvent(AnnouncementService.EVENT_ANNC_UPDATE_AVAILABILITY, msg.getReference(), true));
+
+					// for event tracking
+					if (titleChanged) {
+						// title changed
+						eventTrackingService.post(eventTrackingService.newEvent(AnnouncementService.EVENT_ANNC_UPDATE_TITLE, msg.getReference(), true));
+					}
+					if (accessChanged) {
+						// access changed
+						eventTrackingService.post(eventTrackingService.newEvent(AnnouncementService.EVENT_ANNC_UPDATE_ACCESS, msg.getReference(), true));
+					}
+					if (availabilityChanged) {
+						// availablity changed
+						eventTrackingService.post(eventTrackingService.newEvent(AnnouncementService.EVENT_ANNC_UPDATE_AVAILABILITY, msg.getReference(), true));
+
+						//SAK-44622: DRAFT
+						//check if an delay might exist
+						if((oReleaseDate != null  && releaseDate == null) || (oReleaseDate != null  && releaseDate != null && !oReleaseDate.equals(releaseDate.toString())) ){
+
+							eventTrackingService.cancelDelays(msg.getReference(), org.sakaiproject.announcement.api.AnnouncementService.EVENT_AVAILABLE_ANNC);
+							Time time = timeService.newTime(msg.getHeader().getInstant().toEpochMilli());
+							//check if new date is in future
+							if(msg.getHeader().getInstant().isAfter(Instant.now())){
+								Event event = eventTrackingService.newEvent(org.sakaiproject.announcement.api.AnnouncementService.EVENT_AVAILABLE_ANNC, msg.getReference(), true);
+								eventTrackingService.delay(event,time);
+							}
+						}
+					}
+				} //SAK-46083
+
+				//SAK-44622: DRAFT
+				Instant nowInstant = Instant.now();
+				Instant date = msg.getHeader().getInstant();
+				Time time = timeService.newTime(date.toEpochMilli());
+				if (nowInstant.isBefore(date)){
+					// track event
+					Event event = eventTrackingService.newEvent(org.sakaiproject.announcement.api.AnnouncementService.EVENT_AVAILABLE_ANNC, msg.getReference(), true);
+					eventTrackingService.delay(event,time);
 				}
 			}
 			catch (IdUnusedException e)
@@ -3000,6 +3024,15 @@ public class AnnouncementAction extends PagedResourceActionII
 
 					// make sure auto-updates are enabled
 					enableObservers(sstate);
+
+
+					//SAK-44622: DRAFT
+					//Delete possible delay
+					Instant date = message.getHeader().getInstant();
+					if(date.isAfter(Instant.now())){
+						eventTrackingService.cancelDelays(message.getReference(), org.sakaiproject.announcement.api.AnnouncementService.EVENT_AVAILABLE_ANNC);
+					}
+
 				}
 				else
 				{
