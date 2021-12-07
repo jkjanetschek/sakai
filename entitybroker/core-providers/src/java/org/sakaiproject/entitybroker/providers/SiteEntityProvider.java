@@ -342,6 +342,76 @@ public class SiteEntityProvider extends AbstractEntityProvider implements CoreEn
         return new ActionReturn(groups);
     }
 
+
+    //jkj: Workaorund for creating groups (PUT --> GOAWAY)
+    @EntityCustomAction(action = "CustomGroup", viewKey = "")
+    public EntityGroup CustomHandleGroups(EntityView view, Map<String, Object> params) {
+
+        String siteId = view.getEntityReference().getId();
+        String groupId = view.getPathSegment(3);
+        EntityGroup eg = null;
+        String groupTitle = params.containsKey("groupTitle") ? params.get("groupTitle").toString() : null;
+        String groupDescription = params.get("groupDescription") != null ? params.get("groupDescription").toString() : null;
+        // fix empty strings that may be specified
+        if ("".equals(groupTitle)) {
+            groupTitle = null;
+        }
+        if ("".equals(groupDescription)) {
+            groupDescription = null;
+        }
+        List<String> userIds = params.get("userIds") != null ? Arrays.asList(params.get("userIds")
+                .toString().split(",")) : new ArrayList<String>();
+        Site site = getSiteById(siteId);
+        // check if the user can access site
+        isAllowedAccessSite(site);
+
+        // check if the user can update group membership
+        if (!siteService.allowUpdateGroupMembership(site.getId())) {
+            throw new SecurityException("This group (" + groupId + ") in site (" + siteId
+                    + ") cannot be updated by the current user.");
+        }
+
+        Group group = null;
+        // PUT /direct/site/siteid/group - create a new group in the site (returns group id).
+        // Params include title, description, optionally initial list of members
+        if (groupTitle == null) {
+            // No title metadata specified
+            throw new IllegalArgumentException("A title needs to be provided for a new group.");
+        }
+        group = site.addGroup();
+        group.getProperties().addProperty(GROUP_PROP_WSETUP_CREATED, Boolean.TRUE.toString());
+        group.setTitle(groupTitle);
+        group.setDescription(groupDescription);
+        // add new members
+        for (String userId : userIds) {
+            // Every user added via this EB is defined as non-provided
+            Role role = site.getUserRole(userId);
+            Member m = site.getMember(userId);
+            if (group.getUserRole(userId) == null && role != null) {
+                try {
+                    group.insertMember(userId, role.getId(), m != null ? m.isActive() : true, false);
+                } catch (IllegalStateException e) {
+                    throw e;
+                }
+            }
+        }
+
+        try {
+            siteService.save(site);
+        } catch (IdUnusedException e) {
+            throw new IllegalArgumentException("Cannot find site with given id: " + siteId
+                    + ":" + e.getMessage(), e);
+        } catch (PermissionException e) {
+            throw new SecurityException(
+                    "Current user does not have permission to add a group to site:" + siteId);
+        }
+        eg = new EntityGroup(group);
+        return eg;
+    }
+
+
+
+
     @EntityCustomAction(action = "group", viewKey = "")
     public EntityGroup handleGroup(EntityView view, Map<String, Object> params) throws AuthzRealmLockException {
         // expects site/siteId/group/groupId
