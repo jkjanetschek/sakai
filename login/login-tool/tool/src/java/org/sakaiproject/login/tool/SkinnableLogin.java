@@ -214,11 +214,19 @@ public class SkinnableLogin extends HttpServlet implements Login {
 			}
 			else
 			{
+				//SAKAIME-727 by thl-->  jkj: revert to vanilla (control with property)
+				//String returnUrl = "http://www.mci4me.at";
 				String returnUrl = (String) session.getAttribute(Tool.HELPER_DONE_URL);
 				// logout the user
 				UsageSessionService.logout();
 				complete(returnUrl, null, tool, res);
 			}
+			return;
+		}
+
+		// SAKAIME-620 SAKAIME-700 SAKAIME-727 changed by thl
+		if(session != null && session.getUserId() != null) {
+			res.sendRedirect(res.encodeRedirectURL(Web.serverUrl(req) + "/portal"));
 			return;
 		}
 		
@@ -349,9 +357,21 @@ public class SkinnableLogin extends HttpServlet implements Login {
 			credentials.setSessionId(session.getId());
 
 			try {
-				loginService.authenticate(credentials);
-				String returnUrl = (String) session.getAttribute(Tool.HELPER_DONE_URL);
-				complete(returnUrl, session, tool, res);
+				//include logins with mailsuffix, by thl (SAKAIME-457, SAKAIME-620, SAKAIME-700, SAKAIME-727)
+				String loginName = "";
+				if (credentials.getIdentifier() != null) {
+					loginName = credentials.getIdentifier().trim();
+				}
+				if (loginName.endsWith("@mci4me.at")) {
+					credentials.setIdentifier(loginName.substring(0, loginName.length()-10));
+
+					loginService.authenticate(credentials);
+					String returnUrl = (String) session.getAttribute(Tool.HELPER_DONE_URL);
+					complete(returnUrl, session, tool, res);
+					log.info("Login attempt successful: ID=" + credentials.getIdentifier() + ", IP Address=" + credentials.getRemoteAddr());
+				} else {
+					throw new LoginException(EXCEPTION_INVALID_CREDENTIALS);
+				}//end change
 
 			} catch (LoginException le) {
 
@@ -609,7 +629,11 @@ public class SkinnableLogin extends HttpServlet implements Login {
 	private void logFailedAttempt(LoginCredentials credentials) {
 		if(serverConfigurationService.getBoolean("login.log-failed", true)) {
 			// SAK-23672 Safe login string before log
-			log.warn("Login attempt failed. ID=" + StringUtils.abbreviate(credentials.getIdentifier().replaceAll("(\\r|\\n)", ""),255) + ", IP Address=" + credentials.getRemoteAddr());
+			try{
+				log.warn("Login attempt failed. ID=" + StringUtils.abbreviate(credentials.getIdentifier().replaceAll("(\\r|\\n)", ""),255) + ", IP Address=" + credentials.getRemoteAddr());
+			} catch(NullPointerException npe) { //SAKAIME-727
+				log.warn("Login attempt with null user failed.");
+			}
 		}
 	}
 

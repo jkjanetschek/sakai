@@ -60,6 +60,38 @@
             </div>
         </div>
 
+        <div id="login-footer-optional">
+            <p align="center">Trotz des richtigen Passwortes Login-Probleme? / Login still not working, despite correct password? <br />
+                Inhalte verschwunden / Content disappeared?<br />
+                IT-FAQs: <a href="https://www.mci4me.at/de/services/it-services#faq" target="legal">Deutsch</a> | <a href="https://www.mci4me.at/en/services/it-services#faq" target="legal">English</a>
+            </p>
+
+            <!-- end xlogin.vm -->
+            <!--SAKAIME-620 SAKAIME-700 SAKAIME-727 inserted by thl SAKAIME-839 changed by csw -->
+
+            <p align="center">
+                <a href="https://my.mci4me.at/?request=resetpassword" target="legal">Reset Password</a><br />
+                <br />Bitte verwenden Sie ab sofort Ihre E-Mailadresse als Benutzerkennung (user id)!<br />
+                Please use your mci4me e-mail address   as user id!<br />
+                <a href="https://www.mci.edu/agb" target="legal">Allg. Geschäftsbedingungen</a> |
+                <a href="https://www.mci.edu/en/university/terms-and-conditions-of-business" target="legal">Terms and conditions of business</a><br />
+                <a href="https://www.mci.edu/de/datenschutz" target="legal">Datenschutzerklärung</a> |
+                <a href="https://www.mci.edu/en/privacy-policy" target="legal">privacy policy</a>
+                <br />
+            </p>
+        </div>
+        <div id="login-footer-mandatory" style="text-align: center;">
+            <div id="login_footer">
+                <a href="https://www.mci.edu/de/impressum" target="legal">Impressum</a> |
+                <a href="https://www.mci.edu/en/imprint" target="legal">Imprint</a> <br />
+                <a href="mailto:helpdesk@mci.edu">Helpdesk</a><br />
+                &copy; <a href="http://www.mci.edu/en" target="legal">MCI - Management Center Innsbruck</a>
+            </div>
+        </div>
+
+
+
+
         <script src="/library/js/portal/portal.login.password.js$!{portalCDNQuery}"></script>
         <script src="/library/js/portal/portal.login.mobile.js$!{portalCDNQuery}"></script>
         <script>
