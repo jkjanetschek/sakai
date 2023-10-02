@@ -94,7 +94,7 @@ public class CourseManagementGroupProvider implements GroupProvider {
 				try {
 					section = cmService.getSection(sectionEid);
 				} catch (IdNotFoundException e) {
-					if (log.isWarnEnabled()) log.warn("Unable to find CM section " + sectionEid);
+					if (log.isDebugEnabled()) log.debug("Unable to find CM section " + sectionEid);
 					continue;
 				}
 				if(log.isDebugEnabled()) log.debug("Looking for roles in section " + sectionEid);

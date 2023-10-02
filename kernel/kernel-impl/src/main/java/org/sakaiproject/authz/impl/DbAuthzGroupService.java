@@ -2307,7 +2307,9 @@ public abstract class DbAuthzGroupService extends BaseAuthzGroupService implemen
 		                if (delegatedAccessGroupAndRole != null && delegatedAccessGroupAndRole.length > 1) {
 		                    dacgarStr = ", GroupAndRole["+delegatedAccessGroupAndRole[0]+", "+delegatedAccessGroupAndRole[1]+"]";
 		                }
-		                log.info("delegatedAccessCheck: userId="+sessionManager().getCurrentSessionUserId()+", siteRef="+siteRef+", delegatedAccess="+dacgarStr);
+						if (!dacgarStr.isEmpty()) {
+							log.info("delegatedAccessCheck: userId=" + sessionManager().getCurrentSessionUserId() + ", siteRef=" + siteRef + ", delegatedAccess=" + dacgarStr);
+						}
 		            }
 		        }
 		    }
