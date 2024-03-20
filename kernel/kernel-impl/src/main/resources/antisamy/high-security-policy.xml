@@ -1145,9 +1145,17 @@
         <!-- Frame & related tags -->
         <tag name="iframe" action="validate">
             <attribute name="allow">
-                <regexp-list>
-                    <regexp name="anything"/>
-                </regexp-list>
+                <literal-list>
+                    <literal value="autoplay; fullscreen; picture-in-picture; clipboard-write"/>
+                    <literal value="autoplay;fullscreen;picture-in-picture;clipboard-write"/>
+                    <literal value="fullscreen; picture-in-picture; clipboard-write"/>
+                    <literal value="fullscreen;picture-in-picture;clipboard-write"/>
+                    <literal value="fullscreen; picture-in-picture"/>
+                    <literal value="fullscreen;picture-in-picture"/>
+                    <literal value="autoplay; fullscreen"/>
+                    <literal value="autoplay;fullscreen"/>
+                    <literal value="fullscreen"/>
+                </literal-list>
             </attribute>
             <attribute name="height"/>
             <attribute name="width"/>
