@@ -143,7 +143,7 @@
 			{
 				width: 100%;		// to maximize click area
 				height: 100%;
-				color: $calendar-event-text-color;
+				color:   var(--sakai-color-blue--darker-4); //$calendar-event-text-color;
 				text-decoration: none;
 
 				&:hover, &:focus

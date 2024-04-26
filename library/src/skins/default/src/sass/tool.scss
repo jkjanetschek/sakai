@@ -34,7 +34,8 @@ $enable-cssgrid: true;
 $offcanvas-box-shadow: 0 1rem 3rem rgba(0, 0, 0, .175);
 
 // Customize some defaults
-$primary: #003a6b;
+//$primary: #003a6b;
+$primary: #004A85FF;  //var(--mci-blue);
 $body-color: #333;
 $body-bg: #fff;
 $border-radius: .4rem;
@@ -45,14 +46,19 @@ $text-color: #333;
 $input-border-focus: #66afe9;
 $input-border: var(--sakai-border-color);
 
+//jkj
+$enable-important-utilities: true;
+
+
 @import "defaults";
 @import "themes/base";
 
 @import "themes/light";
 @import "themes/dark";
 
-@import "customization-lib"; //it is copied from the user supplied file by maven
-@import "customization-main"; //it is copied from the user supplied file by maven
+
+// move customization-lib & customization-main to bottom
+
 
 // Configuration
 @import "bootstrap/scss/functions";
@@ -201,7 +207,8 @@ $jumbotron-heading-font-size: $h4-font-size;
 @import "modules/tool/search/search";
 @import "modules/datatables/base";
 
-
+@import "customization-lib"; //it is copied from the user supplied file by maven
+@import "customization-main"; //it is copied from the user supplied file by maven
 
 
 //

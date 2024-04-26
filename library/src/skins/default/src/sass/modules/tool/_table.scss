@@ -227,6 +227,17 @@ table{
 		{
 			margin: 0;	// remove margins added with .act
 		}
+
+		#buttonContainer{
+			button{
+				color: var(--sakai-white) !important;
+				background:var(--mci-blue) !important;
+
+				&:hover {
+					background:var(--mci-true) !important;
+				}
+			}
+		}
 	}
 
 	@media #{$tablet}

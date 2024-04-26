@@ -238,6 +238,8 @@ img {
 
 video, embed, object, iframe {
   max-width: 100%;
+  display:block;
+  margin: auto;
 }
 
 legend {

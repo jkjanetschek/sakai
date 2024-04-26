@@ -592,7 +592,7 @@ placeholder till more standard way of doing it*/
 	filter:progid:DXImageTransform.Microsoft.Alpha(Opacity=50), progid:DXImageTransform.Microsoft.BasicImage(grayscale=1) !important;
 	opacity:.50 !important;
 }
-.inactive *
+.inactive *:not(button span)
 {
 	color: var(--sakai-text-color-disabled) !important;
 }

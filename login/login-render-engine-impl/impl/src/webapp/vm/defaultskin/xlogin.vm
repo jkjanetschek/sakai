@@ -18,7 +18,7 @@
                         <!--Close button is hidden by default, but made visible through js when loaded into modal-->
                         <button type="button" class="d-none btn-close" data-bs-dismiss="modal" aria-label="___i18n___Close"></button>
                     </div>
-                    <aside id="xlogin-logo" class="bg-primary mb-3 py-2 px-2 text-center">
+                    <aside id="xlogin-logo" class="xloginMCI bg-primary mb-3 py-2 px-2 text-center">
                         <img src="/library/skin/$!{pageSkin}/images/sakaiLogo.png" alt="${uiService}" class="portal-header-logo">
                     </aside>
                     <div class="modal-body">
@@ -43,9 +43,9 @@
                                 </label>
                             </div>
                             <div class="d-flex gap-2 mb-2">
-                                <input name="submit" type="submit" id="submit" class="btn btn-primary btn-lg flex-grow-1" value="${loginWording}"/>
+                                <input name="submit" type="submit" id="submit" class="xloginMCIButton btn btn-primary btn-lg flex-grow-1" value="${loginWording}"/>
                                 #if (${doCancel})
-                                    <input name="cancel" type="submit" class="order-1 btn btn-secondary btn-lg" value="${cancelWording}"/>
+                                    <input name="cancel" type="submit" class="xloginMCIButton order-1 btn btn-secondary btn-lg" value="${cancelWording}"/>
                                 #end
                             </div>
                         </form>

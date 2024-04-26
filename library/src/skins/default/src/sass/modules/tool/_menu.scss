@@ -17,7 +17,7 @@
 		font-weight: $tool-tab-text-weight;
 		line-height: 18px;
 		margin: $standard-space $standard-space 0 0;
-		
+
 		// Define tab styles for both direct anchors and spans with anchors
 		span a, > a{
 			display: inline-block;
@@ -50,7 +50,7 @@
 				box-shadow: var(--button-shadow);
 			}
 		}
-		
+
 		// Current state styles for spans and direct anchors
 		span.current, span a.current, > a.current {
 			display: inline-block;
@@ -59,7 +59,7 @@
 			border: 1px solid var(--tool-tab-border-color);
 			border-radius: 4px;
 			background: var(--tool-tab-active-background-color);
-			color: var(--tool-tab-active-text-color);
+			color: var(--tool-tab-active-text-color) !important;
 			text-decoration: none;
 			text-transform: none;
 			cursor: pointer;
@@ -83,16 +83,18 @@
 				box-shadow: var(--button-shadow);
 			}
 		}
-		
+
 		// Specific styling for span.current > a
 		span.current a{
 			border: 0px none;
 			font-size: 1em;
 			margin: 0;
 			padding: 0;
-			top: 1px;
+          //top: 1px;
+          color: var(--tool-tab-active-text-color) !important;  // $tool-tab-active-text-color;
+          background: var(--mci-gray) !important; //jkj
 		}
-		
+
 		span{
 			display: inline;
 			&.inactive{

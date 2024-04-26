@@ -55,7 +55,7 @@
         display: block;
     }
 
-    // Primary branding color. 
+    // Primary branding color.
     // Suggested: Your institution's main branding color.
     // Used in the top header, action buttons, etc. Commonly used as the background
     // color with white text color.
@@ -104,7 +104,8 @@
 
     // Default: A slightly lighter shade of --sakai-background-color-1
     // Used in hover effects of --sakai-background-color-1, alternating table rows
-    --sakai-background-color-2: var(--sakai-greyblue--darker-5);
+    //--sakai-background-color-2: var(--sakai-greyblue--darker-5);
+    --sakai-background-color-2: var(--mci-gray);
 
     // Default: A slightly lighter shade of --sakai-background-color-2
     // Used for active, focus, selected effects of --sakai-background-color-1
@@ -351,4 +352,9 @@
     .poweredby__image {
         filter: invert(1);
     }
+
+  /*
+   *   MCI
+  */
+  --bs-border-color: var(--sakai-modal-content-bg) !important;
 }

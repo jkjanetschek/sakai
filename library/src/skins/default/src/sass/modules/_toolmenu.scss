@@ -759,7 +759,7 @@ body {
 						background-color: var(--tool-lessons-subpage-menu-selected-parent-background-color);
 						color: var(--tool-lessons-toplevel-menu-expanded-selected-color);
 						.#{$namespace}toolsNav__menuitem--icon {
-							color: var(--tool-lessons-toplevel-menu-expanded-selected-color) !important;
+							color: var(--sakai-white) !important; //var(--tool-lessons-toplevel-menu-expanded-selected-color) !important;  //SAK-48907
 						}
 						.#{$namespace}toolsNav__menuitem--title {
 							color: var(--tool-lessons-toplevel-menu-expanded-selected-color) !important;
@@ -970,7 +970,7 @@ body {
 				.lessons-goto-top-page {
 					.#{$namespace}toolsNav__menuitem--title,
 					.#{$namespace}toolsNav__menuitem--icon {
-						color: var(--tool-menu-item-text-color) !important;
+						color: var(--tool-menu-item-selected-hover-text-color) !important; //var(--tool-menu-item-text-color) !important; //SAK-48907
 					}
 					&:hover {
 						.#{$namespace}toolsNav__menuitem--title,

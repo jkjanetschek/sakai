@@ -380,7 +380,7 @@
 					@extend button;
 
 					&:hover {
-						color: var(--sakai-text-color-1) !important;
+						color: var(--sakai-white) !important; //var(--sakai-text-color-1) !important;   // still relevant?
 					}
 
 					&.current {
@@ -433,6 +433,13 @@
 
 	#{'#authorIndexForm\\:remove-selected'} {
 		@extend button;
+		&:not(.disabled){
+			color: var(--sakai-white) !important;
+			background: var(--mci-blue) !important;
+			&:hover{
+				background: var(--mci-gray) !important;
+			}
+		}
 
 		&.disabled {
 			@extend input, [type="submit"], [disabled="disabled"];

@@ -62,13 +62,13 @@
   #gradeTableWrapper .tabulator-cell {
     background: var(--sakai-background-color-1);
     border-bottom: 1px solid var(--sakai-border-color);
-  }  
+  }
   #gradeTableWrapper .tabulator-row > *:nth-child(1){
     text-align: left;
   }
   #gradeTableWrapper .tabulator-row .tabulator-cell:nth-child(1) .relative .gb-value {
     overflow: hidden;
-  }  
+  }
   #gradeTableWrapper .tabulator.gb-fixed-columns-1 .tabulator-row .tabulator-cell:nth-child(1),
   #gradeTableWrapper .tabulator.gb-fixed-columns-2 .tabulator-row .tabulator-cell:nth-child(2),
   #gradeTableWrapper .tabulator.gb-fixed-columns-3 .tabulator-row .tabulator-cell:nth-child(3),
@@ -121,7 +121,7 @@
 
   #gradeTableWrapper .tabulator-cell {
     white-space: nowrap;
-  }  
+  }
   #gradeTableWrapper .gb-title {
     font-weight: bold;
     text-align: left;
@@ -490,7 +490,7 @@
   }
   .tabulator .tabulator-header .tabulator-col {
     overflow: visible; /* Allow content in header cells to overflow */
-  }  
+  }
   .gb-hidden-column-visual-cue {
     position: absolute;
     top: -6px;
@@ -1330,7 +1330,7 @@
   .dropdown-toggle::after {
     display: none;
   }
-  
+
   // Masking the auto selected text in dropdowns in Firefox
   .dropdown-menu.show {
     a::-moz-selection {

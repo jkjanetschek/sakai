@@ -29,7 +29,8 @@
     // predefined with gray, blue, teal, gold, green, orange,
     // purple, and red palettes available for you to use.
     // More info about defineColorHSL in sass/themes/_base.scss
-    @include defineColorHSL(--sakai-brand, 203, 76%, 25%);
+   // @include defineColorHSL(--sakai-brand, 203, 76%, 25%);
+    @include defineColorHSL(--sakai-brand, 206.6, 100%, 26%);
     /////////////////////////////////////////////////////////////
 
     /////////////////////////////////////////////////////////////
@@ -53,11 +54,11 @@
         display: none;
     }
 
-    // Primary branding color. 
+    // Primary branding color.
     // Suggested: Your institution's main branding color.
     // Used in the top header, action buttons, etc. Commonly used as the background
     // color with white text color.
-    --sakai-primary-color-1: var(--sakai-brand);
+    --sakai-primary-color-1: var(--sakai-brand);   //jkj: var(--sakai-brand);
 
     // Default: A slightly darker shade of --sakai-primary-color-1
     // Used for hover effects and higher contrast with white text color
@@ -155,7 +156,7 @@
     // Suggested: darkish grey
     --sakai-border-color-modal: var(--sakai-color-gray--darker-4);
 
-    // Primary text color used across sakai. 
+    // Primary text color used across sakai.
     // Suggested: dark gray, near black
     // Most commonly used against --sakai-background-color-1
     --sakai-text-color-1: var(--sakai-color-gray--darker-5);
@@ -210,13 +211,14 @@
     --tool-tab-hover-background-color: var(--sakai-passive-color-2);
     --tool-tab-hover-highlight-color: var(--sakai-active-color-2);
     --tool-tab-active-text-color: var(--sakai-text-color-inverted);
-    --tool-tab-active-background-color: var(--sakai-primary-color-1);
-    --tool-tab-active-highlight-color:var(--sakai-active-color-3);
+  --tool-tab-active-background-color: var(--mci-gray);
+  --tool-tab-active-highlight-color:var(--sakai-active-color-3);
 
     --top-header-background: var(--sakai-background-color-1);
     --top-header-background-logo: var(--top-header-background);
     --top-header-border-color: transparent;
     --top-header-text-color: var(--sakai-text-color-1);
+    --top-header-background: var(--sakai-color-gray--darker-5);
     --top-header-profile-border-color-top: var(--sakai-secondary-color-1);
     --top-header-profile-border-color-right: var(--sakai-secondary-color-1);
     --top-header-profile-border-color-bottom: var(--sakai-tertiary-color-1);
@@ -239,13 +241,15 @@
     --link-hover-background-color: transparent;
 
     // Default (non-primary) button design:
-    --button-text-color: var(--sakai-text-color-2);
-    --button-background: var(--sakai-passive-color-1);
+    --button-text-color: var(--sakai-text-color-2);       //jkj
+    --button-background: var(--sakai-passive-color-1);    //jkj
+    //--button-text-color: var(--sakai-white);
+    //--button-background: var(--mci-blue);
     --button-border-color: var(--sakai-passive-color-2);
     --button-shadow: none;
     // hover and focus states:
-    --button-hover-text-color: var(--button-text-color);
-    --button-hover-background: var(--sakai-passive-color-2);
+    --button-hover-text-color: var(--sakai-white);
+    --button-hover-background: var(--mci-gray);
     --button-hover-border-color: var(--sakai-passive-color-3);
     --button-hover-shadow: none;
     // active state:
@@ -261,13 +265,15 @@
     --button-disabled-shadow: none;
 
     // Primary action button design:
-    --button-primary-text-color: var(--sakai-text-color-inverted);
-    --button-primary-background: var(--sakai-primary-color-1);
+   // --button-primary-text-color: var(--sakai-text-color-inverted);
+   // --button-primary-background: var(--sakai-primary-color-1);
+    --button-primary-text-color: var(--sakai-white);
+    --button-primary-background: var(--mci-blue);
     --button-primary-border-color: var(--button-primary-background);
     --button-primary-shadow: var(--elevation-2dp);
     // hover and focus states for primary action button:
-    --button-primary-hover-text-color: var(--button-primary-text-color);
-    --button-primary-hover-background: var(--sakai-primary-color-2);
+    --button-primary-hover-text-color: var(--sakai-white);
+    --button-primary-hover-background: var(--mci-gray);
     --button-primary-hover-border-color: var(--button-primary-hover-background);
     --button-primary-hover-shadow: var(--elevation-4dp);
     // active state for primary action button:
@@ -382,7 +388,8 @@
     --site-nav-btn-disabled-bg: var(--site-nav-btn-bg);
     --site-nav-btn-disabled-border-color: var(--site-nav-btn-border-color);
 
-    --site-nav-btn-current-color: var(--button-text-color);
+    //--site-nav-btn-current-color: var(--button-text-color); //jkj
+    --site-nav-btn-current-color: var(--sakai-text-color-2);
     --site-nav-btn-current-bg: transparent;
     --site-nav-btn-current-border-color: var(--site-nav-btn-current-bg);
     --site-nav-btn-current-hover-color: var(--site-nav-btn-current-color);
@@ -646,6 +653,10 @@
     --sakai-scrollbar-background-color: var(--sakai-border-color);
     --sakai-scrollbar-thumb-color: var(--sakai-brand);
     --sakai-scrollbar-thumb-hover-color: var(--sakai-brand--lighter-3);
+  /*
+ *   MCI
+ */
+  --bs-border-color: var(--sakai-modal-content-bg) !important;
 }
 
 // Tables

@@ -196,9 +196,9 @@ $theme-color-interval: 9 !default;
 
   //MCI Color palette
   //https://pinetools.com/invert-color
-  @include defineColorHSL(--mci-blue, 206.6, 100%, 26%);
+  @include defineColorHSL(--mci-blue, 206.6, 100%, 26%);  // 004A85FF   --mci-blue
   @include defineColorHSL(--mci-orange, 36, 100%, 50%);
-  @include defineColorHSL(--mci-gray, 260, 2%, 25%);
+  @include defineColorHSL(--mci-gray, 260, 2%, 25%);  // --mci-gray
   @include defineColorHSL(--mci-true, 0, 0%, 40%);
   @include defineColorHSL(--sakai-nice, 0, 0%, 79%);
   @include defineColorHSL(--sakai-silver, 0, 0%, 85%);

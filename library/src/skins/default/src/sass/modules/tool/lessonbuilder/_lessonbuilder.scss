@@ -112,6 +112,7 @@
 	input[type="submit"].question-submit,.linkCell .addStudentContent, input[type="submit"].setStudentZero {
 		margin-top: $standard-space-4x;
 		@include sakai_secondary_button();
+        color: #004983;
 	}
 	.column .commentDiv, .column .studentContentTable, .column .forumSummaryHeaderDiv, .column .announcementsHeaderDiv, .column .fc-toolbar {
 		background-color: var(--sakai-background-color-2);
@@ -122,15 +123,18 @@
 	}
 	//legacy gray
 	.colgray, .colgray-trans {
-		@extend .sakai-colorize--sakai-color-gray--lighter-6;
-		border: 1px solid var(--sakai-color-gray--lighter-5);
+		//@extend .sakai-colorize--sakai-color-gray--lighter-6;
+		background-color: #f0f0f0;;
+		border: 1px solid #222;  // var(--sakai-color-gray--lighter-5)
 	}
 	.colgray .commentDiv, .colgray .studentContentTable, .colgray .questionDiv .contentCol, .colgray .forumSummaryHeaderDiv, .colgray .announcementsHeaderDiv, .colgray-trans .commentDiv, .colgray-trans .studentContentTable, .colgray-trans .questionDiv .contentCol {
 		background-color: var(--sakai-color-gray--lighter-4);
 	}
 	.colgray a[href], .colgray-trans a[href]{
-		color: var(--sakai-color-gray--darker-6);
+		color: black;
+		font-weight: 600;
 	}
+
 	//legacy red
 	.colred, .colred-trans {
 		@extend .sakai-colorize--sakai-color-red--lighter-6;
@@ -140,19 +144,31 @@
 		background-color: var(--sakai-color-red--lighter-4);
 	}
 	.colred a[href], .colred h3.author, .colred-trans a[href], .colred-trans h3.author {
-		color: var(--sakai-color-red--darker-6);
+		//color: var(--sakai-color-red--darker-6);
+		color: #004983;
 	}
 	//legacy blue
 	.colblue, .colblue-trans {
-		@extend .sakai-colorize--sakai-color-blue--lighter-6;
-		border: 1px solid var(--sakai-color-blue--lighter-5);
+		//@extend .sakai-colorize--sakai-color-blue--lighter-6;
+		background-color: #004983;
+		color: #ebebeb;
+		border: 1px solid #004 // !important;  // var(--sakai-color-blue--lighter-5)
 	}
 	.colblue .commentDiv, .colblue .studentContentTable, .colblue .questionDiv .contentCol, .colblue .forumSummaryHeaderDiv, .colblue .announcementsHeaderDiv, .colblue-trans .commentDiv, .colblue-trans .studentContentTable, .colblue-trans .questionDiv .contentCol {
-		background-color: var(--sakai-color-blue--lighter-4);
+		//background-color: var(--sakai-color-blue--lighter-4);
+		background-color: #666; //mci
 	}
 	.colblue a[href], .colblue-trans a[href] {
-		color: var(--sakai-color-blue--darker-6);
+		//color: var(--sakai-color-blue--darker-6);
+		color: black; //mci
+		font-weight: 600;
+		&:hover {
+			color:  #ffd699;
+			text-decoration: underline;
+		}
 	}
+
+
 	//legacy green
 	.colgreen, .colgreen-trans {
 		@extend .sakai-colorize--sakai-color-green--lighter-6;
@@ -166,15 +182,145 @@
 	}
 	//legacy yellow
 	.colyellow, .colyellow-trans {
-		@extend .sakai-colorize--sakai-color-gold--lighter-6;
-		border: 1px solid var(--sakai-color-gold--lighter-5);
+	//	@extend .sakai-colorize--sakai-color-gold--lighter-6;
+		background-color: #ffffe8;
+		color: #000;
+		border: 1px solid #000; // !important;  //var(--sakai-color-gold--lighter-5)
 	}
 	.colyellow .commentDiv, .colyellow .studentContentTable, .colyellow .questionDiv .contentCol, .colyellow .forumSummaryHeaderDiv, .colyellow .announcementsHeaderDiv, .colyellow-trans .commentDiv, .colyellow-trans .studentContentTable, .colyellow-trans .questionDiv .contentCol {
 		background-color: var(--sakai-color-gold--lighter-4);
 	}
 	.colyellow a[href],.colyellow h3.author, .colyellow-trans a[href],.colyellow-trans h3.author {
-		color: var(--sakai-color-gold--darker-6);
+		//color: var(--sakai-color-gold--darker-6);
+		color: black; // mci
+		font-weight: 600;
 	}
+
+
+	.colbluelight, .colbluelight-trans {
+		background-color: #99b6cd;
+		border-color: #004; // !important;
+		color: #004;
+	}
+	.colbluelight .commentDiv, .colbluelight .studentContentTable, .colbluelight .questionDiv .contentCol, .colbluelight .checklistDiv, .colbluelight-trans .commentDiv, .colbluelight-trans .studentContentTable, .colbluelight-trans .questionDiv .contentCol, colbluelight-trans .checklistDiv  {
+		background-color:  #ffd480;
+		color: #000;
+	}
+	.colbluelight a[href],.colbluelight h3.author, .colbluelight-trans a[href],.colbluelight-trans h3.author {
+		color: black;
+      	font-weight: 600;
+	}
+
+	.colorange, .colorange-trans {
+		background-color: #ff9900;
+		border-color: #000; // !important;
+		color: #fff;
+	}
+	.colorange .commentDiv, .colorange .studentContentTable, .colorange .questionDiv .contentCol, .colorange .checklistDiv, .colorange-trans .commentDiv, .colorange-trans .studentContentTable, .colorange-trans .questionDiv .contentCol, colorange-trans .checklistDiv  {
+		background-color:  #ffd480;
+		color: #000;
+	}
+	.colorange a[href],.colorange h3.author, .colorange-trans a[href],.colorange-trans h3.author {
+		color: #004983;
+	}
+
+	.colorangelight, .colorangelight-trans {
+		background-color: #ffd699;
+		border-color: #000;  // !important;
+		color: #000;
+	}
+	.colorangelight .commentDiv, .colorangelight .studentContentTable, .colorangelight .questionDiv .contentCol, .colorangelight .checklistDiv, .colorangelight-trans .commentDiv, .colorangelight-trans .studentContentTable, .colorangelight-trans .questionDiv .contentCol, .colorangelight-trans .checklistDiv {
+		background-color:  #e4e4e4;
+	}
+	.colorangelight a[href],.colorange h3.author, .colorangelight-trans a[href],.colorange-trans h3.author {
+		color: #004983;
+	}
+
+
+	/*
+	 *  MCI Legacy stuff
+	 */
+
+	.colgrayborderless {
+		background-color: #f0f0f0;
+		border-color: transparent !important;
+	}
+
+	.colgrayborderless .commentDiv, .colgrayborderless .studentContentTable, .colgrayborderless .questionDiv .contentCol, .colgrayborderless .checklistDiv {
+		background-color: #b8b8b8;
+	}
+	.colgrayborderless a[href]{
+		color: black;
+		font-weight: 600;
+	}
+
+
+	.colblueborderless {
+		background-color: #004983;
+		border-color: transparent !important;
+		color: #ebebeb !important;
+	}
+	.colblueborderless .commentDiv, .colblueborderless .studentContentTable, .colblueborderless .questionDiv .contentCol, .colblueborderless .checklistDiv {
+		background-color: #666;
+	}
+	.colblueborderless a[href] {
+		color: black;
+		font-weight: 600;
+		&:hover {
+			color: #ffd699;
+			text-decoration: underline;
+		}
+	}
+	.colbluelightborderless {
+		background-color: #99b6cd;
+		color: #004;
+		border-color: transparent !important;
+	}
+
+
+	.colyellowborderless {
+		background-color: #ffffe8;
+		border-color: transparent !important;
+		color: #000;
+	}
+	.colyellowborderless .commentDiv, .colyellowborderless .studentContentTable, .colyellowborderless .questionDiv .contentCol, .colyellowborderless .checklistDiv {
+		background-color:  #ffd480;
+	}
+	.colyellowborderless a[href],.colyellowborderless h3.author {
+		color: black;
+		font-weight: 600;
+	}
+
+
+	.colorangeborderless {
+		background-color: #ff9900;
+		border-color: transparent !important;
+		color: #fff;
+	}
+	.colorangeborderless .commentDiv, .colorangeborderless .studentContentTable, .colorangeborderless .questionDiv .contentCol, .colorangeborderless .checklistDiv {
+		background-color:  #ffd480;
+		color: #000;
+	}
+	.colorangeborderless a[href],.colorange h3.author {
+		color: #004983;
+	}
+	.colorangelightborderless {
+		background-color: #ffd699;
+		border-color: transparent;
+		color: #4b2600;
+	}
+	.colorangelightborderless .commentDiv, .colorangelightborderless .studentContentTable, .colorangelightborderless .questionDiv .contentCol, .colorangelightborderless .checklistDiv {
+		background-color:  #e4e4e4;
+	}
+	.colorangelightborderless a[href],.colorangelightborderless h3.author {
+		color: black;
+		font-weight: 600;
+	}
+
+
+
+
+
 	.usebutton,
 	input[type="submit"].question-submit,
 	.linkCell .addStudentContent,
@@ -317,8 +463,8 @@
 	@include sakaiLessonsLayoutColorScheme('--sakai-lessons-navy', 'darker', 'navy2');
 
 	.colngray-trans, .colnblack-trans, .colnblue-trans, .colnblue2-trans, .colnred-trans, .colnnavy-trans, .colnnavy2-trans, .colnorange-trans, .colngold-trans, .colnteal-trans, .colnpurple-trans,
-	.colgray-trans, .colred-trans, .colblue-trans, .colgreen-trans, .colyellow-trans, .colngreen-trans {
-		border-color: transparent;
+	.colgray-trans, .colred-trans, .colblue-trans, .colgreen-trans, .colyellow-trans, .colngreen-trans, .colbluelight-trans, colorange-trans, .colorangelight-trans {
+		border-color: transparent !important;
 		box-shadow: none;
 		transition: none;
 	}
@@ -662,7 +808,7 @@
     float: none
   }
   .controlsPanel .act .deleteButton:hover, .act .deleteButton:hover {
-    background: none !important;
+    // background: none !important;
     cursor: pointer;
   }
   .inset-text {
@@ -852,8 +998,8 @@
 
   /* padding-top 35 for one col, 25 for multiple, 20 in narrow screen */
   .column {
-    margin: 8px 8px 0 0;
-    padding: 25px 7px 15px 7px;
+    margin: 4px 8px 4px 8px;   //20.x -> 1px 0;
+    padding: 25px 7px 15px 7px;  //20.x ->  0px 7px;
     list-style:none;
     display:inline-block;
     vertical-align: top;
@@ -900,19 +1046,20 @@
     width: calc(200% / 4 - 8px) !important;
   }
   .cols3 {
-    width: calc(100% / 3 - 8px) !important;
+    width: calc(100% / 3 - 16px) !important;
   }
   [class~="cols3"][class~="double"] {
-    width: calc(200% / 3 - 8px) !important;
+    width: calc(200% / 3 - 16px) !important;
   }
   .cols2 {
-    width: calc(100% / 2 - 8px) !important;
+    width: calc(100% / 2 - 16px) !important;
   }
   [class~="cols2"][class~="double"] {
-    width: calc(200% / 2 - 8px) !important;
+    width: calc(200% / 2 - 16px) !important;
   }
   .cols1 {
-    width: calc(100% - 8px) !important;
+   // padding-top: 0px; //jkj do not take over from 20.x?
+    width: calc(100% - 16px) !important;
   }
   /* this is to prevent the last column from going to a new
      line if the calculation is a bit off. */
@@ -973,8 +1120,8 @@
     padding:4px;
   }
 
-  .coltrans {
-    border-color: transparent;
+  .coltrans, .coltrans-trans {
+    border-color: transparent !important;
     box-shadow: none;
     transition: none;
   }
@@ -1059,7 +1206,7 @@
     padding: 0px 4px !important;
   }
   .edit-col .ui-button-text, #submit-grading .ui-button-text, .portalmenu .ui-button-text {
-    font-size: 90%;
+    font-size: 60%;
   }
   .buttonItem {
     padding-left: 20px
@@ -1311,7 +1458,7 @@
   }
   .item-group-titles {
     font-style: italic;
-    color: var(--sakai-text-color-dimmed);
+    color: #930;
     padding-left: 1em;
   }
   .item-group-titles.released {
@@ -1345,6 +1492,8 @@
   }
   .link-div {
     display:inline;
+	font-weight: 700;
+	font-size: 1.5em;
   }
   .add-comment-button {
     margin: 7px 0px 2px 0px
@@ -1449,6 +1598,7 @@
 
   .lessons-siteHierarchy-title {
    font-weight: bold;
+	margin-left: 0.5em;
   }
   .itemAction {
     padding-top: 0px;
@@ -1461,6 +1611,7 @@
     margin-right: 0.5em;
   }
   a.nextprev {
+	margin-left: 5px !important;
     margin-right: 0px !important;
   }
   img {
@@ -1583,17 +1734,7 @@
     margin-top: 0;
     font-weight: 400;
   }
-  .twitter-div {
-    overflow-y: auto;
-    float: left;margin:
-    0 10.0px 20.0px 0;
-    border: 1px solid var(--sakai-border-color);
-    border-radius: 0 0 6px 6px;
-    clear: right;
-  }
-  .edit-twitter-div {
-    float:left;
-  }
+
   #question-text-area-evolved\:\:input {
     width: 400px;
   }
@@ -1897,6 +2038,15 @@
   div.navIntraTool {
     border-top:none;
   }
+
+	/* our additions to the top menu */
+
+	.top-icon:before {
+		margin-right: 5px;
+	}
+	#print-view {
+		margin-right: 7px;
+	}
   /* temporary, to avoid changing old stuff for the moment */
   .edit-col {
     padding-top: 0px !important;
@@ -1923,7 +2073,7 @@
     color: var(--sakai-text-color-2);
   }
   .calendar-div {
-    max-width: 800px;
+    max-width: 550px;
     border: 1px solid var(--sakai-border-color);
     border-radius: 0px 0px 10px 10px;
   }
@@ -1939,6 +2089,9 @@
     cursor: pointer;
     margin-bottom: 6px; /*to add space between two events*/
   }
+	.fc-today-button{
+		background-color: #eee !important;
+	}
   .fc-state-default {
     color: var(--sakai-text-color-1) !important;
   }
@@ -2108,12 +2261,30 @@
   }
   .PagePicker {
     margin-top:12px;
-  }   
+  }
   /* 800 is when the left margin collapses */
   @media only screen and (max-width: 800px) {
     .Mrphs-container--toolTitleNav {
       margin-bottom: 10px !important;
     }
+	div.navIntraTool {
+	padding: 0.3em 0.7em !important;
+	}
+	.navIntraTool {
+	border:none !important;
+	}
+
+	#content {
+	color: #000;
+	opacity: 0.9;
+	}
+
+	.action {
+	background: #cacaca;
+	opacity: 0.9;
+	padding: 0.2em 0.2em;
+	margin-top: 8px;
+	}
     .genTitle {
       display:none;
     }
@@ -2159,6 +2330,10 @@
       padding-left: 7px;
       padding-right: 7px;
     }
+	/* Give the repositioned button container some room */
+	#toolbar {
+	  margin-top: 20px;
+	}
   }
   /* 480 is boundary of most phones */
   @media only screen and (max-width: 480px) {
@@ -2193,7 +2368,7 @@
     float:right
   }
   .contentButton span, .contentButton a {
-    color: var(--button-text-color) !important;
+ //   color: var(--button-text-color); !important;
     text-decoration: none;
   }
   .contentButton span {
@@ -2202,9 +2377,14 @@
   .fa-button-text {
     font-size:125%;
   }
+  .navIntraTool li.contentButton a, .topaction a {
+		padding-top:2px !important;
+		padding-bottom:2px !important;
+		text-transform: uppercase;
+  }
   .navIntraTool li.contentButton a .fa-button-text, .fa-fw {
     font-family:FontAwesome;
-    font-size: 0.8em;
+    font-size: 1.1em;
   }
   .studentRow > .fa-fw {
     width: 1em !important;
@@ -2219,7 +2399,7 @@
   .fa-edit-icon {
     font-size:16px;
     font-weight: normal;
-    color: var(--sakai-text-color-dimmed);
+    color: var(--sakai-text-color-dimmed);  //jkj:  var(--sakai-text-color-dimmed);
     font-family:FontAwesome;
   }
   .fa-group-icon {
@@ -2269,6 +2449,12 @@
    margin-top:5px;
    margin-bottom:0px;
   }
+	#toolbar {
+		margin: 0;
+		margin-bottom: -10px;
+		margin-top: -10px;
+		display: inline-block;
+	}
   /* old portal, but only for students. instructors need more spacing */
   .oldPortal ~ .itemclass {
     margin-top: 0.0em !important;
@@ -2314,6 +2500,13 @@
   nav.Mrphs-container--toolTitleNav .Mrphs-directUrl__dropDown .active {
           /*z-index: 100001 !important;*/
   }
+	/* menu off user icon, site menu in narrow, site menu in  wide mode
+	changed by thl SAKAIME-807
+	Later on, check for mobile view: LSNBLDR-777*/
+	.Mrphs-mainHeader, .Mrphs-skipNav__menu, #selectSiteModal {
+		z-index: 100002 !important;
+		position:relative;
+	}
   /* chat open button */
   #Mrphs-footerApp__chat {
           /*z-index: 100003 !important;*/
@@ -2328,6 +2521,10 @@
       font-weight: normal;
       color: var(--sakai-text-color-1);
   }
+	.checklistDiv h3 {
+		margin-top: 0px;
+		font-size: 100%;
+	}
   .Mrphs-sakai-lessonbuildertool .navIntraTool.top-next-prev {
       margin-top: 20px;
   }
@@ -2907,3 +3104,5 @@ div#calendarEventDialog {
     }
   }
 }
+
+

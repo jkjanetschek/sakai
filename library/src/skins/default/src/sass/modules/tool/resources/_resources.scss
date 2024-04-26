@@ -50,7 +50,15 @@
 			}
 			&.inactive {
 				* {
-					color: var(--sakai-text-color-disabled) !important;
+					&:not(td.actions2) {
+						&:not(div.btn-group) {
+							&:not(button.resources-dropdown) {
+								*:not(button span) {
+									color: var(--sakai-text-color-disabled) !important;
+								}
+							}
+						}
+					}
 				}
 				.resource-name, .resource-access, .resource-creator, .resource-modified, .resource-size {
 					font-style: italic;
@@ -162,6 +170,11 @@
 	}
 	td.actions2 .dropdown-toggle {
 		padding: 2px 6px;
+		color: var(--sakai-white) !important;
+		background: var(--mci-blue);
+		&:hover{
+			background: var(--mci-true);
+		}
 	}
 	td.actions2 .dropdown-header {
 		padding: 0 21px;

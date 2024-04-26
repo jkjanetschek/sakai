@@ -294,7 +294,7 @@ body.is-logged-out{
 	display: inline-block;
 	margin-left: $top-header-item-spacing;
 	padding-left: $top-header-item-spacing;
-	border-left: $top-header-separators-thickness solid var(--topNav-border-color);
+	//border-left: $top-header-separators-thickness solid var(--topNav-border-color);	// still used?
     white-space: nowrap;
     a {
         text-decoration: none;
@@ -601,10 +601,10 @@ body.is-logged-out{
 					font-weight: $sites-nav-menu-item-selected-font-weight;
 
 					&:hover, &:focus {
-						border-top: $sites-nav-menu-item-selected-hover-border-top;
-						border-right: $sites-nav-menu-item-selected-hover-border-right;
-						border-bottom: $sites-nav-menu-item-selected-hover-border-bottom;
-						border-left: $sites-nav-menu-item-selected-hover-border-left;
+						//border-top: $sites-nav-menu-item-selected-hover-border-top;   		// still relevant?
+						//border-right: $sites-nav-menu-item-selected-hover-border-right;
+						//border-bottom: $sites-nav-menu-item-selected-hover-border-bottom;
+						//border-left: $sites-nav-menu-item-selected-hover-border-left;
 						border-color: var(--sites-nav-menu-item-selected-hover-border-color);
 						background: var(--sites-nav-menu-item-selected-hover-background);
 					}

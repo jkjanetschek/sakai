@@ -4,7 +4,7 @@
     color: transparent;
   }
 
-  width: 750px;
+  width: 1000px;
 
   a[href]:focus {
     outline: 3px solid var(--focus-outline-color);
@@ -19,6 +19,7 @@
 
   .fav-sites-entry {
     padding: 5px;
+    width:auto;
   }
 
   .card-title {
