@@ -52,11 +52,13 @@ import org.sakaiproject.mailarchive.api.MailArchiveMessageHeader;
 import org.sakaiproject.mailarchive.api.MailArchiveMessageHeaderEdit;
 import org.sakaiproject.mailarchive.api.MailArchiveService;
 import org.sakaiproject.message.api.Message;
+import org.sakaiproject.message.api.MessageEdit;
 import org.sakaiproject.message.api.MessageChannel;
 import org.sakaiproject.message.api.MessageChannelEdit;
 import org.sakaiproject.message.api.MessageHeader;
 import org.sakaiproject.message.api.MessageHeaderEdit;
 import org.sakaiproject.message.util.BaseMessage;
+import org.sakaiproject.message.util.BaseMessage.BaseMessageChannelEdit;
 import org.sakaiproject.time.api.Time;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.util.BaseResourcePropertiesEdit;
@@ -510,7 +512,8 @@ public abstract class BaseMailArchiveService extends BaseMessage implements Mail
 	 */
 	public void contextDeleted(String context, boolean toolPlacement)
 	{
-		disableMailbox(context);
+		deleteMailbox(context);
+		//disableMailbox(context);
 	}
 
 	/**
@@ -649,6 +652,86 @@ public abstract class BaseMailArchiveService extends BaseMessage implements Mail
 		{
 		}
 	}
+
+
+
+	/**
+	 *  hard Delete of Mailbox
+	 */
+
+	protected void deleteMailbox(String siteId) {
+
+		// form the email channel name
+		String channelRef = channelReference(siteId, m_siteService.MAIN_CONTAINER);
+
+		// see if there's a channel
+		MessageChannel channel = null;
+		try {
+			channel = getChannel(channelRef);
+		} catch (IdUnusedException e) {
+		} catch (PermissionException e) {
+		}
+
+
+
+		// if it exists, make sure it's disabled
+		if (channel != null) {
+			try {
+				List<Message> messages = getMessages(channelRef, null, 0, true, true, false);
+				MessageChannelEdit edit = (MessageChannelEdit) editChannel(channelRef);
+				for(Message message:messages) {
+					try {
+						//	MessageEdit edit = (MessageEdit) editMessage(message.getId());
+						//	removeMessage(channel, edit);
+						edit.removeMessage(message.getId());
+					} catch (PermissionException e) {
+					}
+				}
+				removeChannel(edit);
+			} catch (PermissionException e) {
+			} catch (IdUnusedException ignore) {
+			} catch (InUseException ignore) {
+			}
+
+
+		}
+			// remove any alias
+			try
+			{
+				aliasService.removeTargetAliases(channelRef);
+			}
+			catch (PermissionException e) {
+			}
+
+	}
+
+/*
+	protected void deleteMessages(String siteId) {
+		// form the email channel name
+		String channelRef = channelReference(siteId, m_siteService.MAIN_CONTAINER);
+		MessageChannel channel = null;
+		try {
+			channel = getChannel(channelRef);
+		} catch (IdUnusedException e) {
+		} catch (PermissionException e) {
+		}
+
+
+		List<Message> messages = getMessages(channelRef, null, 0, true, true, false);
+		for(Message message:messages){
+			try{
+				//	MessageEdit edit = (MessageEdit) editMessage(message.getId());
+			//	removeMessage(channel, edit);
+				BaseMessageChannelEdit.removeMessage(message.getId());
+			} catch (PermissionException e) {
+			} catch (IdUnusedException ignore) {
+			} catch (InUseException ignore) {
+			}
+
+		}
+	}
+
+*/
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * MailArchiveService implementation

@@ -64,7 +64,11 @@
     <many-to-one name="inReplyTo" column="IN_REPLY_TO"
       class="org.sakaiproject.component.app.messageforums.dao.hibernate.MessageImpl"
       not-null="false" cascade="none" index="MFR_MESSAGE_T_IN_REPLY_TO_I"/>
-    <property name="threadId" column="THREADID" type="long" />
+      <set name="inReplyFrom" lazy="true"  cascade="delete-orphan">
+          <key column="IN_REPLY_TO"/>
+          <one-to-many class="org.sakaiproject.component.app.messageforums.dao.hibernate.MessageImpl"/>
+      </set>
+      <property name="threadId" column="THREADID" type="long" />
   	<property name="dateThreadlastUpdated" column="LASTTHREADATE" type="timestamp" />
   	<property name="threadLastPost" column="LASTTHREAPOST" type="long" />
     <property name="typeUuid">
@@ -79,7 +83,7 @@
  	<!-- added implementing delete from threaded view -->
 	<property name="deleted">
 		<column name="DELETED" not-null="true" />
-	</property> 
+	</property>
 	<property name="scheduler">
       <column name="SCHEDULER" not-null="true" default="0"/>
     </property>
@@ -101,7 +105,7 @@
 	                    column="userSurrogateKey"/>
   	  </list>         
   	  -->
-  	  <list name="recipients" lazy="true" table="MFR_PVT_MSG_USR_T">
+  	  <list name="recipients" lazy="true" table="MFR_PVT_MSG_USR_T" cascade="delete-orphan">
   	    <key column="messageSurrogateKey"/>
   	    <index column="user_index_col"/>
   	    <composite-element class="org.sakaiproject.component.app.messageforums.dao.hibernate.PrivateMessageRecipientImpl">
@@ -920,6 +924,13 @@
     ]]>
  
   </query>
+
+    <query name="findPrvtMsgsByContext">
+        <![CDATA[from org.sakaiproject.component.app.messageforums.dao.hibernate.PrivateMessageImpl as message
+             left join fetch message.recipients recipient
+             where recipient.contextId = :contextId
+    ]]>
+    </query>
     
 </hibernate-mapping>
 

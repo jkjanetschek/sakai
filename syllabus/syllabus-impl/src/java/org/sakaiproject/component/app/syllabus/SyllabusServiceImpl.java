@@ -50,6 +50,7 @@ import org.sakaiproject.entity.api.Edit;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityTransferrer;
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.sakaiproject.entity.api.HttpAccess;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
@@ -84,7 +85,7 @@ import lombok.extern.slf4j.Slf4j;
  *         Preferences - Java - Code Style - Code Templates
  */
 @Slf4j
-public class SyllabusServiceImpl implements SyllabusService, EntityTransferrer
+public class SyllabusServiceImpl implements SyllabusService, EntityTransferrer, HardDeleteAware
 {
   private static final String SYLLABUS = "syllabus";
   private static final String SYLLABUS_ID = "id";
@@ -1339,5 +1340,10 @@ public class SyllabusServiceImpl implements SyllabusService, EntityTransferrer
 			}
 		}
 	}
-	
+
+
+    public void hardDelete(String siteId){
+        log.info("Hard Delete Syllabus Tool of site: " + siteId);
+        syllabusManager.hardDeleteForContext(siteId);
+    }
 }

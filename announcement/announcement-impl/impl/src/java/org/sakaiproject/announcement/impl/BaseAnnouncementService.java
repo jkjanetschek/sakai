@@ -70,18 +70,7 @@ import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.content.api.ContentResource;
-import org.sakaiproject.entity.api.ContextObserver;
-import org.sakaiproject.entity.api.Edit;
-import org.sakaiproject.entity.api.Entity;
-import org.sakaiproject.entity.api.EntityNotDefinedException;
-import org.sakaiproject.entity.api.EntityPermissionException;
-import org.sakaiproject.entity.api.EntityPropertyNotDefinedException;
-import org.sakaiproject.entity.api.EntityPropertyTypeException;
-import org.sakaiproject.entity.api.EntityTransferrer;
-import org.sakaiproject.entity.api.HttpAccess;
-import org.sakaiproject.entity.api.Reference;
-import org.sakaiproject.entity.api.ResourceProperties;
-import org.sakaiproject.entity.api.ResourcePropertiesEdit;
+import org.sakaiproject.entity.api.*;
 import org.sakaiproject.event.api.NotificationEdit;
 import org.sakaiproject.event.api.NotificationService;
 import org.sakaiproject.exception.IdInvalidException;
@@ -90,11 +79,7 @@ import org.sakaiproject.exception.IdUsedException;
 import org.sakaiproject.exception.InUseException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.javax.Filter;
-import org.sakaiproject.message.api.Message;
-import org.sakaiproject.message.api.MessageChannel;
-import org.sakaiproject.message.api.MessageEdit;
-import org.sakaiproject.message.api.MessageHeader;
-import org.sakaiproject.message.api.MessageHeaderEdit;
+import org.sakaiproject.message.api.*;
 import org.sakaiproject.message.util.BaseMessage;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
@@ -112,6 +97,7 @@ import org.sakaiproject.util.StringUtil;
 import org.sakaiproject.util.Validator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.sakaiproject.entity.api.HardDeleteAware;
 
 /**
  * <p>
@@ -120,7 +106,7 @@ import org.w3c.dom.Element;
  */
 @Slf4j
 public abstract class BaseAnnouncementService extends BaseMessage implements AnnouncementService, ContextObserver,
-		EntityTransferrer
+		EntityTransferrer, HardDeleteAware
 {
 	
 	/** Messages, for the http access. */
@@ -2356,5 +2342,45 @@ public abstract class BaseAnnouncementService extends BaseMessage implements Ann
 		}
 
 		return Optional.of(super.getEntityUrl(r));
+	}
+
+
+
+	public void hardDelete(String siteId) {
+		log.info("Hard Delete Announcement Tool of site: " + siteId);
+
+		List<String> ids = getChannelIds(siteId);
+		for (String id : ids){
+			String ref = channelReference(siteId, id); // /announcement/channel/Test123/main
+			try{
+				AnnouncementChannel announcementChannel = getAnnouncementChannel(ref);
+				List<Message> messages = announcementChannel.getMessages(null, true, null);
+				for(Message message : messages){
+					try{
+						announcementChannel.removeAnnouncementMessage(message.getId());
+					}catch (PermissionException e3){
+						log.error("The current user does not have permission to remove message  for context: {}", siteId, e3);
+					}
+				}
+				MessageChannelEdit edit =	editChannel(ref);
+				removeChannel(edit);
+			} catch (IdUnusedException e1) {
+				log.warn("No AnnouncementChannel found for site: " + siteId);
+			} catch (PermissionException e2) {
+				log.error("The current user does not have permission to access AnnouncementChannel for context: {}", siteId, e2);
+			} catch (InUseException ex) {
+			log.error("InUseException exception occurred for message channel for site: {}", siteId, ex);
+			}catch (Exception ex){
+			log.error("Unknown exception occurred in announcement service  for site: {}", siteId, ex);
+		}
+	}
+
+		// remove any alias
+		try
+		{
+			aliasService.removeTargetAliases("/announcement/announcement/" + siteId);
+		}
+		catch (PermissionException e) {
+		}
 	}
 }

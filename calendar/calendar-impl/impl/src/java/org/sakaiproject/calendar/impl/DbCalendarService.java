@@ -278,6 +278,15 @@ public class DbCalendarService
 			return readResource(container, xml);
 		}
 
+		public void deleteUrlsForContext(String siteId){
+			String sql = "DELETE FROM calendar_opaqueurl where calendarRef like '%" +siteId+"%'";
+			try{
+				m_sqlService.dbWrite(sql);
+			}catch (Exception e){
+				log.error("Error deleting opaqueUrl for context: " + siteId + " : " + e);
+			}
+		}
+
 	}   // DbStorage
 }	// DbCachedCalendarService
 

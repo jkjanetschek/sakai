@@ -38,5 +38,6 @@ public interface DBMembershipItem extends MutableEntity {
   public PermissionLevel getPermissionLevel();
 
   public void setPermissionLevel(PermissionLevel permissionLevel);
-  
+
+  public void setTopic(Topic topic);
 }

@@ -550,4 +550,6 @@ public interface LTIService extends LTISubstitutionsFilter {
      * @param filter The filter to remove.
      */
     void removePropertiesFilter(LTISubstitutionsFilter filter);
+
+    void hardDelete(String siteId);
 }

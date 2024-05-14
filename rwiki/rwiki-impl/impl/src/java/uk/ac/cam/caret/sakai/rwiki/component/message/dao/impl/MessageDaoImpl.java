@@ -24,12 +24,15 @@ package uk.ac.cam.caret.sakai.rwiki.component.message.dao.impl;
 import java.util.Date;
 import java.util.List;
 
+import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Expression;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
+import org.springframework.transaction.annotation.Transactional;
 import uk.ac.cam.caret.sakai.rwiki.message.model.RwikiMessageImpl;
 import uk.ac.cam.caret.sakai.rwiki.service.message.api.dao.MessageDao;
 import uk.ac.cam.caret.sakai.rwiki.service.message.api.model.Message;
@@ -202,5 +205,31 @@ public class MessageDaoImpl extends HibernateDaoSupport implements MessageDao {
 					+ session, start, finish);
 		}
 	}
+	@Transactional(readOnly = false)
+	public void hardDeleteMessagesInSpace(String context){
+		try{
+			HibernateCallback callback = new HibernateCallback() {
+				public Object doInHibernate(Session session)
+						throws HibernateException {
+					return session.createCriteria(Message.class).add(Restrictions.like("pagespace","%"+context+"%")).list();
+				}
+			};
+			/*
+			List<Message> messages = (List) getHibernateTemplate().execute(callback);
+			Session session = getSessionFactory().getCurrentSession();
+			session.setFlushMode(FlushMode.COMMIT);
+			for(Message message:messages){
+				session.delete(message);
+			}
+
+			 */
+
+			getHibernateTemplate().deleteAll((List) getHibernateTemplate().execute(callback));
+		}catch (HibernateException e){
+			logger.error(e);
+		}
+	}
+
+
 
 }

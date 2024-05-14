@@ -24,23 +24,7 @@ package org.sakaiproject.citation.impl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.Stack;
-import java.util.TreeSet;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -80,6 +64,8 @@ import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.HttpAccess;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
+import org.sakaiproject.event.api.Event;
+import org.sakaiproject.event.api.EventTrackingService;
 import org.sakaiproject.event.api.NotificationService;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.InUseException;
@@ -105,7 +91,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Accessors(prefix = "m_" )
-public abstract class BaseCitationService implements CitationService
+public abstract class BaseCitationService implements CitationService, Observer
 {
 	protected boolean attemptToMatchSchema = false;
 	
@@ -4197,6 +4183,10 @@ public abstract class BaseCitationService implements CitationService
 
 	public static final String PROP_TEMPORARY_CITATION_LIST = "citations.temporary_citation_list";
 
+	private EventTrackingService eventTrackingService;
+
+	public void setEventTrackingService(EventTrackingService eventTrackingService){this.eventTrackingService = eventTrackingService;}
+
 	/**
 	 * Checks permissions to add a CitationList.  Returns true if the user
 	 * has permission to add a resource in the collection identified by the
@@ -4340,6 +4330,7 @@ public abstract class BaseCitationService implements CitationService
 			m_storage.close();
 			m_storage = null;
 		}
+		eventTrackingService.deleteObserver(this);
 	}
 
 	/**
@@ -4745,6 +4736,8 @@ public abstract class BaseCitationService implements CitationService
 		{
 			registerResourceType();
 		}
+
+		eventTrackingService.addLocalObserver(this);
 
 	}
 
@@ -5743,6 +5736,33 @@ public abstract class BaseCitationService implements CitationService
     	c.copy(citation);
     	return c;
     }
+
+    public void hardDeleteCitation(String collectionId){
+        try{
+            CitationCollection collection = getCollection(collectionId);
+            List<Citation> citations = collection.getCitations();
+            for (Citation citation : citations){
+                m_storage.removeCitation(citation);
+            }
+            m_storage.removeCollection(collection);
+        }catch (IdUnusedException e){
+            log.error(String.valueOf(e));
+        }
+    }
+
+
+    public void update(Observable o, final Object arg){
+        if(arg instanceof  Event){
+            Event e = (Event) arg;
+            String event = e.getEvent();
+            if(event.equals("citation.hardDelete")) {
+                String resource = e.getResource();
+                hardDeleteCitation(resource);
+            }
+        }
+    }
+
+
 
 } // BaseCitationService
 

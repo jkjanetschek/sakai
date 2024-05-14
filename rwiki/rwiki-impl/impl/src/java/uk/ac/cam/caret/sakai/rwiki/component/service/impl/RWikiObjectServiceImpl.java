@@ -48,6 +48,7 @@ import org.sakaiproject.entity.api.EntityCopyrightException;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityNotDefinedException;
 import org.sakaiproject.entity.api.EntityPermissionException;
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.sakaiproject.entity.api.HttpAccess;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.tool.api.Session;
@@ -91,7 +92,10 @@ import uk.ac.cam.caret.sakai.rwiki.service.exception.PermissionException;
 import uk.ac.cam.caret.sakai.rwiki.service.exception.ReadPermissionException;
 import uk.ac.cam.caret.sakai.rwiki.service.exception.UpdatePermissionException;
 import uk.ac.cam.caret.sakai.rwiki.service.exception.VersionException;
+import uk.ac.cam.caret.sakai.rwiki.service.message.api.MessageService;
 import uk.ac.cam.caret.sakai.rwiki.service.message.api.PreferenceService;
+import uk.ac.cam.caret.sakai.rwiki.service.message.api.TriggerService;
+import uk.ac.cam.caret.sakai.rwiki.service.message.api.dao.PagePresenceDao;
 import uk.ac.cam.caret.sakai.rwiki.utils.NameHelper;
 import uk.ac.cam.caret.sakai.rwiki.utils.TimeLogger;
 
@@ -101,7 +105,7 @@ import uk.ac.cam.caret.sakai.rwiki.utils.TimeLogger;
 
 // FIXME: Component
 @Slf4j
-public class RWikiObjectServiceImpl implements RWikiObjectService
+public class RWikiObjectServiceImpl implements RWikiObjectService, HardDeleteAware
 {
 
 	private RWikiCurrentObjectDao cdao;
@@ -139,6 +143,8 @@ public class RWikiObjectServiceImpl implements RWikiObjectService
 	private DigestService digestService;
 
 	private SecurityService securityService;
+	private MessageService messageService;
+	private TriggerService triggerService;
 
 	/** Configuration: to run the ddl on init or not. */
 	protected boolean autoDdl = false;
@@ -191,6 +197,9 @@ public class RWikiObjectServiceImpl implements RWikiObjectService
 		userDirectoryService = (UserDirectoryService) load(cm,UserDirectoryService.class.getName());
 		entityManager.registerEntityProducer(this,
 				RWikiObjectService.REFERENCE_ROOT);
+
+		messageService = (MessageService) load(cm, MessageService.class.getName());
+		triggerService = (TriggerService) load(cm, TriggerService.class.getName());
 		if (ServerConfigurationService.getBoolean("wiki.notification", true)) //$NON-NLS-1$
 		{
 			// Email notification
@@ -1811,5 +1820,18 @@ public class RWikiObjectServiceImpl implements RWikiObjectService
 			log.info("Rwiki transferCopyEntities Error" + e);
 		}
 		return transferCopyEntities(fromContext, toContext, ids, transferOptions);
+	}
+
+	@Override
+	public void hardDelete(String siteId) {
+		log.info("Hard Delete  of Tool Wiki for context: " + siteId);
+		cdao.hardDeleteRWikiObjectsForContext(siteId);
+		hdao.hardDeleteRWikiHistoryObjectsForContext(siteId);
+
+		messageService.hardDeleteMessagesInSpace(siteId);
+		triggerService.hardDeleteTriggersInSpace(siteId);
+		preferenceService.hardDeletePreferencesForContext(siteId);
+
+		//table: rwikiproperties is ignored for now
 	}
 }

@@ -132,6 +132,16 @@ public interface ContentServiceSql
 	 */
 	String getInsertIndividualDropboxChangeSql();
 
+
+
+	/**
+	 * returns the sql statement which deletes rows after site is hard deleted
+	 */
+	public String getHardDeleteDropboxSql();
+	public String getHardDeleteTypeRegistrySql();
+
+
+
 	/**
 	 * returns the sql statement to add the FILE_SIZE column to the specified table.
 	 */

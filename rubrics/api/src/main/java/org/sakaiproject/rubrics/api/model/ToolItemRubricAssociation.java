@@ -25,9 +25,11 @@ package org.sakaiproject.rubrics.api.model;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -41,6 +43,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.OneToMany;
 
 
 import lombok.EqualsAndHashCode;
@@ -48,6 +51,7 @@ import lombok.ToString;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -104,7 +108,12 @@ public class ToolItemRubricAssociation implements PersistableEntity<Long>, Seria
                         indexes = @Index(name = "rbc_param_association_idx", columnList = "association_id"))
     @MapKeyColumn(name = "parameter_label")
     @Fetch(FetchMode.SUBSELECT)
+    @Cascade(value = {org.hibernate.annotations.CascadeType.ALL})
     private Map<String, Boolean> parameters;
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "association_id")
+    private List<Evaluation> evaluations;
 
     public Map<String, String> getFormattedAssociation() {
 

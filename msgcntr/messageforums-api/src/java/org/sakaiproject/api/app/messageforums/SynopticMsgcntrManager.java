@@ -67,6 +67,7 @@ public interface SynopticMsgcntrManager {
 	public void deleteSynopticMsgcntrItem(SynopticMsgcntrItem item);
 
 	public void createOrUpdateSynopticToolInfo(List<String> userIds, String siteId, String siteTitle, Map<String, Integer[]> unreadCounts);
+	public void hardDeleteSynopticItemsForContxt(final String siteId);
 	
 	/**
 	 * This method is used to get live information regarding the new message count per user for a forum ID

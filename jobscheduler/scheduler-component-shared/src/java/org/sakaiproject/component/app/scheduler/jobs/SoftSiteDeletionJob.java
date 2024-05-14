@@ -115,7 +115,8 @@ public class SoftSiteDeletionJob implements Job {
 	
 					try {
 						enableSecurityAdvisor();
-	
+						//SAK-48820
+						s.getGroups();
 						siteService.removeSite(s, hardDelete);
 						log.info("Removed site: " + s.getId());
 	

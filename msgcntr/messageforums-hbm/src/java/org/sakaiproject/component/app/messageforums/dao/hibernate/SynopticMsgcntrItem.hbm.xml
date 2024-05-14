@@ -34,6 +34,10 @@
 	<query name="findSiteSynopticMsgcntrItems">
 	  <![CDATA[from org.sakaiproject.component.app.messageforums.dao.hibernate.SynopticMsgcntrItemImpl as s where s.userId in ( :userIds ) and s.siteId = :siteId ]]>
 	</query>
+
+	<query name="findSynopticMsgcntrItemsForContext">
+		<![CDATA[from org.sakaiproject.component.app.messageforums.dao.hibernate.SynopticMsgcntrItemImpl as s where s.siteId = :siteId ]]>
+	</query>
 	
 	<query name="findSynopticMsgcntrItemById">
 	  <![CDATA[from org.sakaiproject.component.app.messageforums.dao.hibernate.SynopticMsgcntrItemImpl as s where s.id = :id ]]>

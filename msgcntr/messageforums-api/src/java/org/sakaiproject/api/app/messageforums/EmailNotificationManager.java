@@ -55,5 +55,6 @@ public interface EmailNotificationManager {
    * @return
    */
   public List<String> filterUsers(List<String> allusers, Topic topic);
+  public void hardDeleteEmailNotificationsForContext(String contextId);
   
 }

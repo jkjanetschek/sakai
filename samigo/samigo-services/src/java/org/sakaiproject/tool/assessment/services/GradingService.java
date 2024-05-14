@@ -3853,6 +3853,13 @@ Here are the definition and 12 cases I came up with (lydia, 01/2006):
 	  return PersistenceService.getInstance().getAssessmentGradingFacadeQueries().
 			  getUnSubmittedAssessmentGradingDataList(publishedAssessmentId, agentIdString);
   }
+
+  public void hardDeleteGradingData(String publishedAssessmentId){
+     // List<AssessmentGradingData> data = getAllAssessmentGradingData(Long.parseLong(publishedAssessmentId));
+      PersistenceService.getInstance().getAssessmentGradingFacadeQueries().hardDeleteGradingData(publishedAssessmentId);
+  }
+
+
 }
 
 /**

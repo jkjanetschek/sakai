@@ -55,6 +55,7 @@ import org.sakaiproject.authz.api.Member;
 import org.sakaiproject.authz.api.Role;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
+import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.entity.api.ContextObserver;
@@ -558,7 +559,9 @@ public abstract class BaseSiteService implements SiteService, Observer
 
 		return rv;
 	}
-	
+
+	protected abstract ContentHostingService contentHostingService();
+
 	/**
 	 * Checks to see if the current user has access to the site and throws an exception if they don't.
 	 * This was extracted to keep the code common to getSiteVisit and allowSiteAccess
@@ -1414,12 +1417,13 @@ public abstract class BaseSiteService implements SiteService, Observer
 	/**
 	 * @inheritDoc
 	 */
-	public void removeSite(Site site, boolean isHardDelete) throws PermissionException, IdUnusedException
-	{
+	public void removeSite(Site site, boolean isHardDelete) throws PermissionException, IdUnusedException {
 		// check security (throws if not permitted)
 		unlock(SECURE_REMOVE_SITE, site.getReference());
 
 		// if soft site deletes are active
+		boolean userOrSpecialSite = false;
+
 		if (!isHardDelete && serverConfigurationService().getBoolean("site.soft.deletion", true)) {
 			
 			log.debug("Soft site deletes are enabled.");
@@ -1428,14 +1432,20 @@ public abstract class BaseSiteService implements SiteService, Observer
 			//made it verbose for logging purposes
 			if(isUserSite(site.getId())) {
 				log.debug("Site: {} is user site and will be hard deleted.", site.getId());
+                //jkj: SAK-39144 not fixed!
+                isHardDelete = true;
+                userOrSpecialSite = true;
 			} else if (isSpecialSite(site.getId())) {
 				log.debug("Site: {} is special site and will be hard deleted.", site.getId());
+                //jkj: SAK-39144 not fixed!
+                isHardDelete = true;
+                userOrSpecialSite = true;
 			} else {
-				log.debug("Site: {} is not user or special site and will be soft deleted.", site.getId());
+                log.debug("Site: {} is not user or special site and will be soft deleted.", site.getId());
 			
 				// if site is not already softly deleted, softly delete it
 				// if already marked for deletion, check permission to hard delete, if ok, let continue.
-				if(!site.isSoftlyDeleted()) {
+				if (!site.isSoftlyDeleted()) {
 					site.setSoftlyDeleted(true);
 					save(site);
 					
@@ -1447,8 +1457,9 @@ public abstract class BaseSiteService implements SiteService, Observer
 			}
 		}
 
-		for (SiteRemovalAdvisor advisor: siteRemovalAdvisors)
-		{
+
+
+		for (SiteRemovalAdvisor advisor : siteRemovalAdvisors) {
 			advisor.removed(site);
 		}
 
@@ -1457,20 +1468,30 @@ public abstract class BaseSiteService implements SiteService, Observer
 		if (cached != null ) {
 			clearUserCacheForSite(site);
 		}
-		
-		// complete the edit
-		storage().remove(site);
 
-		// track it
-		eventTrackingService().post(eventTrackingService().newEvent(SECURE_REMOVE_SITE, site.getReference(), true));
 
-		// get the services related to this site setup for the site's removal
-		disableRelated(site);
 
 		// Use the HardDelete interface to purge content from database
 		if (isHardDelete) {
 			hardDelete(site);
 		}
+
+
+
+
+
+		// complete the edit
+		//jkj: move here to avoid eg. IdUnusedException in hardDeleteAware Implementations
+		storage().remove(site);
+
+		// get the services related to this site setup for the site's removal
+		// jkj: move after hardDelete to avoid: removeSite: AuthzGroup exception: org.sakaiproject.authz.api.AuthzRealmLockException
+		// jkj: Site not found when handling event (0:site.usersite.invalidate; Security invalidation error when handling an event (site.usersite.invalidate) --> ignore?
+		disableRelated(site);
+
+		// track it
+		eventTrackingService().post(eventTrackingService().newEvent(SECURE_REMOVE_SITE, site.getReference(), true));
+
 	}
 
 	/**
@@ -2731,6 +2752,17 @@ public abstract class BaseSiteService implements SiteService, Observer
 				hd.hardDelete(site.getId());
 			}
 		}
+
+		//delete root content collection of attachments
+		String id = id = "/attachment/" + site.getId() + "/";
+		try {
+			contentHostingService().removeCollection(id);
+		} catch (IdUnusedException ide) {
+			log.warn("collection not found for id: " + id);
+		} catch (Exception e) {
+			log.warn("Failed to remove collection {}.", id, e);
+		}
+
 	}
 
 	/**

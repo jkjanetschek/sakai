@@ -896,4 +896,35 @@ public class DBLTIService extends BaseLTIService implements LTIService {
 		return (List<Map<String, Object>>) rv;
 	}
 
+	public void hardDelete(String siteId){
+		if (siteService.isSpecialSite(siteId)) {
+			log.error("hardDelete rejected special site: {}", siteId);
+			return;
+		}
+
+		log.info("Hard Delete  of Tool Lti for context: " + siteId);
+
+		String statementLtiTools = "DELETE FROM lti_tools WHERE SITE_ID = ?";
+		Object fieldsLtiTools[] = new Object[1];
+		fieldsLtiTools[0] = siteId;
+		m_sql.dbWrite(statementLtiTools, fieldsLtiTools);
+
+		String statementLtiContent = "DELETE FROM lti_content WHERE SITE_ID = ?";
+		Object fieldsLtiContent[] = new Object[1];
+		fieldsLtiContent[0] = siteId;
+		m_sql.dbWrite(statementLtiContent, fieldsLtiContent);
+
+		String statementLtiBinding = "DELETE FROM lti_binding WHERE SITE_ID = ?";
+		Object fieldsLtiBinding[] = new Object[1];
+		fieldsLtiBinding[0] = siteId;
+		m_sql.dbWrite(statementLtiBinding, fieldsLtiBinding);
+
+		String statementLtiMembershipJobs = "DELETE FROM lti_memberships_jobs WHERE SITE_ID = ?";
+		Object fieldsLtiMembershipJobs[] = new Object[1];
+		fieldsLtiMembershipJobs[0] = siteId;
+		m_sql.dbWrite(statementLtiMembershipJobs, fieldsLtiMembershipJobs);
+
+		// TODO table lti_deploy still in use?
+	}
+
 }

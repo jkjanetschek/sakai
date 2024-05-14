@@ -934,4 +934,12 @@ public class SyllabusManagerImpl extends HibernateDaoSupport implements Syllabus
 	public void setEntityManager(EntityManager entityManager) {
 		this.entityManager = entityManager;
 	}
+
+
+    public void hardDeleteForContext(String siteId){
+        SyllabusItem item = getSyllabusItemByContextId(siteId);
+        if(item != null){
+            getHibernateTemplate().delete(item);
+        }
+    }
 }

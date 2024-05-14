@@ -3142,10 +3142,22 @@ public class SimplePageBean {
 	    
 		// remove fake item if it's top level. We won't see it if it's still active
 		// so this means the user has removed it in site info
+
+
+
+
+/*
 		SimplePageItem item = simplePageToolDao.findTopLevelPageItemBySakaiId(pageId+"");
 		if (item != null)
 		    simplePageToolDao.deleteItem(item);			
-		
+*/
+		// multiple rootItems of type page are possible --> sakaiId points to same rootPage
+		List<String> id = new ArrayList<String>(Arrays.asList(String.valueOf(pageId)));
+		List<SimplePageItem> rootItems = simplePageToolDao.findTopLevelPageItemsBySakaiIds(id);
+		if (rootItems != null) {
+			rootItems.forEach(o ->  simplePageToolDao.deleteItem(o));
+		}
+
 		// currently the UI doesn't allow you to kill top level pages until they have been
 		// removed by site info, so we don't have to hack on the site pages
 		

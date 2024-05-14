@@ -62,6 +62,7 @@ public interface AssessmentGradingFacadeQueriesAPI
    * @return an list of all the items or an empty list if none
    */
   public List<ItemGradingData> getAllItemGradingDataForItemInGrading(final Long assesmentGradingId, final Long publishedItemId);
+  public List<AssessmentGradingData> getAllAssessmentGradingDataForHardDelete(final Long publishedId);
   
   public Map<Long, List<ItemGradingData>> getItemScores(Long publishedId, Long itemId, String which);
   
@@ -288,5 +289,7 @@ public interface AssessmentGradingFacadeQueriesAPI
   public Map<Long, List<Long>> getAverageAssessmentGradingByPublishedItem(Long publishedAssessmentId);
   
   public List getUnSubmittedAssessmentGradingDataList(Long publishedAssessmentId, String agentIdString);
+
+  public void hardDeleteGradingData(String publishedAssessmentId);
 
 }

@@ -28,6 +28,7 @@ public interface RankManager {
      */
     public List getRankList(String contextid);
 
+    public List getRanksForContext(String contextId);
     /**
      * Get all ranks for the site sorted by min Post descending
      */
@@ -52,4 +53,6 @@ public interface RankManager {
     public void addImageAttachToRank(final Rank rank, final RankImage imageAttach);
 
     public void removeImageAttachToRank(final Rank rank, final RankImage imageAttach);
+
+    public void hardDeleteRank(Rank rank);
 }

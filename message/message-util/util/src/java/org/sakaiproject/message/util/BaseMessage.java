@@ -2899,6 +2899,12 @@ public abstract class BaseMessage implements MessageService, DoubleStorageUser
 		 */
 		public boolean allowRemoveMessage(Message m)
 		{
+
+			// fix permission exception, if groups in message header do not exist anymore
+			if(m_securityService.isSuperUser()){
+				return true;
+			}
+
 			// this is true if we can remove it due to any of our group membership
 			boolean allowed = allowEditMessage(m, SECURE_REMOVE_OWN, SECURE_REMOVE_ANY);
 

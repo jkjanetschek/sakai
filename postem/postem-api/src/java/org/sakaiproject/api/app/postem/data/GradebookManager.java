@@ -88,4 +88,6 @@ public interface GradebookManager {
      * @return a list of all of the usernames associated with the given gradebook
      */
     public List getUsernamesInGradebook(Gradebook gradebook);
+
+    public void hardDeleteGradebooks(String siteId);
 }

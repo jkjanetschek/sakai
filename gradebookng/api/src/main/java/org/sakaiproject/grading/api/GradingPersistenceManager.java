@@ -122,4 +122,5 @@ public interface GradingPersistenceManager {
 
     Optional<GradebookProperty> getGradebookProperty(String name);
     GradebookProperty saveGradebookProperty(GradebookProperty property);
+    boolean isGradebookDefined(final String gradebookUid);
 }

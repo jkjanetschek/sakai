@@ -200,4 +200,8 @@ public class TriggerServiceImpl implements TriggerService
 		this.triggerHandlers = triggerHandlers;
 	}
 
+	public void hardDeleteTriggersInSpace(String context){
+		triggerDao.hardDeleteTriggersInSpace(context);
+	}
+
 }

@@ -31,6 +31,7 @@ import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityProducer;
 import org.sakaiproject.entity.api.EntityTransferrer;
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.sakaiproject.entity.api.HttpAccess;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
@@ -57,7 +58,7 @@ import lombok.Setter;
  * Entity Producer for GradebookNG. This is required to participate in other entity actions but also handles the transfer of data between
  * sites
  */
-public class GradebookNgEntityProducer implements EntityProducer, EntityTransferrer {
+public class GradebookNgEntityProducer implements EntityProducer, EntityTransferrer, HardDeleteAware {
 
 	protected static final String[] TOOL_IDS = { "sakai.gradebookng" };
 
@@ -348,4 +349,10 @@ public class GradebookNgEntityProducer implements EntityProducer, EntityTransfer
 	public void updateEntityReferences(String toContext, Map<String, String> transversalMap) {
 		//not necessary
 	}
+
+	@Override
+	public void hardDelete(String siteId) {
+		gradingService.hardDeleteGradebook(siteId);
+	}
+
 }

@@ -100,6 +100,7 @@ import org.sakaiproject.authz.api.RoleAlreadyDefinedException;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.conditions.api.ConditionService;
 import org.sakaiproject.content.api.ContentChangeHandler;
 import org.sakaiproject.content.api.ContentCollection;
@@ -4576,6 +4577,22 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 
 		// htripath -store the metadata information into a delete table
 		// assumed uuid is not null as checkExplicitLock(id) throws exception when null
+
+
+		//SAK-48460
+		if(removeContent){
+			if(edit.getResourceType().equals("org.sakaiproject.citation.impl.CitationList")){
+				try{
+					String citationCollectionId = new String(edit.getContent());
+					log.info("Removing CitationList " + citationCollectionId);
+				//	citationService.hardDeleteCitation(new String(edit.getContent()));
+					eventTrackingService.post(eventTrackingService.newEvent("citation.hardDelete", citationCollectionId, true));
+				}catch (ServerOverloadException e){
+					log.error("Error reading CitationList: " + e);
+				}
+			}
+		}
+
 
 		try {
 			String uuid = this.getUuid(id);
@@ -13726,7 +13743,11 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		 * @return collection of ContentResource
 		 */
 		public Collection<ContentResource> getContextResourcesOfType(String resourceType, Set<String> contextIds);
-		
+
+
+		public void hardDeleteDropbox(String siteId);
+		public void hardDeleteTypeRegistry(String siteId);
+
 	} // Storage
 
 	/**********************************************************************************************************************************************************************************************************************************************************
@@ -14425,9 +14446,54 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 			log.error("hardDelete rejected on non site collection: {}", collectionId);
 			return;
 		}
-		log.info("hardDelete proceeding on collectionId: {}", collectionId);
 
 
+
+
+
+		try{
+			hardDeleteResources(collectionId);
+		}catch (Exception e){
+			log.error("Error removing resources for collectionId: " + collectionId + " " + e);
+		}
+
+		try{
+			hardDeleteResources("/group-user/" + siteId + "/");
+		}catch (Exception e){
+			log.error("Error removing resources for collectionId: " + "/group-user/" + siteId + "/" + " " + e);
+		}
+
+		try{
+			hardDeleteResources("/attachment/" + siteId+ "/");
+		}catch (Exception e){
+			log.error("Error removing resources for collectionId: " + "/attachment/" + siteId+ "/" + " " + e);
+		}
+
+
+		// Cleanup the collections
+		removeCollectionRecursive(collectionId);
+
+		removeCollectionRecursive("/group-user/" + siteId + "/");
+
+		removeCollectionRecursive("/attachment/" + siteId+ "/");
+
+
+		//deletion of user sites --> TODO refactor
+		try{
+			hardDeleteResources("/content/user/" + siteId + "/");
+		}catch (Exception e){
+			log.error("Error removing resources for collectionId: " + "/content/user/" + siteId + "/" + " " + e);
+		}
+		removeCollectionRecursive("/content/user/" + siteId + "/");
+
+
+		//clean table content_dropbox_changes
+		m_storage.hardDeleteDropbox(siteId);
+		//clean table content_type_registry
+		m_storage.hardDeleteTypeRegistry(siteId);
+	}
+
+	public void hardDeleteResources(String collectionId){
 		// Get normal resources are purge one-by-one
 		List<ContentResource> resources = getAllResources(collectionId);
 		for (ContentResource resource : resources) {
@@ -14446,15 +14512,12 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 			try {
 				removeDeletedResource(deletedResource.getId());
 			} catch (Exception e) {
-				log.warn("Failed to remove some content.", e);
+				log.warn("Failed to remove deleted content.", e);
 			}
 		}
-
-		// Cleanup the collections
-		removeCollectionRecursive(collectionId);
 	}
 
-	private void removeCollectionRecursive(String collectionId) {
+	public void removeCollectionRecursive(String collectionId) {
 		ContentCollection collection = null;
 		try {
 			collection = getCollection(collectionId);

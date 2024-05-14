@@ -373,6 +373,7 @@ public abstract class TopicImpl extends MutableEntityImpl implements Topic {
       }
           
       membershipItemSet.remove(item);
+      item.setTopic(null);
     }
 
     public String getDefaultAssignName()

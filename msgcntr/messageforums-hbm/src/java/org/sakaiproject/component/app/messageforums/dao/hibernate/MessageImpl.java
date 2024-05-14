@@ -20,11 +20,7 @@
  **********************************************************************************/
 package org.sakaiproject.component.app.messageforums.dao.hibernate;
 
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -61,6 +57,8 @@ public class MessageImpl extends MutableEntityImpl implements Message
   private Boolean scheduler = false;
   @Getter @Setter
   private Date scheduledDate;
+    //needed for hardDelete Implementation
+    private Set inReplyFrom;
 
 	public static Comparator ATTACHMENT_COMPARATOR;
 	public static Comparator SUBJECT_COMPARATOR;
@@ -73,6 +71,14 @@ public class MessageImpl extends MutableEntityImpl implements Message
 	public static Comparator DATE_COMPARATOR_DESC;
 	public static Comparator LABEL_COMPARATOR_DESC;
 	public static Comparator AUTHORED_BY_COMPARATOR_DESC;
+
+
+
+    public void setInReplyFrom(Set inReplyFrom){
+        this.inReplyFrom = inReplyFrom;
+    }
+
+    public Set getInReplyFrom(){return this.inReplyFrom;}
 
 	// indecies for hibernate
 	//private int tindex;
@@ -90,6 +96,7 @@ public class MessageImpl extends MutableEntityImpl implements Message
 	public MessageImpl()
 	{
 		attachmentsSet = new HashSet();
+		inReplyFrom = new HashSet();
 	}
 
 	public Boolean getDraft()

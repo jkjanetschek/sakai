@@ -42,22 +42,9 @@ import java.util.TimeZone;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.sakaiproject.api.app.messageforums.Area;
-import org.sakaiproject.api.app.messageforums.AreaManager;
-import org.sakaiproject.api.app.messageforums.Attachment;
-import org.sakaiproject.api.app.messageforums.BaseForum;
-import org.sakaiproject.api.app.messageforums.DBMembershipItem;
-import org.sakaiproject.api.app.messageforums.DiscussionForum;
-import org.sakaiproject.api.app.messageforums.DiscussionForumService;
-import org.sakaiproject.api.app.messageforums.DiscussionTopic;
-import org.sakaiproject.api.app.messageforums.Message;
-import org.sakaiproject.api.app.messageforums.MessageForumsForumManager;
-import org.sakaiproject.api.app.messageforums.MessageForumsMessageManager;
-import org.sakaiproject.api.app.messageforums.MessageForumsTypeManager;
-import org.sakaiproject.api.app.messageforums.PermissionLevel;
-import org.sakaiproject.api.app.messageforums.PermissionLevelManager;
-import org.sakaiproject.api.app.messageforums.PermissionsMask;
+import org.sakaiproject.api.app.messageforums.*;
 import org.sakaiproject.api.app.messageforums.ui.DiscussionForumManager;
+import org.sakaiproject.api.app.messageforums.ui.PrivateMessageManager;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.api.GroupNotDefinedException;
@@ -87,6 +74,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.sakaiproject.entity.api.HardDeleteAware;
+import  org.sakaiproject.api.app.messageforums.Area;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -94,7 +83,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
-public class DiscussionForumServiceImpl implements DiscussionForumService, EntityTransferrer
+public class DiscussionForumServiceImpl implements DiscussionForumService, EntityTransferrer, HardDeleteAware
 {
 	private static final String CONTENT_GROUP = "/content/group/";
 	private static final String ARCHIVING = "archiving ";
@@ -193,6 +182,16 @@ public class DiscussionForumServiceImpl implements DiscussionForumService, Entit
 	private ToolManager toolManager;
 	@Setter
 	private ServerConfigurationService serverConfigurationService;
+    @Setter
+    private PrivateMessageManager privateManager;
+    @Setter
+    private RankManager rankManager;
+    @Setter
+    private SynopticMsgcntrManager synopticMsgcntrManager;
+    @Setter
+    private EmailNotificationManager emailNotificationManager;
+    @Setter
+    private AnonymousManager anonymousManager;
 
 	private final Base64 base64Encoder = new Base64();
 
@@ -1515,6 +1514,54 @@ public class DiscussionForumServiceImpl implements DiscussionForumService, Entit
 	private Boolean getImportAsDraft() {
 		boolean importAsDraft = serverConfigurationService.getBoolean("import.importAsDraft", true);
 		return serverConfigurationService.getBoolean("msgcntr.forums.import.importAsDraft", importAsDraft);
+	}
+
+	/**
+	 *   implementation of hardDeleteAware; DiscussionForumService is default only service which can implement as it is a registerd EntityProducer
+	 */
+	public void hardDelete(String siteId) {
+		if (siteId == null) return;
+		log.info("Hard Delete MessageForum Tool of site: " + siteId);
+		List dfForums = dfManager.getDiscussionForumsByContextId(siteId);  // BaseForum
+
+
+		for(Object forum: dfForums){
+			dfManager.deleteForum((DiscussionForum)forum);
+		}
+
+		//private Forums
+		List privateForums = privateManager.getPrivateForumsByContextId(siteId);
+		for (Object privateForum : privateForums){
+			privateManager.deletePrivateForum((PrivateForum) privateForum, siteId);
+		}
+
+		// areas
+		List<Area> areas = areaManager.getAreasByContextId(siteId);
+		for (Area area:areas){
+			areaManager.deleteArea(area);
+		}
+
+
+		//rank
+		List<Rank> ranks = rankManager.getRanksForContext(siteId);
+		for (Rank rank:ranks){
+			rankManager.hardDeleteRank(rank);
+		}
+
+
+		//table: mfr_date_restrictions_t --> not relevant? --> ignored for now!
+
+		//synoptics
+		synopticMsgcntrManager.hardDeleteSynopticItemsForContxt(siteId);
+
+
+		//email notifications
+		emailNotificationManager.hardDeleteEmailNotificationsForContext(siteId);
+
+		//anon mapping
+		anonymousManager.hardDeleteMappingForContext(siteId);
+
+
 	}
 
 }

@@ -20,6 +20,8 @@
  **********************************************************************************/
 package org.sakaiproject.api.app.messageforums;
 
+import java.util.List;
+
 /**
  * The Area id the high level object of the object model. Typicaly a site
  * can contain up to 2 Areas - a Discussion Area and a Private Message Area
@@ -72,6 +74,9 @@ public interface AreaManager
 	 * @return
 	 */
 	public Area getAreaByContextIdAndTypeId(String contextId, String typeId);
+
+
+	public List getAreasByContextId(String contextId);
 	
 	/** 
 	 * Get all Areas of the given type

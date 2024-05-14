@@ -66,6 +66,7 @@ public class SynopticMsgcntrManagerImpl extends HibernateDaoSupport implements S
 	private static final String QUERY_WORKSPACE_SYNOPTIC_ITEMS = "findWorkspaceSynopticMsgcntrItems";
 	private static final String QUERY_SITE_SYNOPTIC_ITEMS = "findSiteSynopticMsgcntrItems";
 	private static final String QUERY_UPDATE_ALL_SITE_TITLES = "updateSiteTitles";
+	private static final String QUERY_SYNOPTIC_ITEMS_FOR_CONTEXT = "findSynopticMsgcntrItemsForContext";
 
 	private HashMap mfPageInSiteMap, sitesMap;
 	// transient variable for when on home page of site
@@ -130,6 +131,19 @@ public class SynopticMsgcntrManagerImpl extends HibernateDaoSupport implements S
 
 		return getHibernateTemplate().execute(hcb);
 	}
+
+
+	private List<SynopticMsgcntrItem> getSynopticMsgcntrItemsForContext(final String siteId) {
+
+		HibernateCallback<List<SynopticMsgcntrItem>> hcb = session -> {
+			Query q = session.getNamedQuery(QUERY_SYNOPTIC_ITEMS_FOR_CONTEXT);
+			q.setParameter("siteId", siteId, StringType.INSTANCE);
+			return q.list();
+		};
+		return getHibernateTemplate().execute(hcb);
+	}
+
+
 
 	public SynopticMsgcntrItem createSynopticMsgcntrItem(String userId, String siteId, String siteTitle){
 		return new SynopticMsgcntrItemImpl(userId, siteId, siteTitle);
@@ -1343,5 +1357,12 @@ public class DecoratedForumInfo{
 				incrementMessagesSynopticToolInfo(userIds, siteId, numOfAttempts-1);
 			}
 		}
-	}	
+	}
+
+    public void hardDeleteSynopticItemsForContxt(final String siteId){
+        List<SynopticMsgcntrItem> items =  getSynopticMsgcntrItemsForContext(siteId);
+        for(SynopticMsgcntrItem item:items){
+            deleteSynopticMsgcntrItem(item);
+        }
+    }
 }

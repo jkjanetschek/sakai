@@ -2159,6 +2159,39 @@ public class DbContentService extends BaseContentService
 
 	   }
 
+       public void hardDeleteDropbox(String siteId){
+
+               String sql = contentServiceSql.getHardDeleteDropboxSql();
+
+               Object[] fields = new Object[1];
+               fields[0] = "/group-user/" + siteId + "/%";
+               try
+               {
+                   boolean ok = m_sqlService.dbWrite(sql, fields);
+               }
+               catch(Exception e)
+               {
+                   log.error("sql == " + sql, e);
+               }
+
+       }
+
+        public void hardDeleteTypeRegistry(String siteId){
+            String sql = contentServiceSql.getHardDeleteTypeRegistrySql();
+            Object[] fields = new Object[1];
+            fields[0] = siteId;
+            try
+            {
+                boolean ok = m_sqlService.dbWrite(sql, fields);
+            }
+            catch(Exception e)
+            {
+                log.error("sql == " + sql, e);
+            }
+        }
+
+
+
         /**
          * Read the resource's body.
          * 

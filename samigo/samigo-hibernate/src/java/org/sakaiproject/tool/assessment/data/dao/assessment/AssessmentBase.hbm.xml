@@ -58,6 +58,14 @@
       <one-to-many class="org.sakaiproject.tool.assessment.data.dao.assessment.SecuredIPAddress"/>
     </set>
 
+    <set name="extendedTimes" table="SAM_EXTENDEDTIME_T" cascade="delete-orphan"
+         inverse="true" lazy="true">
+        <key column="ASSESSMENT_ID"/>
+        <one-to-many class="org.sakaiproject.tool.assessment.data.dao.assessment.ExtendedTime"/>
+    </set>
+
+
+
     <subclass name="org.sakaiproject.tool.assessment.data.dao.assessment.AssessmentData"
       discriminator-value="0">
       <property name="assessmentTemplateId" column="ASSESSMENTTEMPLATEID" />

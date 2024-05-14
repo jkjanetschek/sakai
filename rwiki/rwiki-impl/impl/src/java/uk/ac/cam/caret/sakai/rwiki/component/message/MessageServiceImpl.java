@@ -190,4 +190,9 @@ public class MessageServiceImpl implements MessageService
 		this.pagePresenceDao = pagePresenceDao;
 	}
 
+	public void hardDeleteMessagesInSpace(String context){
+		messageDao.hardDeleteMessagesInSpace(context);
+		pagePresenceDao.hardDeletePresencesInSpace(context);
+	}
+
 }

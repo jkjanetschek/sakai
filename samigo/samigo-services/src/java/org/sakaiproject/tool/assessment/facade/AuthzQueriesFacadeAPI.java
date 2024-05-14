@@ -65,5 +65,5 @@ public interface AuthzQueriesFacadeAPI
   public List<AuthorizationData> getAuthorizationByFunctionAndQualifier(String functionId, String qualifierId);
 
   public boolean checkMembership(String siteId);
-
+  public void hardDeleteGroupAuthzData(String groupId);
 }

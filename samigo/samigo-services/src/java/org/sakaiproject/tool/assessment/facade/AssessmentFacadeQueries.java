@@ -112,6 +112,8 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import lombok.extern.slf4j.Slf4j;
 
+import javax.persistence.EntityNotFoundException;
+
 @Slf4j
 public class AssessmentFacadeQueries extends HibernateDaoSupport implements AssessmentFacadeQueriesAPI {
 
@@ -2434,4 +2436,16 @@ public class AssessmentFacadeQueries extends HibernateDaoSupport implements Asse
     	}
     }
 
+
+	public void hardDeleteAssessment(String assessmentId){
+		try{
+			AssessmentData assessment = (AssessmentData) getHibernateTemplate().load(AssessmentData.class, Long.parseLong(assessmentId));
+			getHibernateTemplate().delete(assessment);
+		}catch (EntityNotFoundException e){
+			log.info("HardDelete: Assessment(" +assessmentId +") not found " + e);
+		}catch (Exception e2){
+			log.info("error hardDelete Assessment: " + e2);
+		}
+
+	}
 }

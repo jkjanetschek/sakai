@@ -28,12 +28,14 @@ import java.util.HashMap;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.HibernateException;
 import org.hibernate.query.Query;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.cover.SecurityService;
 import org.sakaiproject.tool.assessment.data.dao.assessment.AssessmentBaseData;
 import org.sakaiproject.tool.assessment.data.dao.authz.AuthorizationData;
+import org.sakaiproject.tool.assessment.data.dao.authz.QualifierData;
 import org.sakaiproject.tool.assessment.facade.AgentFacade;
 import org.sakaiproject.tool.assessment.facade.AuthzQueriesFacadeAPI;
 import org.sakaiproject.tool.cover.ToolManager;
@@ -298,5 +300,23 @@ public class AuthzQueriesFacade extends HibernateDaoSupport implements AuthzQuer
     }
     return isMember;
   }
+
+
+
+    public void hardDeleteGroupAuthzData(String groupId) {
+        Session session = getHibernateTemplate().getSessionFactory().getCurrentSession();
+
+        try {
+            session.createQuery("delete from AuthorizationData where agentId = :id")
+                    .setString("id", groupId)
+                    .executeUpdate();
+            session.flush();
+        } catch (HibernateException e) {
+            log.error("Error hard delete samigo group Authz Data " + e);
+        }
+    }
+
+
+
 
 }

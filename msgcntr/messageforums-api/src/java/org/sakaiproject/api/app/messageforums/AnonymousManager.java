@@ -86,4 +86,5 @@ public interface AnonymousManager
 	 * Persists the specified anonMapping in the db
 	 */
 	public void saveAnonMapping(AnonymousMapping anonMapping);
+	public void hardDeleteMappingForContext(String contextId);
 }

@@ -111,4 +111,8 @@ public class PreferenceServiceImpl implements PreferenceService
 		preferenceDao.deleteExact(user, context, type);
 	}
 
+	public void hardDeletePreferencesForContext(String context){
+		preferenceDao.hardDeletePreferencesForContext(context);
+	}
+
 }

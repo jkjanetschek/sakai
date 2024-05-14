@@ -741,4 +741,9 @@ public class PublishedAssessmentService extends AssessmentService{
 		PersistenceService.getInstance().getPublishedAssessmentFacadeQueries().restorePublishedAssessment(publishedAssessmentId);
 	}
 
+    public void hardDeletePublishedAssessment(String assessmentId){
+        PersistenceService.getInstance().getPublishedAssessmentFacadeQueries().hardDeletePublishedAssessment(assessmentId);
+    }
+
+
 }

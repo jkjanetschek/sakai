@@ -53,6 +53,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
+import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -109,6 +110,7 @@ import org.sakaiproject.calendar.api.Calendar;
 import org.sakaiproject.calendar.api.CalendarEvent;
 import org.sakaiproject.calendar.api.CalendarService;
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.content.api.ContentCollection;
 import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.content.api.ContentResource;
 import org.sakaiproject.content.api.ContentResourceEdit;
@@ -191,16 +193,19 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.InputSource;
+import org.sakaiproject.entity.api.HardDeleteAware;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
+import  org.sakaiproject.assignment.api.model.Assignment;
 
 /**
  * Created by enietzel on 3/3/17.
  */
 @Slf4j
 @Transactional(readOnly = true)
-public class AssignmentServiceImpl implements AssignmentService, EntityTransferrer, ApplicationContextAware {
+public class AssignmentServiceImpl implements AssignmentService, EntityTransferrer, ApplicationContextAware, HardDeleteAware {
 
 	@Setter private AnnouncementService announcementService;
     @Setter private ApplicationContext applicationContext;
@@ -4293,12 +4298,30 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                                 toCalendar = calendarService.getCalendar(toCalendarId);
                             }
 
-                            String fromDisplayName = fromEvent.getDisplayName();
+                            // make a collection of Group objects from the collection of group ref strings
+                            Collection groups = new Vector();
+                            Site oSite = siteService.getSite(oAssignment.getContext());
+                            Site nSite = siteService.getSite(nAssignment.getContext());
+                            Collection<Group> groupsInNewSite = nSite.getGroups();
+
+                            for (Iterator iGroups = fromEvent.getGroups().iterator(); iGroups.hasNext();)
+                            {
+                                String groupRef = (String) iGroups.next();
+                                String oGroupTitle = oSite.getGroup(groupRef).getTitle();
+                                for(Group group: groupsInNewSite){
+                                    if(group.getTitle().equals(oGroupTitle)){
+                                        groups.add(group);
+                                    }
+                                }
+                               // groups.add(siteService.getSite(oAssignment.getContext()).getGroup(groupRef));
+                            }
+
+
                             CalendarEvent toCalendarEvent
                                 = toCalendar.addEvent(fromEvent.getRange(), fromEvent.getDisplayName()
                                     , fromEvent.getDescription(), fromEvent.getType()
                                     , fromEvent.getLocation(), fromEvent.getAccess()
-                                    , fromEvent.getGroups(), fromEvent.getAttachments());
+                                    , groups, fromEvent.getAttachments());
                             nProperties.put(
                                 ResourceProperties.PROP_ASSIGNMENT_DUEDATE_CALENDAR_EVENT_ID, toCalendarEvent.getId());
                             nProperties.put(AssignmentConstants.NEW_ASSIGNMENT_DUE_DATE_SCHEDULED, Boolean.TRUE.toString());
@@ -5110,5 +5133,118 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
     		return resourceLoader.getString("user.modify.unknown", "");
     	}
     }
+
+
+
+    /**
+     * Implementation of HardDeleteAware to allow content to be fully purged
+     */
+    public void hardDelete(String siteId) {
+        log.info("Hard Delete  of Tool Assignments for context: " + siteId);
+
+        if (siteService.isSpecialSite(siteId)) {
+            log.error("hardDelete rejected special site: {}", siteId);
+            return;
+        }
+
+        Collection<Assignment> assignments = getDeletedAssignmentsForContext(siteId);
+        assignments.addAll(getAssignmentsForContext(siteId));
+
+
+        //remove associated tags and rubics and delete assignment
+        Iterator<Assignment> it =  assignments.iterator();
+        while (it.hasNext()) {
+            Assignment a = (org.sakaiproject.assignment.api.model.Assignment) it.next();
+            removeAssociatedTaggingItem(a);
+
+            // remove rubric association if there is one
+            //noch notwendig??????  hard delete durch tool rubric selber
+            //        rubricsService.deleteRubricAssociation(RubricsConstants.RBCS_TOOL_ASSIGNMENT, a.getId());
+
+
+            //release locks
+            Collection<String> groups = a.getGroups();
+            Site site = null;
+            try{
+                site = siteService.getSite(siteId);
+                for (String reference : groups) {
+                    Group group = site.getGroup(reference);
+                    if (group != null) {
+                        group.setLockForReference("/assignment/a/"+siteId+"/"+a.getId(), AuthzGroup.RealmLockMode.NONE);
+                        authzGroupService.save(authzGroupService.getAuthzGroup(group.getReference()));
+                    }
+                }
+                // siteService.save(siteService.getSite(a.getContext()));
+            } catch (IdUnusedException e){
+                log.error("IdUnusedException: " + String.valueOf(e));
+            } catch (AuthzPermissionException e){
+                log.error("AuthzPermissionException: " + String.valueOf(e));
+            } catch (GroupNotDefinedException e){
+                log.error("GroupNotDefinedException: " + String.valueOf(e));
+            }
+
+
+
+
+            try {
+                deleteAssignment(a);
+            } catch (PermissionException e) {
+                log.error("cant delete assignment " + e);
+            }
+        }
+
+
+        //  deleteAssignmentAndAllReferences()
+
+        //remove attachements
+        List<ContentResource> resources = contentHostingService.getAllResources("/attachment/" + siteId + "/Assignments/");  // /attachment/Course-ID-SLVA-32936/Assignments/7e00e547-4357-4d81-86ec-3b77100f12dd/Peer Review_Assignment 2_Feedback rubric.xlsx
+        for (ContentResource resource : resources) {
+            log.info("Removing resource: {}", resource.getId());
+            try {
+                contentHostingService.removeResource(resource.getId());
+            } catch (Exception e) {
+                log.warn("Failed to remove content.", e);
+            }
+        }
+
+        // Cleanup the collections
+        ContentCollection contentCollection = null;
+        try {
+            contentCollection = contentHostingService.getCollection("/attachment/" + siteId + "/Assignments/");
+            //   contentCollection = contentHostingService.getCollection("/attachment/" + siteId + "/");
+        } catch (IdUnusedException e) {
+            log.warn("id for collection does not exist " + e);
+        } catch (TypeException e1) {
+            log.warn("not a collection " + e1);
+        } catch (PermissionException e2) {
+            log.warn("insufficient permissions " + e2);
+        }
+
+
+        try{
+            //contentHostingService.removeCollection("/attachment/" + siteId + "/Assignments/");
+            if(contentCollection !=  null){
+                List<String> members = contentCollection.getMembers();
+                for(String member : members){
+                    log.info("remove contenCollection: " + member);
+                    contentHostingService.removeCollection(member);
+                }
+                contentHostingService.removeCollection(contentCollection.getId());
+            }
+
+            //     contentHostingService.removeCollection("/attachment/"+siteId+"/Assignments/");
+        }catch (IdUnusedException e) {
+            log.warn("id for collection does not exist " + e);
+        } catch (TypeException  e1) {
+            log.warn("not a collection " + e1);
+        } catch (PermissionException e2) {
+            log.warn("insufficient permissions " + e2);
+        }catch (InUseException e3){
+            log.warn("InUseException " + e3);
+        }catch (ServerOverloadException e4){
+            log.warn("ServerOverloadException " + e4);
+        }
+
+    } //harddelete
 
 }

@@ -66,15 +66,7 @@ import org.sakaiproject.tool.assessment.data.ifc.assessment.SectionDataIfc;
 import org.sakaiproject.tool.assessment.data.ifc.shared.TypeIfc;
 import org.sakaiproject.tool.assessment.entity.api.CoreAssessmentEntityProvider;
 import org.sakaiproject.tool.assessment.entity.api.PublishedAssessmentEntityProvider;
-import org.sakaiproject.tool.assessment.facade.AgentFacade;
-import org.sakaiproject.tool.assessment.facade.AssessmentFacade;
-import org.sakaiproject.tool.assessment.facade.AssessmentFacadeQueriesAPI;
-import org.sakaiproject.tool.assessment.facade.AssessmentTemplateFacade;
-import org.sakaiproject.tool.assessment.facade.ItemFacade;
-import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
-import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacadeQueries;
-import org.sakaiproject.tool.assessment.facade.SectionFacade;
-import org.sakaiproject.tool.assessment.facade.TypeFacade;
+import org.sakaiproject.tool.assessment.facade.*;
 import org.sakaiproject.tool.assessment.services.ItemService;
 import org.sakaiproject.tool.assessment.services.PersistenceService;
 import org.sakaiproject.tool.assessment.services.QuestionPoolService;
@@ -1408,4 +1400,33 @@ public class AssessmentService {
 
 		return rename;
 	}
+
+
+	public AuthzQueriesFacadeAPI getAuthzQueriesFacade() {
+		try {
+			return PersistenceService.getInstance().getAuthzQueriesFacade();
+		} catch(
+		Exception e) {
+			log.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	/*
+	 *   hard delete methods
+	 */
+
+	public void hardDeleteAssessment(String assessmentId){
+		 PersistenceService.getInstance().getAssessmentFacadeQueries().hardDeleteAssessment(assessmentId);
+	}
+	public void hardDeletePublishedAssessment(String assessmentId){
+		PersistenceService.getInstance().getPublishedAssessmentFacadeQueries().hardDeletePublishedAssessment(assessmentId);
+	}
+
+	public void hardDeleteFavoriteColChoices(String siteId){
+		PersistenceService.getInstance().getFavoriteColChoicesFacadeQueries().hardDeleteFavoriteColChoices(siteId);
+	}
+
+
+
 }

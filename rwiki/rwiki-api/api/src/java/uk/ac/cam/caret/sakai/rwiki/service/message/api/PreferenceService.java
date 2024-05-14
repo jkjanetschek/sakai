@@ -84,4 +84,6 @@ public interface PreferenceService
 	 * @param type
 	 */
 	void deletePreference(String user, String context, String type);
+
+	void hardDeletePreferencesForContext(String context);
 }

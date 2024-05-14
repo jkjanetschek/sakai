@@ -23,6 +23,7 @@
 
 package org.sakaiproject.lessonbuildertool.model;
 
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -56,6 +57,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import org.sakaiproject.javax.Restriction;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate5.HibernateTemplate;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
@@ -1972,4 +1974,135 @@ public class SimplePageToolDaoImpl extends HibernateDaoSupport implements Simple
 
         }).filter(spi -> spi != null).collect(Collectors.toList());
     }
+
+
+    /**
+     *  Hard Delete methods
+     */
+    public List<SimplePage> getAllPages(final String siteId) {
+        // set of all top level pages, actually the items pointing to them
+        try {
+
+            DetachedCriteria d = DetachedCriteria.forClass(SimplePage.class);
+            d.add(Restrictions.eq("siteId", siteId));
+            //	d.add(Restrictions.isNull("parent"));
+
+            List<SimplePage> lessonsPages = (List<SimplePage>) getHibernateTemplate().findByCriteria(d);
+
+            return lessonsPages;
+
+        } catch (Exception e) {
+            log.warn("Could not find site: " + siteId, e);
+            return null;
+        }
+    }
+    public List<SimplePageItem> getAllPageItems(List<SimplePage> allPages){
+        List<Long> allPageIds = new ArrayList<Long>();
+        allPages.forEach(a -> allPageIds.add(a.getPageId()));
+
+        if(allPageIds.size() != 0){
+            DetachedCriteria d = DetachedCriteria.forClass(SimplePageItem.class).add(Restrictions.or(Restrictions.in("pageId", allPageIds),Restrictions.in("sakaiId",allPageIds.stream().map(o -> o.toString()).collect(Collectors.toList()))));
+            return (List<SimplePageItem>) getHibernateTemplate().findByCriteria(d);
+        }
+
+        return new ArrayList<>();
+
+    }
+    public void deleteLessonsBuilderGroups(String siteId){
+        DetachedCriteria d = DetachedCriteria.forClass(SimplePageGroup.class);
+        d.add(Restrictions.eq("siteId", siteId));
+        //	d.add(Restrictions.isNull("parent"));
+        List<SimplePageGroup> lessonsGroups = (List<SimplePageGroup>) getHibernateTemplate().findByCriteria(d);
+        getHibernateTemplate().deleteAll(lessonsGroups);
+    }
+    public void deleteLessonsLogs(List<SimplePageItem> simplePageitems) {
+        //List<SimplePageItem> listAllItems = getAllPageItems(allPages);
+
+        List<Long> itemsIds = simplePageitems.stream().map(a -> a.getId()).collect(Collectors.toList());
+        if(itemsIds.size() != 0){
+            DetachedCriteria d2 = DetachedCriteria.forClass(SimplePageLogEntry.class).add(Restrictions.in("itemId",itemsIds));
+            List<SimplePageLogEntry> logEntries = (List<SimplePageLogEntry>) getHibernateTemplate().findByCriteria(d2);
+            getHibernateTemplate().deleteAll(logEntries);
+        }
+    }
+
+    public void deleteLessonsComments(List<SimplePage> allPages){
+        List<Long> allPageIds = allPages.stream().map(a -> a.getPageId()).collect(Collectors.toList());
+        if(allPageIds.size() != 0){
+            DetachedCriteria d = DetachedCriteria.forClass(SimplePageComment.class).add(Restrictions.in("pageId",allPageIds));
+            List<SimplePageComment> list = (List<SimplePageComment>) getHibernateTemplate().findByCriteria(d);
+            getHibernateTemplate().deleteAll(list);
+        }
+    }
+    public void deleteChecklistItemsStatus(List<SimplePageItem> allPageItems){
+        //List<SimplePageItem> listAllItems = getAllPageItems(allPages);
+        List<SimplePageItem> checkListItems = (List<SimplePageItem>) allPageItems.stream().filter(o -> o.getType() == 15).collect(Collectors.toList());
+        List<Long> checkListItemsIds = checkListItems.stream().map(o -> o.getId()).collect(Collectors.toList());
+
+
+        if(checkListItemsIds.size() != 0){
+            final String sql = "DELETE FROM lesson_builder_ch_status WHERE checklistId IN (" + checkListItemsIds.stream().map(i -> "?").collect(Collectors.joining(",")) + ")";
+            final Object [] fields = new Object[checkListItemsIds.size()];
+
+            for (int i=0; i<checkListItemsIds.size(); i++) {
+                fields[i] = checkListItemsIds.get(i);
+            }
+            sqlService.dbWrite(sql, fields );
+        }
+
+
+        /*
+         *	SQL Error: 1064, SQLState: 42000 ou have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the
+         *	right syntax to use near ')' at line 1
+         */
+
+        //DetachedCriteria d = DetachedCriteria.forClass(ChecklistItemStatus.class).add(Restrictions.in("id.checklistId",checkListItemsIds));
+        //List<ChecklistItemStatus> list = (List<ChecklistItemStatus>) getHibernateTemplate().findByCriteria(d);
+        //getHibernateTemplate().deleteAll(list);
+    }
+    public void deletePeerEvalStatus(List<SimplePage> allPages){
+        List<Long> allPageIds = allPages.stream().map(a -> a.getPageId()).collect(Collectors.toList());
+        if(allPageIds.size() != 0){
+            DetachedCriteria d = DetachedCriteria.forClass(SimplePagePeerEvalResult.class).add(Restrictions.in("pageId",allPageIds));
+            getHibernateTemplate().deleteAll(getHibernateTemplate().findByCriteria(d));
+        }
+    }
+    public void deleteLessonsProperties(String siteId){
+        DetachedCriteria d = DetachedCriteria.forClass(SimplePageProperty.class).add(Restrictions.like("attribute","%"+siteId+"%"));
+        getHibernateTemplate().deleteAll(getHibernateTemplate().findByCriteria(d));
+    }
+    public void deleteQuestionResponses(List<SimplePageItem> allPageItems){
+        //List<SimplePageItem> listAllItems = getAllPageItems(allPages);
+        List<SimplePageItem> checkListItems = allPageItems.stream().filter(o -> o.getType() == 11).collect(Collectors.toList());
+        List<Long> checkListItemsIds = checkListItems.stream().map(o -> o.getId()).collect(Collectors.toList());
+        if(checkListItemsIds.size() != 0){
+            DetachedCriteria d = DetachedCriteria.forClass(SimplePageQuestionResponse.class).add(Restrictions.in("questionId",checkListItemsIds));
+            DetachedCriteria d2 = DetachedCriteria.forClass(SimplePageQuestionResponseTotals.class).add(Restrictions.in("questionId",checkListItemsIds));
+            //List<ChecklistItemStatus> list = (List<ChecklistItemStatus>) getHibernateTemplate().findByCriteria(d);
+            getHibernateTemplate().deleteAll(getHibernateTemplate().findByCriteria(d));
+            getHibernateTemplate().deleteAll(getHibernateTemplate().findByCriteria(d2));
+        }
+    }
+    public void deleteStudentPages(List<SimplePage> allPages){
+        List<Long> allPageIds = allPages.stream().map(a -> a.getPageId()).collect(Collectors.toList());
+        if(allPageIds.size() != 0){
+            DetachedCriteria d = DetachedCriteria.forClass(SimpleStudentPage.class).add(Restrictions.in("pageId",allPageIds));
+            List<SimpleStudentPage> studentPages = (List<SimpleStudentPage>) getHibernateTemplate().findByCriteria(d);
+            deleteRelatedStudentPageItems(studentPages);
+            getHibernateTemplate().deleteAll(studentPages);
+        }
+    }
+
+    private void deleteRelatedStudentPageItems(List<SimpleStudentPage> studentPages) {
+        List<Long> allCommentSectionIds = studentPages.stream().map(s -> s.getCommentsSection()).collect(Collectors.toList());
+        if (allCommentSectionIds.size() != 0) {
+            DetachedCriteria d = DetachedCriteria.forClass(SimplePageItem.class).add(Restrictions.in("id", allCommentSectionIds));
+            try {
+                getHibernateTemplate().deleteAll(getHibernateTemplate().findByCriteria(d));
+            } catch (Exception e) {
+                log.warn("Failed to delete StudentPageItem for commentSectionIds: {}", e.getMessage());
+            }
+        }
+    }
 }
+

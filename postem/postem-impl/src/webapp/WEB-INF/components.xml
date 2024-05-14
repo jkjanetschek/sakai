@@ -29,4 +29,10 @@
 			</props>
 		</property>
 	</bean>
+
+
+	<bean id="org.sakaiproject.component.app.postem.GradebookService" class="org.sakaiproject.component.app.postem.GradebookService" init-method="init">
+		<property name="siteService" ref="org.sakaiproject.site.api.SiteService"/>
+		<property name="gradebookManager" ref="org.sakaiproject.api.app.postem.data.GradebookManager" />
+	</bean>
 </beans>

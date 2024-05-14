@@ -53,6 +53,7 @@ public class EmailNotificationManagerImpl extends HibernateDaoSupport implements
 
 	private static final String QUERY_BY_USER_ID = "findEmailNotificationByUserId";
 	private static final String QUERY_USERLIST_BY_NOTIFICATION_LEVEL = "findUserIdsByNotificationLevel";
+	private static final String QUERY_BY_CONTEXT = "findEmailNotificationByContext";
 
 	protected UserDirectoryService userDirectoryService;
 
@@ -245,6 +246,20 @@ public class EmailNotificationManagerImpl extends HibernateDaoSupport implements
 		log.debug("saveEmailNotification executed for contextid={} userid={}",
 				emailoption.getContextId(), emailoption.getUserId());
 
+	}
+
+	private List getEmailNotificationsForContext(String contextId){
+		HibernateCallback<List<String>> hcb = session -> {
+			Query q = session.getNamedQuery(QUERY_BY_CONTEXT);
+			q.setParameter("contextId", contextId, StringType.INSTANCE);
+			return q.list();
+		};
+		return getHibernateTemplate().execute(hcb);
+	}
+
+	public void hardDeleteEmailNotificationsForContext(String contextId){
+		List<EmailNotification> notifications = getEmailNotificationsForContext(contextId);
+		getHibernateTemplate().deleteAll(notifications);
 	}
 
 }

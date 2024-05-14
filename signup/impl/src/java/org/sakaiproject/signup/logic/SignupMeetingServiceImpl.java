@@ -1191,4 +1191,8 @@ public class SignupMeetingServiceImpl implements SignupMeetingService, Retry, Me
 	    return df.format(date);
 	}
 
+	public void hardDeleteSignupMeetingForContext(String siteId){
+		signupMeetingDao.hardDeleteSignupMeetingsForContext(siteId);
+	}
+
 }

@@ -102,5 +102,7 @@ public interface ConversationsService {
 
     ConvStatus getConvStatusForSiteAndUser(String siteId, String userId) throws ConversationsPermissionsException;
     void saveConvStatus(ConvStatus convStatus) throws ConversationsPermissionsException;
-    Map<String, Object> getSiteStats(String siteId, Instant from, Instant to, int page, String sort) throws ConversationsPermissionsException; 
+    Map<String, Object> getSiteStats(String siteId, Instant from, Instant to, int page, String sort) throws ConversationsPermissionsException;
+
+    void hardDelete(String siteId);
 }

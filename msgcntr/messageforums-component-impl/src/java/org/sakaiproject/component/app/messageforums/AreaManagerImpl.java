@@ -22,6 +22,7 @@ package org.sakaiproject.component.app.messageforums;
 
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.HibernateException;
@@ -55,6 +56,7 @@ public class AreaManagerImpl extends HibernateDaoSupport implements AreaManager 
 
     private static final String QUERY_AREA_BY_CONTEXT_AND_TYPE_ID = "findAreaByContextIdAndTypeId";
     private static final String QUERY_AREA_BY_TYPE = "findAreaByType";
+    private static final String QUERY_AREAS_BY_CONTEXT = "findAreasByContext";
 
     // TODO: pull titles from bundle
     private static final String MESSAGECENTER_BUNDLE = "org.sakaiproject.api.app.messagecenter.bundle.Messages";
@@ -304,7 +306,7 @@ public class AreaManagerImpl extends HibernateDaoSupport implements AreaManager 
     }
 
     public void deleteArea(Area area) {
-        getHibernateTemplate().delete(area);
+        getHibernateTemplate().delete(getHibernateTemplate().merge(area));
         log.debug("deleteArea executed with areaId: " + area.getId());
     }
 
@@ -338,7 +340,19 @@ public class AreaManagerImpl extends HibernateDaoSupport implements AreaManager 
 
         return (Area) getHibernateTemplate().execute(hcb);
     }
-    
+
+
+    public List getAreasByContextId(final String contextId) {
+        HibernateCallback hcb = new HibernateCallback() {
+            public Object doInHibernate(Session session) throws HibernateException {
+                Query q = session.getNamedQuery(QUERY_AREAS_BY_CONTEXT);
+                q.setParameter("contextId", contextId, StringType.INSTANCE);
+                return q.list();
+            }
+        };
+
+        return (List) getHibernateTemplate().execute(hcb);
+    }
     
 
     public Area getAreaByType(final String typeId) {

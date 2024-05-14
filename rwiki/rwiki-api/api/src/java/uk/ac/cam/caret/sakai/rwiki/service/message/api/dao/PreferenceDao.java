@@ -48,4 +48,5 @@ public interface PreferenceDao
 	int delete(String user, String context, String type);
 
 	int deleteExact(String user, String context, String type);
+	void hardDeletePreferencesForContext(String context);
 }

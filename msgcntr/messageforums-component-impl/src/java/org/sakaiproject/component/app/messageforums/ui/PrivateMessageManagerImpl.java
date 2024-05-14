@@ -2238,8 +2238,29 @@ return topicTypeUuid;
 	  getHibernateTemplate().initialize(currentMessage.getRecipients());
 	  return currentMessage;
   }
-  
-  private PrivateMessage createResponseMessage(PrivateMessage currentMessage, MimeMessage msg, String from) throws MessagingException {
+
+
+    public List getPrivateForumsByContextId(String contextId)
+    {
+        log.debug("getPrivateForumsByContextId(String contextId)");
+
+        return forumManager.getForumByTypeAndContext(typeManager
+                .getPrivateMessageAreaType(), contextId);
+    }
+
+    public void deletePrivateForum(PrivateForum forum, String siteId)
+    {
+        if (log.isDebugEnabled())
+        {
+            log.debug("setForumManager(DiscussionForum" + forum + ")");
+        }
+        forumManager.deletePrivateForum(forum, siteId);
+    }
+
+
+
+
+    private PrivateMessage createResponseMessage(PrivateMessage currentMessage, MimeMessage msg, String from) throws MessagingException {
 	  PrivateMessage rrepMsg = messageManager.createPrivateMessage() ;
 
 	  if (StringUtils.isBlank(msg.getSubject())) {

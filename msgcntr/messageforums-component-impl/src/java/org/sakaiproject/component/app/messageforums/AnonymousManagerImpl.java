@@ -255,4 +255,19 @@ public class AnonymousManagerImpl extends HibernateDaoSupport implements Anonymo
 		String hex = Integer.toHexString( (new Random()).nextInt(MAX_HEX) );
 		return (ANON_ID_PADDING.substring(hex.length()) + hex).toUpperCase();
 	}
+
+	public void hardDeleteMappingForContext(String contextId){
+		HibernateCallback<List<AnonymousMapping>> hcb = new HibernateCallback<List<AnonymousMapping>>()
+		{
+			public List<AnonymousMapping> doInHibernate(Session session) throws HibernateException
+			{
+				Query q = session.getNamedQuery(QUERY_BY_SITE);
+				q.setParameter("siteId", contextId, StringType.INSTANCE);
+				return q.list();
+			}
+		};
+
+		List<AnonymousMapping> mappings = getHibernateTemplate().execute(hcb);
+		getHibernateTemplate().deleteAll(mappings);
+	}
 }

@@ -28,9 +28,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Expression;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
+import org.springframework.transaction.annotation.Transactional;
 import uk.ac.cam.caret.sakai.rwiki.message.model.RwikiTriggerImpl;
 import uk.ac.cam.caret.sakai.rwiki.service.message.api.dao.TriggerDao;
 import uk.ac.cam.caret.sakai.rwiki.service.message.api.model.Trigger;
@@ -169,6 +171,20 @@ public class TriggerDaoImpl extends HibernateDaoSupport implements TriggerDao
 	public void update(Object o)
 	{
 		getHibernateTemplate().saveOrUpdate(o);
+	}
+	@Transactional(readOnly = false)
+	public void hardDeleteTriggersInSpace(String context){
+		try{
+			HibernateCallback callback = new HibernateCallback() {
+				@Override
+				public Object doInHibernate(Session session) throws HibernateException {
+					return session.createCriteria(Trigger.class).add(Restrictions.like("pagespace","%"+context+"%")).list();
+				}
+			};
+			getHibernateTemplate().deleteAll((List)getHibernateTemplate().execute(callback));
+		}catch (HibernateException e){
+			log.error(String.valueOf(e));
+		}
 	}
 
 }

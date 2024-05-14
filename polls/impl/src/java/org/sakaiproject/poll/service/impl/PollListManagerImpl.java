@@ -37,18 +37,13 @@ import java.util.Vector;
 import lombok.extern.slf4j.Slf4j;
 import lombok.Data;
 
+import org.sakaiproject.entity.api.*;
 import org.springframework.dao.DataAccessException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import org.sakaiproject.entity.api.Entity;
-import org.sakaiproject.entity.api.EntityManager;
-import org.sakaiproject.entity.api.EntityTransferrer;
-import org.sakaiproject.entity.api.HttpAccess;
-import org.sakaiproject.entity.api.Reference;
-import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.genericdao.api.search.Order;
 import org.sakaiproject.genericdao.api.search.Restriction;
 import org.sakaiproject.genericdao.api.search.Search;
@@ -65,7 +60,7 @@ import org.sakaiproject.site.api.SiteService;
 
 @Slf4j
 @Data
-public class PollListManagerImpl implements PollListManager,EntityTransferrer {
+public class PollListManagerImpl implements PollListManager,EntityTransferrer, HardDeleteAware {
 
     public static final String REFERENCE_ROOT = Entity.SEPARATOR + "poll";
 
@@ -692,4 +687,15 @@ public class PollListManagerImpl implements PollListManager,EntityTransferrer {
 		}
 		return false;
 	}
+
+
+    public void hardDelete(String siteId) {
+        log.info("Hard Delete  of Tool Polls for context: " + siteId);
+
+        List<Poll> polls =  findAllPolls( siteId);
+        for (Poll poll: polls){
+            deletePoll(poll);
+        }
+
+    }
 }

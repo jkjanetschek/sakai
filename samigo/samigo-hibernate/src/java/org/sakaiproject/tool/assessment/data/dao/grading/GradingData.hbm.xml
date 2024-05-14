@@ -32,6 +32,16 @@
         <key column="ITEMGRADINGID"/>
         <one-to-many class="org.sakaiproject.tool.assessment.data.dao.grading.ItemGradingAttachment" not-found="ignore"/>
     </set>
+
+    <list name="mediaArray" table="SAM_MEDIA_T" cascade="delete-orphan" inverse="true" lazy="true">
+      <key column="ITEMGRADINGID"/>
+      <index></index>
+      <one-to-many class="org.sakaiproject.tool.assessment.data.dao.grading.MediaData" not-found="ignore"/>
+    </list>
+
+
+
+
   </class>
 
   <class name="org.sakaiproject.tool.assessment.data.dao.grading.AssessmentGradingData" table="SAM_ASSESSMENTGRADING_T">

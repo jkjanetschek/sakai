@@ -90,5 +90,6 @@ public interface MessageService
 	 * @return
 	 */
 	List getUsersInSpaceOnly(String pageSpace, String pageName);
+	void hardDeleteMessagesInSpace(String context);
 
 }

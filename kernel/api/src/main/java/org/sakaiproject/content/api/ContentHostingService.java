@@ -2173,4 +2173,7 @@ public interface ContentHostingService extends EntityProducer
 	 * @return String - The name of the folder.
 	 */
 	public String getStudentUploadFolderName();
+
+    public void removeCollectionRecursive(String collectionId);
+    public void hardDeleteResources(String collectionId);
 }

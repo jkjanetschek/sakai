@@ -385,4 +385,8 @@ public class GradingPersistenceManagerImpl implements GradingPersistenceManager 
     public GradebookProperty saveGradebookProperty(GradebookProperty property) {
         return gradebookPropertyRepository.save(property);
     }
+
+    public boolean isGradebookDefined(final String gradebookUid) {
+        return gradebookRepository.isGradebookDefined(gradebookUid);
+    }
 }

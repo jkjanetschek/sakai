@@ -148,4 +148,5 @@ public interface RWikiCurrentObjectDao extends RWikiObjectDao
 	 */
 	List findAllPageNames();
 
+	public void hardDeleteRWikiObjectsForContext(String context);
 }

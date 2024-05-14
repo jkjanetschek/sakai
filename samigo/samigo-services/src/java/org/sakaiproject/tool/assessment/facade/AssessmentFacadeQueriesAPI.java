@@ -248,4 +248,6 @@ public interface AssessmentFacadeQueriesAPI {
     public List<AssessmentData> getDeletedAssessments(String siteId);
 
     public void restoreAssessment(Long assessmentId);
+
+	public void hardDeleteAssessment(String assessmentId);
 }

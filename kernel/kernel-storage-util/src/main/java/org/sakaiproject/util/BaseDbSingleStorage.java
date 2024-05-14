@@ -94,6 +94,7 @@ public class BaseDbSingleStorage implements DbSingleStorage
 	protected Hashtable m_locks = null;
 
 	/** If set, we treat reasource ids as case insensitive. */
+	// SAK-48458
 	protected boolean m_caseInsensitive = false;
 
 	/** Injected (by constructor) SqlService. */
@@ -1119,7 +1120,7 @@ public class BaseDbSingleStorage implements DbSingleStorage
 		if ("mysql".equals(m_sql.getVendor()))
 		{
 			if (recordId == null) recordId = "null";
-			return recordId.hashCode() + " - " + recordId;
+			return recordId.toLowerCase().hashCode() + " - " + recordId;
 		}
 		else
 		// oracle, hsqldb

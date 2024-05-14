@@ -282,4 +282,7 @@ public interface MessageForumsForumManager {
 
 	public List<String> getAllowedGroupForRestrictedForum(final Long forumId, final String permissionName);
 	public List<String> getAllowedGroupForRestrictedTopic(final Long topicId, final String permissionName);
+
+
+    public void deletePrivateForum(PrivateForum forum, String siteId);
 }

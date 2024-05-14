@@ -1214,4 +1214,5 @@ public interface GradingService extends EntityProducer {
     public void updateGradeMapping(Long gradeMappingId, Map<String, Double> gradeMap);
 
     public String getUrlForAssignment(Assignment assignment);
+    public void hardDeleteGradebook(String siteId);
 }

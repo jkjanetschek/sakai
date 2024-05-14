@@ -474,4 +474,6 @@ public interface SignupMeetingService {
 	 */
 	String getUsersLocalDateTimeString(Instant instant);
 
+
+	 void hardDeleteSignupMeetingForContext(String siteId);
 }

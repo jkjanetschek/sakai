@@ -39,6 +39,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import org.sakaiproject.entity.api.*;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -50,15 +51,6 @@ import org.sakaiproject.chat2.model.ChatManager;
 import org.sakaiproject.chat2.model.ChatMessage;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.component.cover.ServerConfigurationService;
-import org.sakaiproject.entity.api.Entity;
-import org.sakaiproject.entity.api.EntityManager;
-import org.sakaiproject.entity.api.EntityNotDefinedException;
-import org.sakaiproject.entity.api.EntityPermissionException;
-import org.sakaiproject.entity.api.EntityProducer;
-import org.sakaiproject.entity.api.EntityTransferrer;
-import org.sakaiproject.entity.api.HttpAccess;
-import org.sakaiproject.entity.api.Reference;
-import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.site.api.Site;
@@ -74,7 +66,7 @@ import org.sakaiproject.util.api.FormattedText;
  *
  */
 @Slf4j
-public class ChatEntityProducer implements EntityProducer, EntityTransferrer {
+public class ChatEntityProducer implements EntityProducer, EntityTransferrer, HardDeleteAware {
    
    @Setter @Getter private EntityManager entityManager;
    @Setter @Getter private ChatManager chatManager;
@@ -791,4 +783,14 @@ public class ChatEntityProducer implements EntityProducer, EntityTransferrer {
 
         return null;
     }
+
+
+    public void hardDelete(String siteId){
+        log.info("Hard Delete  of Tool Chat2 for context: " + siteId);
+        chatManager.hardDeleteChannelsForContext(siteId);
+
+
+    }
+
+
 }

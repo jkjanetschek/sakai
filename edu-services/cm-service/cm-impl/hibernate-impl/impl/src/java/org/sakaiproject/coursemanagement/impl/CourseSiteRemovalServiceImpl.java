@@ -132,7 +132,7 @@ public class CourseSiteRemovalServiceImpl extends HibernateDaoSupport implements
        int numSitesRemoved = 0;
        for (AcademicSession academicSession : academicSessions) {
           // see if the academic session ended more than the specified number of days ago
-          if (academicSession.getEndDate().getTime() < expirationDate.getTime()) {
+          if (!academicSession.isCurrent() && academicSession.getEndDate().getTime() < expirationDate.getTime()) {
              // get a list of all published course sites in ascending creation date order which are associated with the specified academic session
              Map<String, String> propertyCriteria = new HashMap<>();
              propertyCriteria.put("term_eid", academicSession.getEid());

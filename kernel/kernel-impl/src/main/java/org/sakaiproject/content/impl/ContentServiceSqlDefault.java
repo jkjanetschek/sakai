@@ -196,6 +196,19 @@ public class ContentServiceSqlDefault implements ContentServiceSql
 	}
 
 	/**
+	 * returns the sql statement which deletes rows after site is hard deleted
+	 */
+	public String getHardDeleteDropboxSql()
+	{
+		return "delete from CONTENT_DROPBOX_CHANGES where DROPBOX_ID like ?";
+	}
+	public String getHardDeleteTypeRegistrySql(){
+		return "delete from CONTENT_TYPE_REGISTRY where CONTEXT_ID like ?";
+	}
+
+
+
+	/**
 	 * returns the sql statement to add the FILE_SIZE column to the CONTENT_RESOURCE table.
 	 */
 	public String getAddFilesizeColumnSql(String table)

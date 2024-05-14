@@ -30,6 +30,7 @@
 		<lookup-method name="idManager" bean="org.sakaiproject.id.api.IdManager" />
 		<lookup-method name="notificationService" bean="org.sakaiproject.event.api.NotificationService" />
 		<lookup-method name="usageSessionService" bean="org.sakaiproject.event.api.UsageSessionService" />
+        <lookup-method name="contentHostingService" bean="org.sakaiproject.content.api.ContentHostingService" />
 
  		<property name="autoDdl"><value>${auto.ddl}</value></property>
         <property name="databaseBeans">

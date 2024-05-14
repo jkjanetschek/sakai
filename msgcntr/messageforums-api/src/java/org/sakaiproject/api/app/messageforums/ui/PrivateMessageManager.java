@@ -88,6 +88,8 @@ public interface PrivateMessageManager {
     	      final String order);
 
 
+    public List getPrivateForumsByContextId(String contextId);
+
     /**
      * check if private message area is enabled for the current user
      * @return boolean
@@ -198,7 +200,7 @@ public interface PrivateMessageManager {
     public void removePvtMsgAttachment(Attachment o);
     public Attachment getPvtMsgAttachment(final Long pvtMsgAttachId);
     
-    
+
     public boolean isInstructor();
     public boolean isInstructor(User user, String contextId);
     public boolean isSectionTA();
@@ -263,5 +265,6 @@ public interface PrivateMessageManager {
 	boolean isAllowToFieldMyGroups(User user, String contextId);
 
 	boolean isAllowToFieldMyGroupMembers(User user, String contextId);
-    
+
+    public void deletePrivateForum(PrivateForum forum, String stiteId);
 }
