@@ -230,6 +230,7 @@ export class SakaiAnnouncements extends SakaiPageableElement {
           }
         .title {
           flex: 2;
+          word-break: break-word;
         }
         .cell {
           display: flex;

@@ -201,6 +201,9 @@ export class SakaiForums extends SakaiPageableElement {
           padding: 8px;
           font-size: var(--sakai-grades-title-font-size);
         }
+        .cell.siteUrl {
+          word-break: break-word;
+        }
         .even {
           background-color: var(--sakai-table-even-color);
         }
