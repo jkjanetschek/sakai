@@ -123,15 +123,15 @@
     box-shadow: none !important;
   }
 }
-/* 
+/*
  * WARNING: This CSS uses deprecated properties because there's currently no alternative way
- * to achieve multi-line text truncation. 
+ * to achieve multi-line text truncation.
  * These properties are:
  * - display: -webkit-box;
  * - -webkit-line-clamp: 2;
  * - -webkit-box-orient: vertical;
- * 
- * These may break in future browser versions, so monitor this and update if a more standardized 
+ *
+ * These may break in future browser versions, so monitor this and update if a more standardized
  * approach becomes available.
  */
 @include media-breakpoint-up(md) {
@@ -624,10 +624,41 @@
     }
   }
 
+  &.portal-nav-sidebar-desktop {
+    background-color: var(--sakai-background-color-3);
+    .site-list-item-collapse {
+      background-color: var(--sakai-background-color-2);
+    }
+    z-index: 10;
+    min-width: var(--portal-nav-sidebar-width);
+  }
+
   .fa-tool-menu-icon {
     margin-top: 5px;
   }
 }
+
+// resize of nav-sidebar
+#nav-sidebar-resize-handle {
+  &.resize-handle {
+  z-index: 1000;
+  width: 5px;
+  position: absolute;
+  height: 100%;
+  //left: var(--portal-nav-sidebar-width);
+  left: calc(var(--portal-nav-sidebar-width) - 2px);
+  cursor: col-resize;
+  pointer-events: auto;
+
+  --default-portal-nav-sidebar-width: var(--portal-nav-sidebar-width);
+  --offset-content-to-container-width: 1.5rem;
+  }
+}
+.no-select {
+  user-select: none;
+}
+
+
 
 .site-list-item .site-link-block .img_site_toolmenu {
   max-height: 1.2em;

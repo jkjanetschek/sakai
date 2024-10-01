@@ -186,6 +186,8 @@
     #end
 
 </aside>
+<div id="nav-sidebar-resize-handle" class="resize-handle"></div>
+
 
 <script>
     // focus the current site on load and prepare site description popovers
@@ -234,5 +236,146 @@
             }
         })
     });
+
+    /*
+     *    Feature resizable nav tool bar
+     */
+
+    const regexPx = /(\d+\.?\d+)?px/;
+
+
+    //use to calc vw
+    const windowWidth = window.innerWidth;
+    const root = document.documentElement;
+    const sidebar = document.getElementById('portal-nav-sidebar');
+    const dragHandle = document.getElementById('nav-sidebar-resize-handle');
+    const pageBody = document.getElementById('pageBody');
+
+
+    const computedStyleRoot = window.getComputedStyle(root);
+    const dragHandleStyles = getComputedStyle(dragHandle);
+    const fontSize = parseFloat(computedStyleRoot.getPropertyValue('font-size'));
+    //TODO refactor using regex!
+    const defaultSidebarWidth = (dragHandleStyles.getPropertyValue('--default-portal-nav-sidebar-width').trim().substring(0, 2)) * fontSize;
+    const offsetContentToContainerWidth = (dragHandleStyles.getPropertyValue('--offset-content-to-container-width').trim().substring(0, 3)) * fontSize;
+
+    //set new min-width for sidebar: override setting from css here to avoid any unkown side effect
+    const minWidthVW = calcVW(defaultSidebarWidth);
+    sidebar.style.minWidth = `${minWidthVW}vw`;
+    //set max width
+    sidebar.style.maxWidth = '95vw';
+    let maxWidthPX = (95*windowWidth)/100
+
+            // px=(vw×viewport width in px)÷100
+
+
+    let mainContainer = null;
+    let portalMainContent = null;
+    let defaultWidthContainer = null;
+    let defaultWidthContainerVW = null;
+
+
+
+    const offSetHandle = calcVW(2)
+
+    // workaround to clear cache
+    if (localStorage.getItem("sidebarWidth") > 50) {
+        localStorage.removeItem("sidebarWidth");
+    }
+
+    // Function to apply saved width from localStorage
+    function applySavedWidth() {
+        let savedWidth = localStorage.getItem("sidebarWidth");
+        if (savedWidth) {
+            const width = parseInt(savedWidth, 10);
+            if (!isNaN(width) && width > 0) {
+                let newWidthHandle = savedWidth - offSetHandle;
+
+
+                sidebar.style.setProperty('width', `${savedWidth}vw`);
+                pageBody.style.gridTemplateColumns = `${savedWidth}vw 1fr`;
+                dragHandle.style.setProperty('left', `${newWidthHandle}vw`);
+
+
+                const offSetContainerWidth = calcOffsetContainerWidth(savedWidth);
+                let newContentContainerWidth = (calcVW(windowWidth) - (calcVW(defaultSidebarWidth) + offSetContainerWidth))
+                mainContainer.style.setProperty('width', `${newContentContainerWidth}vw`)
+
+            }
+        }
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        portalMainContent = document.querySelector('.portal-main-content');
+        mainContainer = document.querySelector('.portal-main-container');
+        defaultWidthContainer = getComputedStyle(mainContainer).getPropertyValue('width');
+
+        const match = defaultWidthContainer.match(regexPx);
+        defaultWidthContainer = match[1];
+        defaultWidthContainerVW = calcVW(defaultWidthContainer);
+
+        const mainContentWidth = Number(defaultWidthContainer) - Number(offsetContentToContainerWidth);
+        const mainContentWidthVW = calcVW(mainContentWidth)
+
+        portalMainContent.style.setProperty('width', `${mainContentWidthVW}vw`);
+
+        mainContainer.style.setProperty('position', 'relative');
+        applySavedWidth();
+    });
+
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {func(...args);}, wait);
+        };
+    }
+    const debouncedResizeSidebar = debounce(resizeSidebar, 9);
+
+    dragHandle.addEventListener('mousedown', function (e) {
+        // Disable text selection while dragging
+        document.body.classList.add("no-select");
+        document.addEventListener('mousemove', debouncedResizeSidebar);
+        document.addEventListener('mouseup', stopResizing);
+    });
+
+    function resizeSidebar(e) {
+        let newWidthSidebar = e.clientX;
+
+        if (newWidthSidebar >= defaultSidebarWidth && newWidthSidebar <= maxWidthPX) {
+            let newWidthHandle = calcVW(newWidthSidebar -2);
+            let offSetContainerWidth = (newWidthSidebar - defaultSidebarWidth);
+            offSetContainerWidth =  calcVW(offSetContainerWidth > 0 ? offSetContainerWidth : 0);
+
+
+            const newContentContainerWidth =  defaultWidthContainerVW - offSetContainerWidth;
+            newWidthSidebar = calcVW(newWidthSidebar);
+            sidebar.style.width = `${newWidthSidebar}vw`;
+            pageBody.style.gridTemplateColumns = `${newWidthSidebar}vw 1fr`;
+            dragHandle.style.left = `${newWidthHandle}vw`;
+            mainContainer.style.width = `${newContentContainerWidth}vw`;
+
+            // Save the new width to localStorage
+            localStorage.setItem("sidebarWidth", newWidthSidebar);
+        }
+
+    }
+    // calc
+    function calcOffsetContainerWidth(newWidth) {
+        let offSetContainerWidth = (newWidth - calcVW(defaultSidebarWidth));
+        return offSetContainerWidth > 0 ? offSetContainerWidth : 0;
+    }
+
+    function stopResizing() {
+        // Re-enable text selection after dragging
+        document.body.classList.remove("no-select");
+        document.removeEventListener('mousemove', debouncedResizeSidebar);
+        document.removeEventListener('mouseup', stopResizing);
+    }
+
+    function calcVW(px) {
+        return (px/windowWidth)*100;
+    }
+
+
 </script>
 <!-- END VM includeSiteNav.vm -->
