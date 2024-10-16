@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -41,6 +42,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -2721,9 +2724,29 @@ public class GradingServiceImpl implements GradingService {
             return null;
         }
 
+
+        String decimalSeperatorPoints = null;
+        Pattern regexPattern = Pattern.compile("\\d+([,.])\\d+");
+        Matcher doubleAsStringMatcher = regexPattern.matcher(doubleAsString);
+        while (doubleAsStringMatcher.find()) {
+            if (doubleAsStringMatcher.group(1) != null) {
+                decimalSeperatorPoints = doubleAsStringMatcher.group(1);
+
+            }
+        }
+
+
         Double scoreAsDouble = null;
         try {
             NumberFormat numberFormat = NumberFormat.getInstance(resourceLoader.getLocale());
+           if (numberFormat instanceof DecimalFormat) {
+                DecimalFormatSymbols symbols = ((DecimalFormat) numberFormat).getDecimalFormatSymbols();
+                if (! Character.toString(symbols.getDecimalSeparator()).equals(decimalSeperatorPoints)) {
+                    symbols.setDecimalSeparator('.');
+                    ((DecimalFormat) numberFormat).setDecimalFormatSymbols(symbols);
+                }
+            }
+
             Number numericScore = numberFormat.parse(doubleAsString.trim());
             return numericScore.doubleValue();
         } catch (final ParseException e) {
