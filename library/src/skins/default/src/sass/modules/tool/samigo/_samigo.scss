@@ -509,6 +509,28 @@
 		margin-right: 7px;
 	}
 
+    .mcAnswerTd {
+      display: flex;
+      flex-direction: row;
+    }
+    .checkBox-mc-mc {
+      flex-shrink: 0;
+    }
+    .mcAnswerTextMC {
+      display:inline-flex;
+      float:unset;
+
+      label, .samigo-answer-label, .samigo-answer-text {
+        font-weight: normal;
+      }
+
+      /* Someone put a paragraph in a multiple choice answer */
+      p:first-child {
+        display: inline;
+        margin: 0 0 1em 0;
+      }
+    }
+
 	.mcAnswerText {
 		display:inline;
 		float:unset;

@@ -42,10 +42,10 @@ should be included in file importing DeliveryMessages
         styleClass="si si-remove feedBackCross">
       </h:panelGroup>
     </t:column>
-    <t:column>
-      <h:selectBooleanCheckbox id="samigo-mc-mc" value="#{selection.response}"
+    <t:column styleClass="mcAnswerTd">
+      <h:selectBooleanCheckbox id="samigo-mc-mc" styleClass="checkBox-mc-mc" value="#{selection.response}"
         disabled="#{delivery.actionString=='reviewAssessment' || delivery.actionString=='gradeAssessment'}" />
-      <h:panelGroup layout="block" styleClass="mcAnswerText">
+      <h:panelGroup layout="block" styleClass="mcAnswerTextMC">
         <span class="samigo-answer-label strong" aria-hidden="true">
           <h:outputText value=" #{selection.answer.label}" escape="false" />
           <h:outputText value="#{deliveryMessages.dot} " rendered="#{selection.answer.label ne ''}" />
