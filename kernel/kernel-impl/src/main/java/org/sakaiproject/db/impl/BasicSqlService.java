@@ -2460,4 +2460,33 @@ public abstract class BasicSqlService implements SqlService
 	{
 		return sqlServiceSql.getBooleanConstant(value);
 	}
+
+	/**
+	 * MCI-specific method in order to retrieve the value of a safety switch.
+	 *
+	 * @param switchKey the name of the switch key, i.e. mci.safetySwitch.customRedirectEnabled
+	 * @return true, if a row with that key has been found and its value is true; false otherwise
+	 */
+	public boolean isMCISafetySwitchEnabled(String switchKey) {
+		String sql = "SELECT enabled FROM MCI_SAFETY_SWITCHES WHERE switch_key = ?";
+		Object[] fields = new Object[] { switchKey };
+		SqlReader<Boolean> reader = resultSet -> {
+			try {
+				return resultSet.getBoolean("enabled");
+			} catch (SQLException e) {
+				log.error(e.getMessage(), e);
+				return false;
+			}
+		};
+
+		//List<Boolean> result = this.dbRead(sql, fields, reader);
+		List<Boolean> result = this.dbRead(sql, fields, reader);
+
+		if (result.isEmpty()) {
+			log.debug("No value found for {} in MCI_SAFETY_SWITCHES.", switchKey);
+			return false;
+		}
+		return result.get(0);
+	}
+
 }

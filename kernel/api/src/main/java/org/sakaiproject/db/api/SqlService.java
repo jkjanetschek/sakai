@@ -419,4 +419,7 @@ public interface SqlService
 	 */
 	int dbWriteCount(String sql, Object[] fields, String lastField, Connection callerConnection, int failQuiet);
 
+	default boolean isMCISafetySwitchEnabled(String switchKey) {
+		return false;
+	};
 }

@@ -42,6 +42,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.event.api.UsageSession;
 import org.sakaiproject.event.cover.UsageSessionService;
 import org.sakaiproject.exception.IdUnusedException;
@@ -68,6 +69,8 @@ public class SkinnableLogin extends HttpServlet implements Login {
 
 	// Service instance variables
 	private AuthzGroupService authzGroupService = ComponentManager.get(AuthzGroupService.class);
+
+	private SqlService sqlService = ComponentManager.get(SqlService.class);
 
 	/** Session attribute used to store a message between steps. */
 	protected static final String ATTR_MSG = "notify";
@@ -224,10 +227,10 @@ public class SkinnableLogin extends HttpServlet implements Login {
 			return;
 		}
 
-		// SAKAIME-620 SAKAIME-700 SAKAIME-727 changed by thl
 		if(session != null && session.getUserId() != null) {
-			res.sendRedirect(res.encodeRedirectURL(Web.serverUrl(req) + "/portal"));
-			return;
+			String returnUrl = (String) session.getAttribute(Tool.HELPER_DONE_URL);
+			log.debug("New MCI custom redirect in place. Redirecting to {}...", returnUrl);
+			complete(returnUrl, session, tool, res);
 		}
 		
 		//SAK-29092 if an auth is specified in the URL, skip any other checks and go straight to it
