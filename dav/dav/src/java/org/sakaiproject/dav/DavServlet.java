@@ -89,6 +89,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.management.LockInfo;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -104,6 +105,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Stack;
 import java.util.TimeZone;
@@ -166,6 +168,7 @@ import org.sakaiproject.user.api.UserDirectoryService;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.user.api.AuthenticationManager;
 import org.sakaiproject.util.IdPwEvidence;
+import org.sakaiproject.util.MCIUtils;
 import org.sakaiproject.util.RequestFilter;
 import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.StringUtil;
@@ -292,7 +295,7 @@ public class DavServlet extends HttpServlet
 	 * Key : path <br>
 	 * Value : LockInfo
 	 */
-	private Hashtable<String,LockInfo> resourceLocks = new Hashtable<String,LockInfo>();
+	private Hashtable<String, LockInfo> resourceLocks = new Hashtable<String,LockInfo>();
 
 	/**
 	 * Repository of the lock-null resources.
@@ -1047,6 +1050,12 @@ public class DavServlet extends HttpServlet
 		if ((prin != null) && (prin instanceof DavPrincipal))
 		{
 			String eid = prin.getName();
+			Optional<String> maybeStripped = MCIUtils.stripDomain(eid, MCIUtils.MCI_MAIL_SUFFIX);
+			// SAKAIME-853: Allow both variants, with and without suffix
+			if (maybeStripped.isPresent()) {
+				eid = maybeStripped.get();
+			}
+
 			String pw = ((DavPrincipal) prin).getPassword();
 			Evidence e = new IdPwEvidence(eid, pw, req.getRemoteAddr());
 

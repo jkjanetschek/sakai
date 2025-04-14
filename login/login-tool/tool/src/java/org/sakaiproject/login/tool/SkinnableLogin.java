@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
-
+import java.util.Optional;
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -58,6 +58,7 @@ import org.sakaiproject.site.api.ToolConfiguration;
 import org.sakaiproject.tool.api.Session;
 import org.sakaiproject.tool.api.Tool;
 import org.sakaiproject.tool.cover.SessionManager;
+import org.sakaiproject.util.MCIUtils;
 import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.Web;
 import org.sakaiproject.util.RequestFilter;
@@ -365,9 +366,10 @@ public class SkinnableLogin extends HttpServlet implements Login {
 				if (credentials.getIdentifier() != null) {
 					loginName = credentials.getIdentifier().trim();
 				}
-				if (loginName.endsWith("@mci4me.at")) {
-					credentials.setIdentifier(loginName.substring(0, loginName.length()-10));
-
+				Optional<String> maybeStripped = MCIUtils.stripDomain(loginName, MCIUtils.MCI_MAIL_SUFFIX);
+				if (maybeStripped.isPresent()) {
+					String strippedLoginName = maybeStripped.get();
+					credentials.setIdentifier(strippedLoginName);
 					loginService.authenticate(credentials);
 					String returnUrl = (String) session.getAttribute(Tool.HELPER_DONE_URL);
 					complete(returnUrl, session, tool, res);
