@@ -23,6 +23,13 @@
 package org.sakaiproject.webapi.controllers;
 
 import org.apache.commons.lang3.StringUtils;
+import org.sakaiproject.assignment.api.AssignmentService;
+import org.sakaiproject.assignment.api.model.Assignment;
+import org.sakaiproject.assignment.api.model.AssignmentSubmission;
+import org.sakaiproject.authz.api.Member;
+import org.sakaiproject.authz.api.Role;
+import org.sakaiproject.authz.api.SecurityService;
+import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.rubrics.api.RubricsService;
 import org.sakaiproject.rubrics.api.beans.AssociationTransferBean;
 import org.sakaiproject.rubrics.api.beans.CriterionOutcomeTransferBean;
@@ -30,6 +37,10 @@ import org.sakaiproject.rubrics.api.beans.CriterionTransferBean;
 import org.sakaiproject.rubrics.api.beans.EvaluationTransferBean;
 import org.sakaiproject.rubrics.api.beans.RatingTransferBean;
 import org.sakaiproject.rubrics.api.beans.RubricTransferBean;
+import org.sakaiproject.site.api.Site;
+import org.sakaiproject.site.api.SiteService;
+import org.sakaiproject.tool.api.SessionManager;
+import org.sakaiproject.webapi.exception.MissingSessionException;
 import org.sakaiproject.tool.assessment.data.dao.grading.ItemGradingData;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.EvaluationModelIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.PublishedAssessmentIfc;
@@ -59,11 +70,15 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import com.github.fge.jsonpatch.JsonPatch;
 
@@ -75,6 +90,17 @@ public class RubricsRestController extends AbstractSakaiApiController {
 
     @Autowired
     private RubricsService rubricsService;
+    @Autowired
+    private AssignmentService assignmentService;
+
+    @Autowired
+    private SiteService siteService;
+
+    @Autowired
+    private SecurityService securityService;
+
+    @Autowired
+    private SessionManager sessionManager;
 
     @GetMapping(value = "/sites/{siteId}/rubrics", produces = MediaType.APPLICATION_JSON_VALUE)
     List<EntityModel<RubricTransferBean>> getRubricsForSite(@PathVariable String siteId) {
@@ -164,7 +190,7 @@ public class RubricsRestController extends AbstractSakaiApiController {
             }
             Map<Long, CriterionTransferBean> updateMap = toUpdate.stream().collect(Collectors.toMap(CriterionTransferBean::getId, item -> item));
             List<Long> removeIds = toRemove.stream().map(CriterionTransferBean::getId).collect(Collectors.toList());
-                
+
             // get assessment, itemgradings and rubric evaluations
             PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
             GradingService gradingService = new GradingService();
@@ -228,9 +254,9 @@ public class RubricsRestController extends AbstractSakaiApiController {
                         log.debug("Rubric evaluation successfully updated");
                         if(!scoreDifference.equals(igd.getAutoScore())) {
                             igd.setAutoScore(scoreDifference);
-                            gradingService.updateItemScore(igd, 1, publishedAssessment);// if second value is not 0 it will check gb association and update it if necessary    
+                            gradingService.updateItemScore(igd, 1, publishedAssessment);// if second value is not 0 it will check gb association and update it if necessary
                             log.debug("Samigo grading successfully updated");
-                        }                
+                        }
                     }
                 }
             }
@@ -496,6 +522,54 @@ public class RubricsRestController extends AbstractSakaiApiController {
         return ResponseEntity.ok().headers(h -> h.setContentDisposition(contentDisposition))
                 .body(rubricsService.createPdf(siteId, rubricId, toolId, itemId, evaluatedItemId));
     }
+
+    // BEGIN MCI#2025040410000107 — Sakai Rubrics Bulk Download
+    // Note: A GlobalExceptionHandler is in place so no error logging done here
+    @ResponseBody
+    @GetMapping(value = "/sites/{siteId}/rubrics/{rubricId}/pdf-archive")
+    public ResponseEntity<byte[]> getPdfArchive(
+            @PathVariable String siteId,
+            @PathVariable Long rubricId,
+            @RequestParam(required = false) String toolId,
+            @RequestParam(required = false) String itemId) throws Exception {
+            log.info("Getting PDF archive for siteId={}, rubricId={}, toolId={}, itemId={} ...", siteId, rubricId, toolId, itemId);
+            checkSakaiSession();
+            Assignment assignment = assignmentService.getAssignment(itemId);
+            Set<AssignmentSubmission> submissions = assignment.getSubmissions();
+            ByteArrayOutputStream zipBaos = new ByteArrayOutputStream();
+            int pdfCount=0;
+            try (ZipOutputStream zos = new ZipOutputStream(zipBaos)) {
+                for (AssignmentSubmission submission : submissions) {
+                    // Prevent empty rubric pdf-generation for non-submissions by filtering on "SUBMITTED" and "USER_SUBMISSION"
+                    if (submission.getSubmitted() && submission.getUserSubmission()) {
+                        byte[] pdfBytes = rubricsService.createPdf(siteId, rubricId, toolId, itemId, submission.getId());
+                        String baseFilename = rubricsService.getRubric(rubricId)
+                                .map(rubric -> rubricsService.createContextualFilename(rubric, toolId, itemId, submission.getId(), siteId))
+                                .orElse("rubric");
+                        baseFilename = StringUtils.isNotBlank(baseFilename) ? baseFilename : "_";
+                        // Add timestamp for uniqueness
+                        String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmssSSS").format(new java.util.Date());
+                        String filename = baseFilename + "_" + timestamp + ".pdf";
+                        log.debug("Generating pdf with name={}", filename);
+                        ZipEntry zipEntry = new ZipEntry(filename);
+                        zos.putNextEntry(zipEntry);
+                        zos.write(pdfBytes);
+                        zos.closeEntry();
+                        pdfCount++;
+                    }
+                }
+            }
+            ContentDisposition contentDisposition = ContentDisposition.builder("attachment")
+                    .filename("rubrics_archive.zip")
+                    .build();
+            log.info("PDF archive created with {} rubric PDFs", pdfCount);
+            return ResponseEntity.ok()
+                    .headers(h -> h.setContentDisposition(contentDisposition))
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(zipBaos.toByteArray());
+    }
+
+    // END MCI#2025040410000107 — Sakai Rubrics Bulk Download
 
     private EntityModel<RubricTransferBean> entityModelForRubricBean(RubricTransferBean rubricBean) {
 

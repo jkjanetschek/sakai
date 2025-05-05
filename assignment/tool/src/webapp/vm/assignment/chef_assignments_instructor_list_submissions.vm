@@ -122,6 +122,17 @@ function printView(url) {
 				<div class="listNav">
 						## download all
 						<a href="#toolLinkParam("$action" "doPrep_download_all" "view=$!view")" class="assignment-item" id="downloadAll" title="$!tlang.getString('downall')">$!tlang.getString('downall')</a>
+
+						## BEGIN MCI#2025040410000107 — Sakai Rubrics Bulk Download
+						#if ($assignment && $assignment.context && $assignment.id && $rubricId && "$rubricId" != "")
+						<a href="/api/sites/$assignment.context/rubrics/$rubricId/pdf-archive?toolId=sakai.assignment.grades&itemId=$assignment.id"
+					   		class="assignment-item"
+					   		id="downloadRubricArchive"
+					   		title="Download Rubric PDFs as ZIP">
+							Download Rubric PDFs
+						</a>
+						#end
+						## END MCI#2025040410000107 — Sakai Rubrics Bulk Download
 						#if (!$disableGrading)
 							## upload all
 							<a href="#toolLinkParam("$action" "doPrep_upload_all" "view=$view")" class="assignment-item" id="uploadAll" title="$!tlang.getString('uploadall.title')">$!tlang.getString('uploadall.title')</a>
