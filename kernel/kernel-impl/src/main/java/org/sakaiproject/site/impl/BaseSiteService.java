@@ -1497,11 +1497,9 @@ public abstract class BaseSiteService implements SiteService, Observer
 			clearUserCacheForSite(site);
 		}
 		
-		// complete the edit
-		storage().remove(site);
 
-		// track it
-		eventTrackingService().post(eventTrackingService().newEvent(SECURE_REMOVE_SITE, site.getReference(), true));
+
+
 
 		// get the services related to this site setup for the site's removal
 		disableRelated(site);
@@ -1518,6 +1516,13 @@ public abstract class BaseSiteService implements SiteService, Observer
 					.build()
 			);
 		}
+
+		// complete the edit
+		//jkj: move here to avoid eg. IdUnusedException in hardDeleteAware Implementations
+		storage().remove(site);
+		// track it
+		eventTrackingService().post(eventTrackingService().newEvent(SECURE_REMOVE_SITE, site.getReference(), true));
+
 	}
 
 	/**
