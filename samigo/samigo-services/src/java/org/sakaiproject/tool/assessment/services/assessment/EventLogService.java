@@ -45,4 +45,8 @@ public class EventLogService{
 	public List<Object[]> getTitlesFromEventLogBySite(String siteId) {
 	   return PersistenceService.getInstance().getEventLogFacadeQueries().getTitlesFromEventLogBySite(siteId);
 	}
+
+	public void hardDeleteEventLog(String siteId){
+		PersistenceService.getInstance().getEventLogFacadeQueries().hardDeleteEventLog(siteId);
+	}
 }

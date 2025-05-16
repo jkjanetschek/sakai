@@ -23,4 +23,7 @@ public interface FavoriteColChoicesFacadeQueriesAPI {
 
 	public List getFavoriteColChoicesByAgent(String siteAgentId);
 	public void saveOrUpdate(FavoriteColChoices list);
+
+	public void hardDeleteFavoriteColChoices(String siteId);
+
 }

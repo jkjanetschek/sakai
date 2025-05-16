@@ -323,4 +323,6 @@ public interface PublishedAssessmentFacadeQueriesAPI
   public List<PublishedAssessmentData> getPublishedDeletedAssessments(String siteId);
 
   public void restorePublishedAssessment(Long publishedAssessmentId);
+
+  public void hardDeletePublishedAssessment(String assessmentId);
 }

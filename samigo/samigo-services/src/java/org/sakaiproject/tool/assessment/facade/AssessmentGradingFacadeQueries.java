@@ -254,6 +254,20 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
         return list;
     }
 
+    public List<AssessmentGradingData> getAllAssessmentGradingDataForHardDelete(final Long publishedId) {
+        final HibernateCallback<List<AssessmentGradingData>> hcb = session -> {
+            Query q = session.createQuery(
+                    "from AssessmentGradingData a where a.publishedAssessmentId = :id");
+            q.setLong("id", publishedId);
+            return q.list();
+        };
+        List<AssessmentGradingData> list = getHibernateTemplate().execute(hcb);
+
+        list.forEach(agd -> agd.setItemGradingSet(getItemGradingSet(agd.getAssessmentGradingId())));
+
+        return list;
+    }
+
     public Map<Long, List<ItemGradingData>> getItemScores(Long publishedId, final Long itemId, String which) {
         List scores = getTotalScores(publishedId, which, true);
         return getItemScores(itemId, scores, false);
@@ -1839,6 +1853,18 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
                             "where s.publishedAssessmentId = :id and s.agentId = :agent");
             q.setParameter("id", publishedAssessmentId);
             q.setParameter("agent", agentIdString);
+            return q.list();
+        };
+        return getHibernateTemplate().execute(hcb);
+    }
+
+    private List<StudentGradingSummaryData> getStudentGradingSummaryDataByPublishedAssessmentId(final Long publishedAssessmentId) {
+        final HibernateCallback<List<StudentGradingSummaryData>> hcb = session -> {
+            Query q = session.createQuery(
+                    "select s " +
+                            "from StudentGradingSummaryData s " +
+                            "where s.publishedAssessmentId = :id");
+            q.setLong("id", publishedAssessmentId);
             return q.list();
         };
         return getHibernateTemplate().execute(hcb);
@@ -3690,4 +3716,14 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
             }
         }
     }
+
+
+    public void hardDeleteGradingData(String publishedAssessmentId) {
+        List<AssessmentGradingData> data = getAllAssessmentGradingDataForHardDelete(Long.parseLong(publishedAssessmentId));
+        data.forEach(a -> getHibernateTemplate().delete(a));
+        List<StudentGradingSummaryData> dataStudents =  getStudentGradingSummaryDataByPublishedAssessmentId(Long.parseLong(publishedAssessmentId));
+        dataStudents.forEach(a -> getHibernateTemplate().delete(a));
+    }
+
+
 }

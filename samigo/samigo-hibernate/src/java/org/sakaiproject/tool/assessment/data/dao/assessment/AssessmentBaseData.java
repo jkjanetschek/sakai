@@ -71,6 +71,13 @@ public class AssessmentBaseData
   private Integer questionSize;
   private Long categoryId;
 
+
+  //only hardDelete: Do not use!
+  private Set extendedTimes;
+  public void setExtendedTimes(Set extendedTimes) {this.extendedTimes = extendedTimes;}
+  public Set getExtendedTimes(){return this.extendedTimes;}
+
+
   public AssessmentBaseData() {}
 
   /**

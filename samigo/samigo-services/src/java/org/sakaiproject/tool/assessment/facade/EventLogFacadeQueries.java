@@ -169,4 +169,23 @@ public class EventLogFacadeQueries extends HibernateDaoSupport implements EventL
       List<Object[]> list = getHibernateTemplate().execute(hcb);
       return list;
    }
+
+
+   public void hardDeleteEventLog(String siteId){
+	   // List<EventLogData> data = getDataBySiteId(siteId);
+		//dont use getDataBySiteId(siteId) --> possible RuntimeException with ldap while searching diretory
+
+	   final HibernateCallback<List<EventLogData>> hcb = session -> {
+		   Query q = session.createQuery(
+				   "select eld from EventLogData as eld"
+						   + " where eld.siteId = :site"
+						   + " order by eld.assessmentId asc, eld.userEid asc"
+		   );
+		   q.setString("site", siteId);
+		   return q.list();
+	   };
+	   List<EventLogData> data = getHibernateTemplate().execute(hcb);
+	   data.forEach(a -> getHibernateTemplate().delete(a));
+   }
+
 }

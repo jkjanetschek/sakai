@@ -63,7 +63,8 @@ public interface AssessmentGradingFacadeQueriesAPI
    * @return an list of all the items or an empty list if none
    */
   public List<ItemGradingData> getAllItemGradingDataForItemInGrading(final Long assesmentGradingId, final Long publishedItemId);
-  
+  public List<AssessmentGradingData> getAllAssessmentGradingDataForHardDelete(final Long publishedId);
+
   public Map<Long, List<ItemGradingData>> getItemScores(Long publishedId, Long itemId, String which);
   
   public Map<Long, List<ItemGradingData>> getItemScores(Long publishedId, Long itemId, String which, boolean loadItemGradingAttachment);
@@ -294,4 +295,6 @@ public interface AssessmentGradingFacadeQueriesAPI
 
   public SectionGradingData getSectionGradingData(Long assessmentGradingId, Long sectionId, String agentId);
   public void saveSectionGrading(SectionGradingData item);
+
+  public void hardDeleteGradingData(String publishedAssessmentId);
 }

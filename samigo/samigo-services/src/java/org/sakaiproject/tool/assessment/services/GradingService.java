@@ -4109,6 +4109,11 @@ Here are the definition and 12 cases I came up with (lydia, 01/2006):
 			log.error(e.getMessage(), e);
 		}
 	}
+
+    public void hardDeleteGradingData(String publishedAssessmentId){
+        // List<AssessmentGradingData> data = getAllAssessmentGradingData(Long.parseLong(publishedAssessmentId));
+        PersistenceService.getInstance().getAssessmentGradingFacadeQueries().hardDeleteGradingData(publishedAssessmentId);
+    }
 }
 
 /**

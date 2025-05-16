@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +39,7 @@ import java.util.TreeSet;
 import java.util.Iterator;
 import java.util.stream.Collectors;
 
+import javax.persistence.EntityNotFoundException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -59,21 +61,34 @@ import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityProducer;
 import org.sakaiproject.entity.api.EntityTransferrer;
 import org.sakaiproject.entity.api.Reference;
+import org.sakaiproject.exception.PermissionException;
+import org.sakaiproject.authz.api.AuthzGroup;
+import org.sakaiproject.authz.api.AuthzGroupService;
+import org.sakaiproject.authz.api.AuthzPermissionException;
+import org.sakaiproject.authz.api.GroupNotDefinedException;
+import org.sakaiproject.content.api.ContentCollection;
+import org.sakaiproject.content.api.ContentHostingService;
+import org.sakaiproject.content.api.ContentResource;
 import org.sakaiproject.entity.api.EntityManager;
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.exception.TypeException;
 import org.sakaiproject.samigo.api.SamigoReferenceReckoner;
 import org.sakaiproject.samigo.util.SamigoConstants;
+import org.sakaiproject.site.api.Group;
 import org.sakaiproject.lti.api.LTIService;
 import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.site.api.ToolConfiguration;
 import org.sakaiproject.tool.assessment.data.dao.assessment.AssessmentData;
 import org.sakaiproject.tool.assessment.data.dao.assessment.ItemData;
+import org.sakaiproject.tool.assessment.data.dao.authz.AuthorizationData;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AnswerIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentIfc;
+import org.sakaiproject.tool.assessment.data.ifc.assessment.PublishedAssessmentIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentMetaDataIfc;
+import org.sakaiproject.tool.assessment.facade.AuthzQueriesFacadeAPI;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.ItemAttachmentIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.ItemFeedbackIfc;
 import org.sakaiproject.tool.assessment.data.ifc.questionpool.QuestionPoolDataIfc;
@@ -84,6 +99,7 @@ import org.sakaiproject.tool.assessment.facade.AssessmentFacade;
 import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
 import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacadeQueriesAPI;
 import org.sakaiproject.tool.assessment.facade.SectionFacade;
+import org.sakaiproject.tool.assessment.services.GradingService;
 import org.sakaiproject.tool.assessment.shared.api.questionpool.QuestionPoolServiceAPI;
 import org.sakaiproject.util.api.LinkMigrationHelper;
 import org.sakaiproject.util.MergeConfig;
@@ -100,7 +116,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class AssessmentEntityProducer implements EntityTransferrer, EntityProducer {
+public class AssessmentEntityProducer implements EntityTransferrer, EntityProducer, HardDeleteAware {
 
     private static final int QTI_VERSION = 1;
     private static final String ARCHIVED_ELEMENT = "assessment";
@@ -117,10 +133,20 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
     @Setter protected LinkMigrationHelper linkMigrationHelper;
     @Setter protected LTIService ltiService;
 
+	private AssessmentService assessmentService;
+	private GradingService gradingService;
+	private EventLogService eventLogService;
+	private PublishedAssessmentService publishedAssessmentService;
+	private AuthzGroupService authzGroupService;
+
 	public void init() {
 		log.info("init()");
 		try {
 			entityManager.registerEntityProducer(this, REFERENCE_ROOT);
+            assessmentService =  new AssessmentService();
+            gradingService = new GradingService();
+            eventLogService = new EventLogService();
+            publishedAssessmentService = new PublishedAssessmentService();
 		} catch (Exception e) {
 			log.warn("Error registering Samigo Entity Producer", e.toString());
 		}
@@ -129,6 +155,11 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
     public void setQtiService(QTIServiceAPI qtiService)  {
         this.qtiService = qtiService;
     }
+
+    public void setContentHostingService(ContentHostingService contentHostingService){this.contentHostingService = contentHostingService;}
+
+    public void setAuthzGroupService(AuthzGroupService authzGroupService){this.authzGroupService = authzGroupService;}
+
 
     @Override
     public String[] myToolIds() {
@@ -907,5 +938,131 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
 
 		return false;
 	}
+
+
+    /**
+     * Implementation of HardDeleteAware
+     */
+    public void hardDelete(String siteId) {
+        log.info("Hard Delete  of Tool Samigo for context: " + siteId);
+
+
+        Site site = null;
+        try{
+            site = siteService.getSite(siteId);
+        }catch (IdUnusedException e){
+            log.error("Could not find context " + e);
+        }
+
+        List<AuthorizationData> authData1 = assessmentService.getAuthzQueriesFacade().getAuthorizationByAgentAndFunction(siteId, "EDIT_ASSESSMENT");
+        for(AuthorizationData data: authData1){
+            log.info("assessment-Title: " + data.getAgentIdString() + " id: " + data.getQualifierId());
+            //	AssessmentIfc assessment = assessmentService.getAssessment(data.getQualifierId());
+            assessmentService.hardDeleteAssessment(data.getQualifierId());
+			assessmentService.getAuthzQueriesFacade().hardDeleteAuthorizationByQualifierID(data.getQualifierId());
+        }
+        List<AuthorizationData> authData2 = assessmentService.getAuthzQueriesFacade().getAuthorizationByAgentAndFunction(siteId, "OWN_PUBLISHED_ASSESSMENT");
+        for(AuthorizationData data: authData2){
+            log.info("publishedAssessemnt-Title: " + data.getAgentIdString() + " id: " + data.getQualifierId());
+            //delete grading data
+            gradingService.hardDeleteGradingData(data.getQualifierId());
+            //release locks
+            try{
+                PublishedAssessmentFacade pubAss = publishedAssessmentService.getPublishedAssessment(data.getQualifierId());
+                Map<String,String> map = pubAss.getReleaseToGroups();
+                if (!map.isEmpty()){
+                    for(Map.Entry<String,String> entry: map.entrySet()){
+                        Group group = site.getGroup(entry.getKey().toString());
+                        if (group != null) {
+                            group.setLockForReference(pubAss.getPublishedAssessmentId().toString(), AuthzGroup.RealmLockMode.NONE);
+                        }
+                    }
+                }
+/*
+				map.forEach((k, v) -> {
+					Group group = finalSite.getGroup(k.toString());
+					log.info("get Group: " + k);
+					if (group != null) {
+						log.info("set lock for pubAss " + pubAss.getPublishedAssessmentId().toString());
+						group.setLockForReference(pubAss.getPublishedAssessmentId().toString(), AuthzGroup.RealmLockMode.NONE);
+						try {
+							authzGroupService.save(authzGroupService.getAuthzGroup(group.getReference()));
+						} catch (GroupNotDefinedException e) {
+							log.error("GroupNotDefinedException: " + e);
+						} catch (AuthzPermissionException e) {
+							log.error("AuthzPermissionException: " + e);
+						}
+					}
+				});
+				*/
+            }catch (EntityNotFoundException ex){
+                log.error("Published Assessment with id {} not found", data.getQualifierId());
+            }
+            try{
+                siteService.saveGroupMembership(site);
+            }catch (IdUnusedException id){
+                log.error("IdUnusedException " + id);
+            }catch (PermissionException pe){
+                log.error("PermissionException " +pe);
+            }
+
+            publishedAssessmentService.hardDeletePublishedAssessment(data.getQualifierId());
+			assessmentService.getAuthzQueriesFacade().hardDeleteAuthorizationByQualifierID(data.getQualifierId());
+        }
+
+
+        //delete event log
+        eventLogService.hardDeleteEventLog(siteId);
+
+        //delete Favorite Col choices
+        assessmentService.hardDeleteFavoriteColChoices(siteId);
+
+        //delete authz data
+		// TODO: DEBUG
+/*
+        assessmentService.getAuthzQueriesFacade().hardDeleteAuthzData(siteId);
+        Collection<Group> groups = site.getGroups();
+        if (groups !=  null){
+            for(Group group : groups){
+                assessmentService.getAuthzQueriesFacade().hardDeleteAuthzData(group.getId());
+            }
+        }
+*/
+
+
+
+        //delete attachments
+        String attachments = "/attachment/" + siteId + "/Tests _ Quizzes/";
+        String attachments2 = "/private/samigo/" + siteId + "/";
+        String attachments3 = "/content/private/samigoDocs/" +  siteId + "/";
+        String attachments4 = "/private/samigoDocs/" + siteId + "/";
+
+
+
+        //TODO where does this come from? sakai 12? german translation?
+        String attachmentsGermanPrefix = "/attachment/" + siteId + "/Prüfungen _ Tests/";
+
+
+
+
+        contentHostingService.hardDeleteResources(attachments);
+        contentHostingService.hardDeleteResources(attachments2);
+        contentHostingService.hardDeleteResources(attachments3);
+        contentHostingService.hardDeleteResources(attachments4);
+        contentHostingService.hardDeleteResources(attachmentsGermanPrefix);
+
+        // remove collection
+        contentHostingService.removeCollectionRecursive(attachments);
+        contentHostingService.removeCollectionRecursive(attachments2);
+        contentHostingService.removeCollectionRecursive(attachments3);
+        contentHostingService.removeCollectionRecursive(attachments4);
+        contentHostingService.removeCollectionRecursive(attachmentsGermanPrefix);
+
+
+
+
+
+
+    }
 
 }

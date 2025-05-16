@@ -880,4 +880,14 @@ public class MockContentHostingService implements ContentHostingService
     {
         return false;
     }
+
+    @Override
+    public void removeCollectionRecursive(String collectionId) {
+        throw new UnsupportedOperationException( "Not supported yet." );
+    }
+
+    @Override
+    public void hardDeleteResources(String collectionId) {
+        throw new UnsupportedOperationException( "Not supported yet." );
+    }
 }

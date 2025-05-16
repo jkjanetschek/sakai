@@ -251,4 +251,6 @@ public interface AssessmentFacadeQueriesAPI {
     public void restoreAssessment(Long assessmentId);
 
     public Set<String> getDuplicateItemHashesForAssessmentIds(Collection<Long> assessmentIds);
+
+    public void hardDeleteAssessment(String assessmentId);
 }
