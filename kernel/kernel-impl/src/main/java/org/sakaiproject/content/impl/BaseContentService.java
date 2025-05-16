@@ -13768,7 +13768,32 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		removeCollectionRecursive(collectionId);
 	}
 
-	private void removeCollectionRecursive(String collectionId) {
+
+	public void hardDeleteResources(String collectionId){
+		// Get normal resources are purge one-by-one
+		List<ContentResource> resources = getAllResources(collectionId);
+		for (ContentResource resource : resources) {
+			log.debug("Removing resource: {}", resource.getId());
+			try {
+				removeResource(resource.getId());
+			} catch (Exception e) {
+				log.warn("Failed to remove content.", e);
+			}
+		}
+
+		// Deleted resources were put in the trash by the instructor
+		List<ContentResource> deletedResources = getAllDeletedResources(collectionId);
+		for (ContentResource deletedResource : deletedResources) {
+			log.debug("Removing deleted resource: {}", deletedResource.getId());
+			try {
+				removeDeletedResource(deletedResource.getId());
+			} catch (Exception e) {
+				log.warn("Failed to remove deleted content.", e);
+			}
+		}
+	}
+
+	public void removeCollectionRecursive(String collectionId) {
 		ContentCollection collection = null;
 		try {
 			collection = getCollection(collectionId);
