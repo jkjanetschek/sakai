@@ -58,6 +58,7 @@ import org.sakaiproject.time.api.TimeService;
 import org.sakaiproject.user.api.PreferencesService;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryService;
+import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
@@ -934,4 +935,18 @@ public class SyllabusManagerImpl extends HibernateDaoSupport implements Syllabus
 	public void setEntityManager(EntityManager entityManager) {
 		this.entityManager = entityManager;
 	}
+
+  public void hardDeleteForContext(String siteId){
+    try {
+      SyllabusItem item = getSyllabusItemByContextId(siteId);
+      if (item != null) {
+          getHibernateTemplate().delete(item);
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Could not find Syllabus item for site {}; {}",siteId , e.getMessage());
+    } catch (DataAccessException e) {
+      log.error("Could not delete Syllabus item for site {}; {}",siteId , e.getMessage());
+    }
+
+  }
 }
