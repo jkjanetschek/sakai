@@ -41,4 +41,7 @@ public class TagRepositoryImpl extends SpringCrudRepositoryImpl<Tag, Long>  impl
 
         return session.createQuery(query).list();
     }
+
+
+
 }

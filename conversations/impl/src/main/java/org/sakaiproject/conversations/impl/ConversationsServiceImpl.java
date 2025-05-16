@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -119,7 +120,6 @@ import org.sakaiproject.user.api.UserDirectoryService;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.util.CalendarEventType;
 import org.sakaiproject.util.ResourceLoader;
-import org.sakaiproject.entity.api.EntityTransferrer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -127,7 +127,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-
+import org.sakaiproject.entity.api.EntityTransferrer;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -140,7 +140,7 @@ import javax.persistence.PersistenceException;
 @Slf4j
 @Setter
 @Transactional
-public class ConversationsServiceImpl implements ConversationsService, EntityTransferrer, Observer {
+public class ConversationsServiceImpl implements ConversationsService, EntityTransferrer, Observer, HardDeleteAware {
 
     private AuthzGroupService authzGroupService;
 
@@ -2839,4 +2839,51 @@ public class ConversationsServiceImpl implements ConversationsService, EntityTra
 
         return calendar;
     }
+
+    public void hardDelete(String siteId) {
+        log.info("Hard Delete Conversations Tool of site: {}", siteId);
+
+        /*
+         *   Posts -> conv_post_reactions, conv_post_status, conv_post_reaction_totals, conv_posts, conv_comments
+         */
+
+        postRepository.findBySiteId(siteId).forEach(p -> {
+            String id = p.getId();
+            commentRepository.deleteByPostId(id);
+            postReactionRepository.deleteByPostId(id);
+            postStatusRepository.deleteByPostId(id);
+            postReactionTotalRepository.deleteByPostId(id);
+            postRepository.deleteById(id);
+        });
+
+
+        /*
+         *  Topics -> conv_topic_status, conv_topic_reactions, conv_topic_reactions_totals, conv_user_statistics ,conv_topics (conv_topic_tags && conv_topic_group)
+         */
+
+        topicRepository.findBySiteId(siteId).forEach(t -> {
+            String id = t.getId();
+            topicStatusRepository.deleteByTopicId(id);
+            topicReactionRepository.deleteByTopicId(id);
+            topicReactionTotalRepository.deleteByTopicId(id);
+            topicRepository.deleteUserStatisticsByTopicId(id);
+            topicRepository.delete(t);
+
+        });
+
+        /*
+         *   Miscellaneous
+         */
+
+        //conv_tags
+        tagRepository.deleteAll(tagRepository.findBySiteId(siteId));
+
+        //conv_status
+        convStatusRepository.deleteAll(convStatusRepository.findBySiteId(siteId));
+
+        // conv_settings
+        settingsRepository.findBySiteId(siteId).ifPresent(settings -> settingsRepository.delete(settings));
+
+    }
+
 }
