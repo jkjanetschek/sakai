@@ -115,6 +115,7 @@ import org.sakaiproject.util.StringUtil;
 import org.sakaiproject.util.Validator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.w3c.dom.NodeList;
 
 /**
@@ -133,7 +134,7 @@ public abstract class BaseAnnouncementService extends BaseMessage implements Ann
 	// XML DocumentBuilder and Transformer for RSS Feed
 	private DocumentBuilder docBuilder = null;
 	private Transformer docTransformer = null;
-	
+
 	@Setter private SiteEmailNotificationAnnc siteEmailNotificationAnnc;
 	@Setter private FunctionManager functionManager;
 	@Setter private AliasService aliasService;
@@ -2332,22 +2333,22 @@ public abstract class BaseAnnouncementService extends BaseMessage implements Ann
 					if (msg.getHeader().getFrom().getId().equals(currentUserId)) {
 						return true;
 					}
-					
+
 					// Allow if user has READ_DRAFT permission (this also covers superusers)
 					if (unlockCheck(SECURE_READ_DRAFT, msg.getReference())) {
 						return true;
 					}
-					
+
 					// Allow if user has site.upd permission (instructor)
 					String siteId = entityManager.newReference(msg.getReference()).getContext();
 					String siteRef = siteService.siteReference(siteId);
 					if (securityService.unlock(SiteService.SECURE_UPDATE_SITE, siteRef)) {
-						log.debug("PrivacyFilter: Allowing draft message {} to be viewed by instructor with site.upd in site {}", 
+						log.debug("PrivacyFilter: Allowing draft message {} to be viewed by instructor with site.upd in site {}",
 							msg.getId(), siteId);
 						return true;
 					}
-					
-					log.debug("PrivacyFilter: Rejecting draft message {} for user {} in site {}", 
+
+					log.debug("PrivacyFilter: Rejecting draft message {} for user {} in site {}",
 						msg.getId(), currentUserId, siteId);
 					return false;
 				}
@@ -2546,4 +2547,6 @@ public abstract class BaseAnnouncementService extends BaseMessage implements Ann
 			log.error("The current user does not have permission to remove announcementChannel aliases for context: {}", siteId, e);
 		}
 	}
+
+
 }

@@ -119,7 +119,7 @@ import java.text.SimpleDateFormat;
 @Slf4j
 public class PrivateMessageManagerImpl extends HibernateDaoSupport implements PrivateMessageManager {
 
-  private final String QUERY_AGGREGATE_COUNT = "findAggregatePvtMsgCntForUserInContext";  
+  private final String QUERY_AGGREGATE_COUNT = "findAggregatePvtMsgCntForUserInContext";
   private final String QUERY_MESSAGES_BY_USER_TYPE_AND_CONTEXT = "findPrvtMsgsByUserTypeContext";
   private final String QUERY_MESSAGES_BY_ID_WITH_RECIPIENTS = "findPrivateMessageByIdWithRecipients";
   private final String QUERY_RESPONSED_COUNT = "findMessageResponsedCountByUser";
@@ -334,7 +334,7 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
     			pf.setAutoForwardEmail(oldForum.getAutoForwardEmail());
     		}      
       }
-      
+
     }    
     else{
 		if(pf.getTopics().stream().noneMatch(t -> PVT_SCHEDULER.equals(((Topic)t).getTitle()))) {
@@ -1213,7 +1213,7 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
   }
 
   @Override
-  public Long sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail, 
+  public Long sendPrivateMessage(PrivateMessage message, Map<User, Boolean> recipients, boolean asEmail,
     List<MembershipItem> draftRecipients, List<MembershipItem> draftBccRecipients, boolean readReceipt) {
 
     try 
@@ -1340,11 +1340,11 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
 
 	return savedMessage.getId();
 	}
-	catch (MessagingException e) 
+	catch (MessagingException e)
 	{
 		log.warn("PrivateMessageManagerImpl.sendPrivateMessage: exception: {}", e.getMessage(), e);
 	}
-	
+
 	return null;
   }
 
@@ -1626,16 +1626,16 @@ public class PrivateMessageManagerImpl extends HibernateDaoSupport implements Pr
     } catch (IdUnusedException e) {
       log.error(e.getMessage(), e);
     }
-    String messageUrl = serverConfigurationService.getPortalUrl() + "/site/" + contextId + "/tool/" 
-                        + site.getToolForCommonId(DiscussionForumService.MESSAGES_TOOL_ID).getId() 
+    String messageUrl = serverConfigurationService.getPortalUrl() + "/site/" + contextId + "/tool/"
+                        + site.getToolForCommonId(DiscussionForumService.MESSAGES_TOOL_ID).getId()
                         + "/privateMsg/pvtMsgDirectAccess?current_msg_detail=" + pvtMessage.getId();
-    
+
     String bodyString = rb.getFormattedMessage("pvt_read_receipt_email", user.getDisplayName(), user.getEid(), pvtMessage.getTitle(), formatter_date.format(new Date()), rb.getFormattedMessage("pvt_email_href", messageUrl, site.getTitle()));
-    
+
     emailService.sendToUser(messageCreator, additionalHeaders, bodyString);
     eventTrackingService.post(eventTrackingService.newEvent(DiscussionForumService.EVENT_MESSAGES_READ_RECEIPT, getEventMessage(pvtMessage, DiscussionForumService.MESSAGES_TOOL_ID, pvtMessage.getCreatedBy(), contextId), false));
   }
-  
+
   /**
    * @see org.sakaiproject.api.app.messageforums.ui.PrivateMessageManager#markMessageAsReadForUser(org.sakaiproject.api.app.messageforums.PrivateMessage)
    */
@@ -2236,13 +2236,34 @@ return topicTypeUuid;
 	  getHibernateTemplate().initialize(currentMessage.getRecipients());
 	  return currentMessage;
   }
-  
+
   public PrivateMessage getPrivateMessageByDecryptedId(String id) throws MessagingException {
 	  PrivateMessage currentMessage = (PrivateMessage) messageManager.getMessageByIdWithAttachments(Long.parseLong(id));
 	  getHibernateTemplate().initialize(currentMessage.getRecipients());
 	  return currentMessage;
   }
-  
+
+
+    public List getPrivateForumsByContextId(String contextId)
+    {
+        log.debug("getPrivateForumsByContextId(String contextId)");
+
+        return forumManager.getForumByTypeAndContext(typeManager
+                .getPrivateMessageAreaType(), contextId);
+    }
+
+    public void deletePrivateForum(PrivateForum forum, String siteId)
+    {
+        if (log.isDebugEnabled())
+        {
+            log.debug("setForumManager(DiscussionForum" + forum + ")");
+        }
+        forumManager.deletePrivateForum(forum, siteId);
+    }
+
+
+
+
   private PrivateMessage createResponseMessage(PrivateMessage currentMessage, MimeMessage msg, String from) throws MessagingException {
 	  PrivateMessage rrepMsg = messageManager.createPrivateMessage() ;
 

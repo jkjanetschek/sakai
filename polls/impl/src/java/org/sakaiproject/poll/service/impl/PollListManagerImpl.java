@@ -43,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.Data;
 import lombok.Setter;
 
+import org.sakaiproject.entity.api.*;
 import org.springframework.dao.DataAccessException;
 
 import org.w3c.dom.Document;
@@ -73,7 +74,7 @@ import org.sakaiproject.util.MergeConfig;
 
 @Slf4j
 @Data
-public class PollListManagerImpl implements PollListManager,EntityTransferrer {
+public class PollListManagerImpl implements PollListManager,EntityTransferrer, HardDeleteAware {
 
     public static final String REFERENCE_ROOT = Entity.SEPARATOR + "poll";
 
@@ -210,7 +211,7 @@ public class PollListManagerImpl implements PollListManager,EntityTransferrer {
         if (options ==  null || options.isEmpty()) {
             options = getOptionsForPoll(t);
         }
- 
+
         Set<Option> optionSet = new HashSet<Option>(options);
         dao.deleteSet(optionSet);
 
@@ -253,12 +254,12 @@ public class PollListManagerImpl implements PollListManager,EntityTransferrer {
     }
 
     public Poll getPollById(Long pollId) throws SecurityException {
- 
+
        return getPollById(pollId, true);
     }
 
     public Poll getPollById(Long pollId, boolean includeOptions) throws SecurityException {
- 
+
         Search search = new Search();
         search.addRestriction(new Restriction("pollId", pollId));
         Poll poll = dao.findOneBySearch(Poll.class, search);
@@ -305,7 +306,7 @@ public class PollListManagerImpl implements PollListManager,EntityTransferrer {
 
     public List<Option> getVisibleOptionsForPoll(Long pollId) {
         List<Option> options = getOptionsForPoll(pollId);
- 
+
         //iterate and remove deleted options
         for (Iterator<Option> i = options.listIterator(); i.hasNext();) {
             Option o = i.next();
@@ -313,7 +314,7 @@ public class PollListManagerImpl implements PollListManager,EntityTransferrer {
                 i.remove();
             }
         }
- 
+
         return options;
     }
 
@@ -607,10 +608,10 @@ public class PollListManagerImpl implements PollListManager,EntityTransferrer {
                 String details = fromPollV.getDetails();
                 details = ltiService.fixLtiLaunchUrls(details, fromContext, toContext, transversalMap);
                 toPoll.setDetails(details);
- 
+
                 //Guardamos toPoll para que se puedan ir añandiéndole las opciones y los votos
                 savePoll(toPoll);
- 
+
                 //Añadimos las opciones
                 List<Option> options = getOptionsForPoll(fromPoll);
                 if (options != null) {
@@ -626,7 +627,7 @@ public class PollListManagerImpl implements PollListManager,EntityTransferrer {
                         toOption.setText(text);
 
                         saveOption(toOption);
- 
+
                         toPoll.addOption(toOption);
                     }
                 }
@@ -720,16 +721,26 @@ public class PollListManagerImpl implements PollListManager,EntityTransferrer {
     }
 
     public boolean isPollPublic(Poll poll) {
- 
+
         //is this poll public?
         if(poll.getIsPublic()){
             return true;
         }
- 
+
         //can the anonymous user vote?
         if(externalLogic.isAllowedInLocation(PollListManager.PERMISSION_VOTE, externalLogic.getSiteRefFromId(poll.getSiteId()))){
             return true;
         }
         return false;
+    }
+
+    public void hardDelete(String siteId) {
+        log.info("Hard Delete  of Tool Polls for context: " + siteId);
+
+        List<Poll> polls =  findAllPolls( siteId);
+        for (Poll poll: polls){
+            deletePoll(poll);
+        }
+
     }
 }

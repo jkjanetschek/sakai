@@ -56,6 +56,7 @@ import org.hibernate.StaleObjectStateException;
 import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityTransferrer;
 import org.sakaiproject.event.api.EventTrackingService;
@@ -167,7 +168,7 @@ public class GradingServiceImpl implements GradingService {
     @Autowired private SessionManager sessionManager;
     @Autowired private ServerConfigurationService serverConfigurationService;
 
-    
+
 
     // Local cache of static-between-deployment properties.
     private Map<String, String> propertiesMap = new HashMap<>();
@@ -1496,7 +1497,7 @@ public class GradingServiceImpl implements GradingService {
      * Batch check external assignment visibility to avoid N+1 queries.
      * Uses the provider's getAllExternalAssignments method when available for better performance.
      */
-    private Map<String, Boolean> getBatchExternalAssignmentVisibility(String gradebookUid, 
+    private Map<String, Boolean> getBatchExternalAssignmentVisibility(String gradebookUid,
             List<GradebookAssignment> assignments, String userId) {
 
         Map<String, Boolean> visibilityMap = new HashMap<>();
@@ -1515,16 +1516,16 @@ public class GradingServiceImpl implements GradingService {
             ExternalAssignmentProvider provider = getExternalAssignmentProviders().get(appName);
             if (provider == null) {
                 // No provider found, default to visible (matches existing behavior)
-                appAssignments.forEach(assignment -> 
+                appAssignments.forEach(assignment ->
                     visibilityMap.put(assignment.getExternalId(), true));
-                log.debug("No provider found for external app: {}, defaulting {} assignments to visible", 
+                log.debug("No provider found for external app: {}, defaulting {} assignments to visible",
                     appName, appAssignments.size());
                 continue;
             }
 
             // Try to use batch method if available
             try {
-                Map<String, List<String>> allExternalAssignments = 
+                Map<String, List<String>> allExternalAssignments =
                     provider.getAllExternalAssignments(gradebookUid, Collections.singleton(userId));
 
                 List<String> visibleAssignmentIds = allExternalAssignments.get(userId);
@@ -1535,12 +1536,12 @@ public class GradingServiceImpl implements GradingService {
                         boolean isVisible = visibleIds.contains(assignment.getExternalId());
                         visibilityMap.put(assignment.getExternalId(), isVisible);
                     }
-                    log.debug("Used batch method for app {}: {} assignments processed", 
+                    log.debug("Used batch method for app {}: {} assignments processed",
                         appName, appAssignments.size());
                     continue;
                 }
             } catch (Exception e) {
-                log.debug("Batch method failed for provider {}, falling back to individual checks: {}", 
+                log.debug("Batch method failed for provider {}, falling back to individual checks: {}",
                     appName, e.getMessage());
             }
 
@@ -1552,7 +1553,7 @@ public class GradingServiceImpl implements GradingService {
                     try {
                         isVisible = provider.isAssignmentVisible(assignment.getExternalId(), userId);
                     } catch (Exception e) {
-                        log.warn("Error checking visibility for assignment {}: {}", 
+                        log.warn("Error checking visibility for assignment {}: {}",
                             assignment.getExternalId(), e.getMessage());
                         // Keep default visible on error
                     }
@@ -1561,7 +1562,7 @@ public class GradingServiceImpl implements GradingService {
                 visibilityMap.put(assignment.getExternalId(), isVisible);
             }
 
-            log.debug("Used individual checks for app {}: {} assignments processed", 
+            log.debug("Used individual checks for app {}: {} assignments processed",
                 appName, appAssignments.size());
         }
 
@@ -3115,11 +3116,11 @@ public class GradingServiceImpl implements GradingService {
             }
 
             Optional<CategoryScoreData> scoreData = calculateCategoryScore(
-                    studentUuid, 
-                    category.getId(), 
-                    allGradeRecords, 
-                    includeNonReleasedItems, 
-                    categoryType, 
+                    studentUuid,
+                    category.getId(),
+                    allGradeRecords,
+                    includeNonReleasedItems,
+                    categoryType,
                     category.getEqualWeightAssignments()
             );
 
@@ -3142,7 +3143,7 @@ public class GradingServiceImpl implements GradingService {
      * @param categoryType the category type of the gradebook
      * @return nested map: studentUuid -> categoryId -> CategoryScoreData
      */
-    public Map<String, Map<Long, CategoryScoreData>> calculateAllCategoryScoresForStudents(Long gradebookId, 
+    public Map<String, Map<Long, CategoryScoreData>> calculateAllCategoryScoresForStudents(Long gradebookId,
             List<String> studentUuids, boolean includeNonReleasedItems, Integer categoryType) {
 
         if (studentUuids == null || studentUuids.isEmpty()) {
@@ -3167,7 +3168,7 @@ public class GradingServiceImpl implements GradingService {
         // Calculate scores for each student
         for (String studentUuid : studentUuids) {
             List<AssignmentGradeRecord> studentGradeRecords = gradeRecMap.get(studentUuid);
-            
+
             if (studentGradeRecords == null || studentGradeRecords.isEmpty()) {
                 log.debug("No grade records found for student: {}", studentUuid);
                 allCategoryScores.put(studentUuid, new HashMap<>());
@@ -3183,11 +3184,11 @@ public class GradingServiceImpl implements GradingService {
                 }
 
                 Optional<CategoryScoreData> scoreData = calculateCategoryScore(
-                        studentUuid, 
-                        category.getId(), 
-                        studentGradeRecords, 
-                        includeNonReleasedItems, 
-                        categoryType, 
+                        studentUuid,
+                        category.getId(),
+                        studentGradeRecords,
+                        includeNonReleasedItems,
+                        categoryType,
                         category.getEqualWeightAssignments()
                 );
 
@@ -5318,6 +5319,33 @@ public class GradingServiceImpl implements GradingService {
     }
 
     @Override
+    public String getUrlForAssignment(Assignment assignment) {
+
+        String gbUrl = "";
+        try {
+            Site site = siteService.getSite(assignment.getContext());
+            ToolConfiguration tc = site.getToolForCommonId("sakai.gradebookng");
+            if (tc != null) {
+                gbUrl = "/portal/directtool/" + tc.getId();
+            } else {
+                log.warn("No gradebook tool for site {}", assignment.getContext());
+            }
+        } catch (IdUnusedException idue) {
+            log.warn("No site for id {}", assignment.getContext());
+        }
+
+        if (assignment.getExternallyMaintained()) {
+            if (assignment.getReference() != null) {
+                return entityManager.getUrl(assignment.getReference(), Entity.UrlType.PORTAL).orElse("");
+            } else {
+                return gbUrl;
+            }
+        } else {
+            return gbUrl;
+        }
+    }
+
+    @Override
     public String getGradebookUidByAssignmentById(String siteId, Long assignmentId) {
         return getAssignmentById(siteId, assignmentId).getContext();
     }
@@ -5860,4 +5888,30 @@ public class GradingServiceImpl implements GradingService {
 
         return null;
     }
+
+    /*
+        @Override
+    public void hardDelete(String siteId) {
+        if (isGradebookDefined(context)) {
+            log.debug("Site " + context + " has been deleted. Removing associated gradebook data.");
+            try {
+                this.gradebookFrameworkService.deleteGradebook(context);
+            } catch (final GradebookNotFoundException e) {
+                log.debug("Couldnt find gradebook. Nothing to delete.", e);
+            }
+
+
+     */
+
+
+    public void hardDeleteGradebook(String siteId) {
+        try {
+            if (gradingPersistenceManager.isGradebookDefined(siteId)) {
+                deleteGradebook(siteId);
+            }
+        } catch (Exception e) {
+            log.warn("Could not hardDelete gradebook for context {}", siteId);
+        }
+    }
+
 }

@@ -31,4 +31,5 @@ public interface TaskRepository extends SpringCrudRepository<Task, Long> {
 
     Optional<Task> findByReference(String reference);
     List<Task> findByGroupsContaining(String groupId);
+    List<Task> findBySiteId(String siteId);
 }

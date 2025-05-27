@@ -95,4 +95,7 @@ public interface SyllabusManager
   public SyllabusItem getSyllabusItem(final Long itemId);
   
   //public SyllabusAttachment creatSyllabusAttachmentResource(String attachId, String name);
+
+  public void hardDeleteForContext(String siteId);
+
 }

@@ -72,4 +72,6 @@ public interface RWikiHistoryObjectDao extends RWikiObjectDao
 	 */
 	List findRWikiHistoryObjectsInReverse(RWikiObject reference);
 
+	public void hardDeleteRWikiHistoryObjectsForContext(String context);
+
 }

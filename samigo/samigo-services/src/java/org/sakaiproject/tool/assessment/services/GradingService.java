@@ -156,7 +156,7 @@ public class GradingService
   public static final Pattern CALCQ_FORMULA_ALLOW_NUMBER_POINT = Pattern.compile("([\\d])([\\.])([^\\d]|$)");
   public static final Pattern CALCQ_DOUBLE_OPEN_BRACKET = Pattern.compile(OPEN_BRACKET + OPEN_BRACKET);
   public static final Pattern CALCQ_DOUBLE_CLOSE_BRACKET = Pattern.compile(CLOSE_BRACKET + CLOSE_BRACKET);
-  
+
   private static final int WRONG_IMAGE_MAP_ANSWER_NON_PARCIAL = -123456789;
   
   private static final String NBSP = "&#160;";
@@ -2776,7 +2776,7 @@ Here are the definition and 12 cases I came up with (lydia, 01/2006):
   public List getExportResponsesData(String publishedAssessmentId, boolean anonymous, String audioMessage, String fileUploadMessage, String noSubmissionMessage, boolean showPartAndTotalScoreSpreadsheetColumns, String poolString, String partString, String questionString, String textString, String responseString, String pointsString, String rationaleString, String itemGradingCommentsString, Map useridMap, String responseCommentString) {
     return this.getExportResponsesData(publishedAssessmentId, anonymous, audioMessage, fileUploadMessage, noSubmissionMessage, showPartAndTotalScoreSpreadsheetColumns, poolString, partString, questionString, textString, responseString, pointsString, rationaleString, itemGradingCommentsString, useridMap, responseCommentString, false);
   }
-  
+
   private void removeUnsubmittedAssessmentGradingData(AssessmentGradingData data){
 	  try {
 	      PersistenceService.getInstance().
@@ -2882,17 +2882,17 @@ Here are the definition and 12 cases I came up with (lydia, 01/2006):
   }
 
   /**
-   * extractGlobalVariables() is a utility function for Calculated Questions.  It 
-   * takes one parameter, which is a block of text, and looks for any variable 
-   * names that are encoded in the text.  A global variable name is enclosed in @ @.  
+   * extractGlobalVariables() is a utility function for Calculated Questions.  It
+   * takes one parameter, which is a block of text, and looks for any variable
+   * names that are encoded in the text.  A global variable name is enclosed in @ @.
    * The values of the variable are encoded elsewhere.
-   * <p>For example, if the passed parameter is <code>[[@a@ + @b@]] = {{c}}</code>, 
+   * <p>For example, if the passed parameter is <code>[[@a@ + @b@]] = {{c}}</code>,
    * the resulting list would contain two entries: strings of "a" and "b"
-   * <p>Global Variables must begin with an alpha, but subsequent character can be 
+   * <p>Global Variables must begin with an alpha, but subsequent character can be
    * alpha-numeric.
    * <p>Note - a formula, encoded as {{ }}, will not be mistaken for a variable.
    * @param text content to be searched
-   * @return a list of matching variable names. If no global variables are found, the 
+   * @return a list of matching variable names. If no global variables are found, the
    * list will be empty
    */
   public List<String> extractGlobalVariables(String text) {
@@ -3483,7 +3483,7 @@ Here are the definition and 12 cases I came up with (lydia, 01/2006):
    * substituted into the expression.
    * @return a string with values substituted. If expression is null,
    * returns a blank string (i.e ""). If globalVariables is null, returns
-   * the original expression 
+   * the original expression
    */
   public String replaceGlobalVariablesWithFormulas(String expression, Map<String, String> globalVariables) {
       if (StringUtils.isEmpty(expression)) {
@@ -4109,6 +4109,13 @@ Here are the definition and 12 cases I came up with (lydia, 01/2006):
 			log.error(e.getMessage(), e);
 		}
 	}
+
+  public void hardDeleteGradingData(String publishedAssessmentId){
+     // List<AssessmentGradingData> data = getAllAssessmentGradingData(Long.parseLong(publishedAssessmentId));
+      PersistenceService.getInstance().getAssessmentGradingFacadeQueries().hardDeleteGradingData(publishedAssessmentId);
+  }
+
+
 }
 
 /**

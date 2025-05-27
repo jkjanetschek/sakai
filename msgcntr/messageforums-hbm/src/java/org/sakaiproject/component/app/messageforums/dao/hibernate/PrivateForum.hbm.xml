@@ -93,6 +93,15 @@
     ]]>
   </query>
 
+  <query name="findPrivateForumsByContext">
+    <![CDATA[from org.sakaiproject.component.app.messageforums.dao.hibernate.BaseForumImpl as f
+             join f.area as a
+             left join fetch f.topicsSet
+             where f.typeUuid = :typeUuid and
+                   a.contextId = :contextId
+    ]]>
+  </query>
+
   <query name="findPrivateForumByOwner">
     <![CDATA[from org.sakaiproject.component.app.messageforums.dao.hibernate.PrivateForumImpl as pf where pf.owner = :owner]]>
   </query>

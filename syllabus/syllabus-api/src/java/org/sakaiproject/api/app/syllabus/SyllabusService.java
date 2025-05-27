@@ -89,4 +89,6 @@ public interface SyllabusService extends EntityProducer
 	public boolean checkAddOrEdit (String reference);
 	//Checks if a user can add or edit the current site
 	public boolean checkAddOrEdit ();
+
+	public void hardDelete(String siteId);
 }

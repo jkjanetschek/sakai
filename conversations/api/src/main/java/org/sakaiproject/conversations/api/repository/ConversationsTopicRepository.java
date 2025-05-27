@@ -27,4 +27,5 @@ public interface ConversationsTopicRepository extends SpringCrudRepository<Conve
     Long countBySiteIdAndMetadata_Creator_Id(String siteId, String creatorId);
     Integer lockBySiteId(String siteId, Boolean locked);
     List<ConversationsTopic> findTopicsByGradingItemId(Long gradingItemId);
+    Integer deleteUserStatisticsByTopicId(String topicId);
 }

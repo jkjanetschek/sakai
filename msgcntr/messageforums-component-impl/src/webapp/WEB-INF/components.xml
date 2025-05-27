@@ -76,6 +76,11 @@
         <property name="sessionManager" ref="org.sakaiproject.tool.api.SessionManager" />
         <property name="ltiService" ref="org.sakaiproject.lti.api.LTIService"/>
         <property name="serverConfigurationService" ref="org.sakaiproject.component.api.ServerConfigurationService" />
+        <property name="privateManager" ref="org.sakaiproject.api.app.messageforums.ui.PrivateMessageManager" />
+        <property name="rankManager" ref="org.sakaiproject.api.app.messageforums.RankManager"/>
+        <property name="synopticMsgcntrManager" ref="org.sakaiproject.api.app.messageforums.SynopticMsgcntrManager" />
+        <property name="emailNotificationManager" ref="org.sakaiproject.api.app.messageforums.EmailNotificationManager" />
+        <property name="anonymousManager" ref="org.sakaiproject.api.app.messageforums.AnonymousManager" />
     </bean>
         
     <bean id="org.sakaiproject.api.app.messageforums.MessageForumsTypeManager" 

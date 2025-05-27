@@ -65,6 +65,7 @@ import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityTransferrer;
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.event.api.EventTrackingService;
 import org.sakaiproject.exception.IdUnusedException;
@@ -131,7 +132,7 @@ import org.w3c.dom.ls.LSSerializer;
 @Slf4j
 @Setter
 @Transactional
-public class RubricsServiceImpl implements RubricsService, EntityTransferrer {
+public class RubricsServiceImpl implements RubricsService, EntityTransferrer, HardDeleteAware {
 
     private static final Font BOLD_FONT = FontFactory.getFont(FontFactory.HELVETICA, 10, Font.BOLD);
     private static final Font NORMAL_FONT = FontFactory.getFont(FontFactory.HELVETICA, 7, Font.NORMAL);
@@ -1946,5 +1947,12 @@ public class RubricsServiceImpl implements RubricsService, EntityTransferrer {
     public List<ToolItemRubricAssociation> getRubricAssociationsByRubricAndTool(Long rubricId, String toolId) {
         return associationRepository.findByRubricIdAndToolId(rubricId, toolId);
     }
+
+
+    public void hardDelete(String siteId) {
+        log.info("Hard Delete  of Tool Rubrics for context: " + siteId);
+        deleteSiteRubrics(siteId);
+    }
+
 
 }

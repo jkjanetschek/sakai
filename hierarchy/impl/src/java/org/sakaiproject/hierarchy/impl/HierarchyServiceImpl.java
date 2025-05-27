@@ -59,6 +59,10 @@ import org.sakaiproject.hierarchy.impl.utils.HierarchyImplUtils;
 import org.sakaiproject.hierarchy.model.HierarchyNode;
 import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.memory.api.MemoryService;
+import org.sakaiproject.site.api.SiteRemovalAdvisor;
+import org.sakaiproject.site.api.Site;
+import org.sakaiproject.site.api.SiteService;
+
 
 /**
  * The default implementation of the Hierarchy interface
@@ -66,7 +70,7 @@ import org.sakaiproject.memory.api.MemoryService;
  * @author Aaron Zeckoski (aaronz@vt.edu)
  */
 @Slf4j
-public class HierarchyServiceImpl implements HierarchyService {
+public class HierarchyServiceImpl implements HierarchyService, SiteRemovalAdvisor {
 
     private static int ORACLE_IN_CLAUSE_SIZE_LIMIT = 1000;
     private boolean oracle = false;
@@ -94,6 +98,9 @@ public class HierarchyServiceImpl implements HierarchyService {
     }
     private final String CACHE_NAME = "org.sakaiproject.hierarchy.cache";
 
+    private SiteService siteService;
+    public void setSiteService(SiteService siteService){this.siteService = siteService;}
+
     // private SessionManager sessionManager;
     // public void setSessionManager(SessionManager sessionManager) {
     // this.sessionManager = sessionManager;
@@ -110,6 +117,8 @@ public class HierarchyServiceImpl implements HierarchyService {
         dao.fixupDatabase();
         
         cache = memoryService.getCache(CACHE_NAME);
+
+        siteService.addSiteRemovalAdvisor(this);
     }
 
     public HierarchyNode createHierarchy(String hierarchyId) {
@@ -1193,5 +1202,30 @@ public class HierarchyServiceImpl implements HierarchyService {
         }
         return parentNodeId;
     }
+
+    public void removed(Site site){
+        log.info("Hierarchy Service: SiteRemoval Advisor called for context: " + site.getId());
+
+
+            List<HierarchyNodeMetaData> l = dao.findBySearch(HierarchyNodeMetaData.class,
+                    new Search("title", "%"+site.getId()+"%",Restriction.LIKE) );
+
+            if (!l.isEmpty()) {
+                Set<HierarchyPersistentNode> nodes = new HashSet<HierarchyPersistentNode>();
+                Set<HierarchyNodeMetaData> nodesMetaData = new HashSet<HierarchyNodeMetaData>();
+                for (int i = 0; i < l.size(); i++) {
+                    HierarchyNodeMetaData nmd = (HierarchyNodeMetaData) l.get(i);
+                    nodesMetaData.add(nmd);
+                    nodes.add(nmd.getNode());
+                }
+                try {
+                    Set[] entitySets = new Set[] { nodesMetaData, nodes };
+                    dao.deleteMixedSet(entitySets);
+                }catch (IllegalArgumentException e) {
+                    log.error("Error deleting Hierarchy nodes for context: " + site.getId());
+                }
+            }
+        }
+
 
 }

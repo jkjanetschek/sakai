@@ -92,6 +92,7 @@ import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityProducer;
 import org.sakaiproject.entity.api.EntityTransferrer;
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.sakaiproject.entity.api.HttpAccess;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
@@ -162,7 +163,7 @@ import org.sakaiproject.util.MergeConfig;
 @Slf4j
 public class LessonBuilderEntityProducer extends AbstractEntityProvider
 	implements EntityProducer, EntityTransferrer, Serializable,
-			   CoreEntityProvider, AutoRegisterEntityProvider, Statisticable, InputTranslatable, Createable, ToolApi  {
+			   CoreEntityProvider, AutoRegisterEntityProvider, Statisticable, InputTranslatable, Createable, ToolApi, HardDeleteAware   {
 	private static final String ARCHIVE_VERSION = "2.4"; // in case new features are added in future exports
 	private static final String VERSION_ATTR = "version";
 	private static final String NAME = "name";
@@ -1992,12 +1993,12 @@ public class LessonBuilderEntityProducer extends AbstractEntityProvider
 		try {
 			Set<String> navigationToolIds = siteService.getSite(fromContext).getOrderedPages()
 				.stream().map(SitePage::getId).collect(Collectors.toSet());
-			
+
 			List<SimplePage> sitePages = simplePageToolDao.getSitePages(fromContext);
 			if (sitePages == null || sitePages.isEmpty()) {
 				return Collections.emptyList();
 			}
-			
+
 			return sitePages.stream()
 				.filter(page -> navigationToolIds.contains(page.getToolId()))
 				.map(p -> Map.of("id", Long.toString(p.getPageId()), "title", p.getTitle()))
@@ -2859,6 +2860,42 @@ public class LessonBuilderEntityProducer extends AbstractEntityProvider
 		return sakaiId;
 	}
 
+
+    public void hardDelete(String siteId){
+        log.info("Hard Delete  of Tool Lessons for context: " + siteId);
+
+
+        List<SimplePage> simplePages =  simplePageToolDao.getAllPages(siteId);
+        List<SimplePageItem> simplePageItems = simplePageToolDao.getAllPageItems(simplePages);
+        //simplePages.forEach(a -> log.info("SimplePage: " + a.getPageId()));
+        // deleteOrphanPages(siteId);
+        // findItemsOnPage
+        SimplePageBean spb = makeSimplePageBean(siteId);
+
+
+
+        //delete table lessons_builder_group
+        simplePageToolDao.deleteLessonsBuilderGroups(siteId);
+        //delete logs --> lessons_builder_log
+        simplePageToolDao.deleteLessonsLogs(simplePageItems);
+        //table: lessons_builder_comments
+        simplePageToolDao.deleteLessonsComments(simplePages);
+        // table lessons_builder_ch_status
+        simplePageToolDao.deleteChecklistItemsStatus(simplePageItems);
+        //table lessons_builder_p_eval_results
+        simplePageToolDao.deletePeerEvalStatus(simplePages);
+        //table lessons_builder_properties
+        simplePageToolDao.deleteLessonsProperties(siteId);
+        //table lessons_builder_q_responses/lessons_builder_qr_totals
+        simplePageToolDao.deleteQuestionResponses(simplePageItems);
+        //table lessons_builder_student_pages
+        simplePageToolDao.deleteStudentPages(simplePages);
+
+        simplePages.forEach(s -> spb.deletePage(siteId,s.getPageId()));
+
+
+
+    }
 
 
 }

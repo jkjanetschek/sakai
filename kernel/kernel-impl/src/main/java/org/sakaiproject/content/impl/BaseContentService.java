@@ -102,6 +102,7 @@ import org.sakaiproject.authz.api.RoleAlreadyDefinedException;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.conditions.api.ConditionService;
 import org.sakaiproject.content.api.ContentChangeHandler;
 import org.sakaiproject.content.api.ContentCollection;
@@ -3836,7 +3837,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		commitCollection(edit);	
 	}
 
-	public ContentResource copyAttachment(String oAttachmentPath, String toContext, String toolTitle, MergeConfig mcx) 
+	public ContentResource copyAttachment(String oAttachmentPath, String toContext, String toolTitle, MergeConfig mcx)
 		throws IdUnusedException, TypeException, PermissionException
 	{
 		ContentResource oAttachment = null;
@@ -4357,7 +4358,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 				log.error("Could not get content from citations resource with id {}", edit.getId(), e);
 			}
 		}
-		
+
 
 		try {
 			String uuid = this.getUuid(id);
@@ -5601,7 +5602,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		
 		return StringUtils.isNotBlank(contentType);
     }
-	
+
 	public void commitResource(ContentResourceEdit edit) throws OverQuotaException, ServerOverloadException
 	{
 		commitResource(edit, NotificationService.NOTI_OPTIONAL);
@@ -6608,7 +6609,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 						{
 							res.setBufferSize(STREAM_BUFFER_SIZE);
 						}
-	
+
 						copyRange(content, out, 0, len-1);
 					}
 					catch (ServerOverloadException e)
@@ -7580,7 +7581,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		}
 		return splicedString.toString();
 	}
-	
+
 	public Map<String, String> transferCopyEntities(String fromContext, String toContext, List<String> resourceIds, List<String> options) {
 
 		Map traversalMap = new HashMap();
@@ -7791,7 +7792,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		traversalMap.put("/fromContext", fromContext);
 		return traversalMap;
 	} // importResources
- 
+
 	@Override
 	public List<Map<String, String>> getEntityMap(String siteId) {
 
@@ -12111,7 +12112,7 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 
 		public String getUrl(boolean relative, String rootProperty)
 		{
-			return (relative ? serverConfigurationService.getAccessPath() : serverConfigurationService.getAccessUrl()) 
+			return (relative ? serverConfigurationService.getAccessPath() : serverConfigurationService.getAccessUrl())
 			+ Web.escapeUrl(getAlternateReferenceRoot(rootProperty) + m_relativeAccessPoint
 			+ convertIdToUserEid(m_id));
 		}
@@ -13107,6 +13108,10 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		 */
 		public Collection<ContentResource> getContextResourcesOfType(String resourceType, Set<String> contextIds);
 		
+
+		public void hardDeleteDropbox(String siteId);
+		public void hardDeleteTypeRegistry(String siteId);
+
 	} // Storage
 
 	/**********************************************************************************************************************************************************************************************************************************************************
@@ -13757,13 +13762,60 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 		// Get collection for the site and check validity
 		String collectionId = getSiteCollection(siteId);
 
+		// TODO: change for impl of UserLifeCycle
+		// uncomment for testing
 		if (!isSiteLevelCollection(collectionId)) {
 			log.error("hardDelete rejected on non site collection: {}", collectionId);
 			return;
 		}
-		log.info("hardDelete proceeding on collectionId: {}", collectionId);
 
 
+
+
+
+		try{
+			hardDeleteResources(collectionId);
+		}catch (Exception e){
+			log.error("Error removing resources for collectionId: " + collectionId + " " + e);
+		}
+
+		try{
+			hardDeleteResources("/group-user/" + siteId + "/");
+		}catch (Exception e){
+			log.error("Error removing resources for collectionId: " + "/group-user/" + siteId + "/" + " " + e);
+		}
+
+		try{
+			hardDeleteResources("/attachment/" + siteId+ "/");
+		}catch (Exception e){
+			log.error("Error removing resources for collectionId: " + "/attachment/" + siteId+ "/" + " " + e);
+		}
+
+
+		// Cleanup the collections
+		removeCollectionRecursive(collectionId);
+
+		removeCollectionRecursive("/group-user/" + siteId + "/");
+
+		removeCollectionRecursive("/attachment/" + siteId+ "/");
+
+
+		//deletion of user sites --> TODO refactor
+		try{
+			hardDeleteResources("/content/user/" + siteId + "/");
+		}catch (Exception e){
+			log.error("Error removing resources for collectionId: " + "/content/user/" + siteId + "/" + " " + e);
+		}
+		removeCollectionRecursive("/content/user/" + siteId + "/");
+
+
+		//clean table content_dropbox_changes
+		m_storage.hardDeleteDropbox(siteId);
+		//clean table content_type_registry
+		m_storage.hardDeleteTypeRegistry(siteId);
+	}
+
+	public void hardDeleteResources(String collectionId){
 		// Get normal resources are purge one-by-one
 		List<ContentResource> resources = getAllResources(collectionId);
 		for (ContentResource resource : resources) {
@@ -13782,15 +13834,12 @@ SiteContentAdvisorProvider, SiteContentAdvisorTypeRegistry, HardDeleteAware
 			try {
 				removeDeletedResource(deletedResource.getId());
 			} catch (Exception e) {
-				log.warn("Failed to remove some content.", e);
+				log.warn("Failed to remove deleted content.", e);
 			}
 		}
-
-		// Cleanup the collections
-		removeCollectionRecursive(collectionId);
 	}
 
-	private void removeCollectionRecursive(String collectionId) {
+	public void removeCollectionRecursive(String collectionId) {
 		ContentCollection collection = null;
 		try {
 			collection = getCollection(collectionId);

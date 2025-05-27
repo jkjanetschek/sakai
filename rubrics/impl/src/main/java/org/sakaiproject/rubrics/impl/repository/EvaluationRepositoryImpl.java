@@ -37,6 +37,7 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Root;
 
 import org.hibernate.Session;
+import org.springframework.transaction.annotation.Transactional;
 
 public class EvaluationRepositoryImpl extends SpringCrudRepositoryImpl<Evaluation, Long> implements EvaluationRepository {
 
@@ -121,19 +122,15 @@ public class EvaluationRepositoryImpl extends SpringCrudRepositoryImpl<Evaluatio
 
 
     @Override
+    @Transactional
     public int deleteByOwnerId(String ownerId) {
 
+        List<Evaluation> evaluations = findByOwnerId(ownerId);
         Session session = sessionFactory.getCurrentSession();
-
-        CriteriaBuilder cb = session.getCriteriaBuilder();
-        CriteriaQuery<Evaluation> query = cb.createQuery(Evaluation.class);
-        Root<Evaluation> root = query.from(Evaluation.class);
-        query.where(cb.equal(root.get("ownerId"), ownerId));
-
-        List<Evaluation> evaluations = session.createQuery(query).list();
         evaluations.forEach(session::delete);
         return evaluations.size();
     }
+
 
     public List<Evaluation> findByOwnerId(String ownerId) {
         Session session = sessionFactory.getCurrentSession();
@@ -145,4 +142,5 @@ public class EvaluationRepositoryImpl extends SpringCrudRepositoryImpl<Evaluatio
 
         return session.createQuery(query).list();
     }
+
 }

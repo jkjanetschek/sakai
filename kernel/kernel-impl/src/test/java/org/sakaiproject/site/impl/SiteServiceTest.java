@@ -29,6 +29,7 @@ import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.event.api.EventTrackingService;
@@ -205,6 +206,11 @@ public class SiteServiceTest extends DbSiteService
 	@Override
 	protected MicrosoftMessagingService microsoftMessagingService() {
 		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected ContentHostingService contentHostingService() {
 		return null;
 	}
 }

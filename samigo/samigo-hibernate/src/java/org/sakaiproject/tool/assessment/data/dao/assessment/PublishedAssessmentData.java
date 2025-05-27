@@ -93,7 +93,12 @@ public class PublishedAssessmentData
   private Long categoryId;
   @Setter @Getter private String reference;
 
-  
+  // only hardDelete: Do not use!
+  private Set extendedTimes;
+  public void setExtendedTimes(Set extendedTimes) {this.extendedTimes = extendedTimes;}
+  public Set getExtendedTimes(){return this.extendedTimes;}
+
+
   public PublishedAssessmentData() {}
   /**
    * "Convenient Constructor"

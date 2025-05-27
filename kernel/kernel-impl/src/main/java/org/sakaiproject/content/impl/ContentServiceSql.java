@@ -133,6 +133,12 @@ public interface ContentServiceSql
 	String getInsertIndividualDropboxChangeSql();
 
 	/**
+	 * returns the sql statement which deletes rows after site is hard deleted
+	 */
+	public String getHardDeleteDropboxSql();
+	public String getHardDeleteTypeRegistrySql();
+
+	/**
 	 * returns the sql statement which retrieves the total number of bytes within a site-level collection (context) in the CONTENT_RESOURCE table.
 	 */
 	String getQuotaQuerySql();

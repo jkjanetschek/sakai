@@ -42,4 +42,5 @@ public interface MessageDao
 	List findBySession(String session);
 
 	void update(Object o);
+	void hardDeleteMessagesInSpace(String context);
 }

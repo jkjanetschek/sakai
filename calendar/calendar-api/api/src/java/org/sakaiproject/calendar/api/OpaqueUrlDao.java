@@ -29,4 +29,6 @@ public interface OpaqueUrlDao {
 
 	void deleteOpaqueUrl(String userUUID, String calendarRef);
 
+	void hardDeleteForContext(String siteId);
+
 }

@@ -132,10 +132,11 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
 
     private static final String QUERY_FORUMS_FOR_MAIN_PAGE = "findForumsForMainPage";
     private static final String QUERY_FAQ_FORUMS = "findFaqForums";
-            
+
     private static final String QUERY_BY_TOPIC_ID = "findTopicById";
     private static final String QUERY_OPEN_BY_TOPIC_AND_PARENT = "findOpenTopicAndParentById";
     private static final String QUERY_PRIVATE_BY_TOPIC_AND_PARENT = "findPrivateTopicAndParentById";
+    private static final String QUERY_TOPICS_FOR_PRIVATE_FORUM = "findTopicsForPrivateForum";
 
     private static final String QUERY_BY_TOPIC_UUID = "findTopicByUuid";
 
@@ -154,6 +155,9 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
 
 
     private static final String MESSAGECENTER_BUNDLE = "org.sakaiproject.api.app.messagecenter.bundle.Messages";
+    private static final String QUERY_MESSAGES_BY_CONTEXT = "findPrvtMsgsByContext";
+
+
 
     /** Sorts the forums by the sort index and if the same index then order by the creation date */
     public static final Comparator FORUM_SORT_INDEX_CREATED_DATE_COMPARATOR_DESC = new ForumBySortIndexAscAndCreatedDateDesc();
@@ -677,6 +681,39 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
         return Util.setToList(resultSet);
     }
 
+    private List getTopicsforPrivateForumById(final Long forumId){
+
+        if (forumId == null) {
+            throw new IllegalArgumentException("Null Argument");
+        }
+
+        HibernateCallback<List> hcb = session -> {
+            Query q = session.getNamedQuery(QUERY_TOPICS_FOR_PRIVATE_FORUM);
+            q.setLong("id", forumId);
+            return q.list();
+        };
+
+        Topic tempTopic = null;
+        Set resultSet = new HashSet();
+        List temp = getHibernateTemplate().execute(hcb);
+        for (Iterator i = temp.iterator(); i.hasNext();)
+        {
+            Object[] results = (Object[]) i.next();
+
+            if (results != null) {
+                if (results[0] instanceof Topic) {
+                    tempTopic = (Topic) Hibernate.unproxy(results[0]);
+                    tempTopic.setBaseForum((BaseForum) Hibernate.unproxy(results[1]));
+                } else {
+                    tempTopic = (Topic) Hibernate.unproxy(results[1]);
+                    tempTopic.setBaseForum((BaseForum) Hibernate.unproxy(results[0]));
+                }
+                resultSet.add(tempTopic);
+            }
+        }
+        return Util.setToList(resultSet);
+    }
+
     public DiscussionForum createDiscussionForum() {
         DiscussionForum forum = new DiscussionForumImpl();
         forum.setUuid(getNextUuid());
@@ -1196,6 +1233,9 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
         getHibernateTemplate().merge(area);
         getHibernateTemplate().delete(forumTmp);
 
+        getHibernateTemplate().delete(forumTmp);
+      //  getHibernateTemplate().delete(area);
+
         log.debug("deleteDiscussionForum executed with forumId: " + id);
     }
 
@@ -1229,7 +1269,7 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
         return getHibernateTemplate().execute(hcb);
     }
 
-    
+
     public Area getAreaByContextIdAndTypeId(final String typeId) {
         log.debug("getAreaByContextIdAndTypeId executing for current user: " + getCurrentUser());
         HibernateCallback<Area> hcb = session -> {
@@ -1274,7 +1314,7 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
         //unread status
         List<UnreadStatus> statuses = getUnreadStatusesForTopic(topic.getId());
         getHibernateTemplate().deleteAll(statuses);
-        
+
         Topic finder = getTopicById(true, topic.getId());
         BaseForum forum = finder.getBaseForum();
         forum.removeTopic(topic);
@@ -1293,6 +1333,76 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
         
         log.debug("deleteOpenForumTopic executed with forumId: " + topic.getId());
     }
+
+    public void deletePrivateForum(PrivateForum forum, String siteId){
+        long id = forum.getId().longValue();
+
+
+        // forum = (DiscussionForum) getForumById(true, id);
+        List<Topic> topics = getTopicsforPrivateForumById(id);
+        PrivateForum mergedForum = null;
+        for (Topic topic : topics) {
+
+            //rubricsService.deleteRubricAssociation(RubricsConstants.RBCS_TOOL_FORUMS, RubricsConstants.RBCS_TOPIC_ENTITY_PREFIX + topic.getId());
+
+            //unread status
+            List<UnreadStatus> statuses = getUnreadStatusesForTopic(topic.getId());
+            getHibernateTemplate().deleteAll(statuses);
+
+            forum.removeTopic(topic);
+            mergedForum = (PrivateForum) getSessionFactory().getCurrentSession().merge(forum);
+            Topic topicTmp = (Topic) getSessionFactory().getCurrentSession().merge(topic);
+/*
+            topicTmp.getMessages().forEach(m -> {if(m.getInReplyTo() != null){
+                m.setInReplyTo(null);
+                getHibernateTemplate().merge(m);}
+            });
+*/
+            getSessionFactory().getCurrentSession().delete(topicTmp);
+        }
+        Area area = mergedForum.getArea();
+        area.removePrivateForum(mergedForum);
+        mergedForum = getHibernateTemplate().merge(forum);
+        getHibernateTemplate().merge(area);
+        getHibernateTemplate().delete(mergedForum);
+        //  getHibernateTemplate().delete(area);
+
+
+        //table: mft_move_history_t not relevant for private messages
+
+        List<PrivateMessage> privateMessages = getMessagesByContext(siteId);
+        for(PrivateMessage privateMessage: privateMessages){
+            /*
+            List<PrivateMessageRecipient> recipients = privateMessage.getRecipients();
+            privateMessage.setRecipients(null);
+            getHibernateTemplate().merge(privateMessage);
+
+            for(PrivateMessageRecipient recipient:recipients){
+                getHibernateTemplate().delete(recipient);
+            }
+             */
+            //table mfr_draft_recipient_t
+            if (privateMessage.getDraft()) {
+                    List list = getHibernateTemplate().execute(session -> session.getNamedQuery("findDraftRecipientsByMessageId"))
+                            .setParameter("id", privateMessage.getId(), LongType.INSTANCE).list();
+                getHibernateTemplate().deleteAll(list);
+            }
+            getHibernateTemplate().delete(privateMessage);
+        }
+        log.debug("deleteDiscussionForum executed with forumId: " + id);
+    }
+
+    private List getMessagesByContext(final String contextId){
+
+        HibernateCallback<List> hcb = session -> {
+            Query q = session.getNamedQuery(QUERY_MESSAGES_BY_CONTEXT);
+            q.setParameter("contextId", contextId, StringType.INSTANCE);
+            return q.list();
+        };
+        return getHibernateTemplate().execute(hcb);
+
+    }
+
 
     /**
      * Delete a private forum topic

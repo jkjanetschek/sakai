@@ -45,4 +45,8 @@ public interface EventLogFacadeQueriesAPI {
 	 */
 	public List<Object[]> getTitlesFromEventLogBySite(String siteId);
 
+
+
+	public void hardDeleteEventLog(String siteId);
+
 }

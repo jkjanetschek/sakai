@@ -111,7 +111,7 @@ import org.sakaiproject.util.MergeConfig;
  * </p>
  */
 @Slf4j
-public abstract class BaseCalendarService implements CalendarService, DoubleStorageUser, ContextObserver, EntityTransferrer, SAXEntityReader, Observer
+public abstract class BaseCalendarService implements CalendarService, DoubleStorageUser, ContextObserver, EntityTransferrer, SAXEntityReader, Observer, HardDeleteAware
 {
 	/** The initial portion of a relative access point URL. */
 	protected String m_relativeAccessPoint = null;
@@ -164,7 +164,9 @@ public abstract class BaseCalendarService implements CalendarService, DoubleStor
 	public static final String SAKAI = "Sakai";
 	
 	private Cache<String, Calendar> cache = null;
-	
+
+
+
 	/**
 	 * Access this service from the inner classes.
 	 */
@@ -510,6 +512,8 @@ public abstract class BaseCalendarService implements CalendarService, DoubleStor
 	 */
 	public void init()
 	{
+		siteService = (SiteService) ComponentManager.get("org.sakaiproject.site.api.SiteService");
+		aliasService = (AliasService) ComponentManager.get("org.sakaiproject.alias.api.AliasService");
 		try
 		{
 			m_relativeAccessPoint = REFERENCE_ROOT;
@@ -2645,6 +2649,11 @@ public abstract class BaseCalendarService implements CalendarService, DoubleStor
          boolean allowed = false;
          boolean ownEvent = event.isUserOwner();
          
+		 // fix PermissionException if EventAccess.GROUPED and group is already deleted
+         if(securityService.isSuperUser()){
+			 return true;
+		 }
+
 			// check security to delete any event
          if ( unlockCheck(AUTH_REMOVE_CALENDAR_ANY, getReference()) )
             allowed = true;
@@ -2652,7 +2661,7 @@ public abstract class BaseCalendarService implements CalendarService, DoubleStor
 			// check security to delete own event
 			else if ( unlockCheck(AUTH_REMOVE_CALENDAR_OWN, getReference()) && ownEvent )
             allowed = true; 
-            
+
 			// but we must also assure, that for grouped events, we can remove it from ALL of the groups
 			if (allowed && (event.getAccess() == EventAccess.GROUPED))
 			{
@@ -4776,6 +4785,8 @@ public abstract class BaseCalendarService implements CalendarService, DoubleStor
 		 * Forget about a event.
 		 */
 		public void removeEvent(Calendar calendar, CalendarEventEdit edit);
+		public void deleteUrlsForContext(String siteId);
+
 
 	} // Storage
 
@@ -5839,6 +5850,52 @@ public abstract class BaseCalendarService implements CalendarService, DoubleStor
 
 		return timeService.newTimeRange(oneYearAgo, oneYearLater);
 	}
+
+
+
+	/**
+	 * Implementation of HardDeleteAware to allow content to be fully purged
+	 */
+	public void hardDelete(String siteId) {
+		log.info("Hard Delete  of Tool Calendar for context: " + siteId);
+
+
+		String calendarId = calendarReference(siteId, SiteService.MAIN_CONTAINER);
+
+		if(calendarId == null){
+			calendarId = "/calendar/calendar/" + siteId + "/main";
+		}
+		try {
+			CalendarEdit calendarEdit = editCalendar(calendarId);
+			List events = m_storage.getEvents((Calendar) calendarEdit, null, null);
+			for (Object event: events){
+				CalendarEvent edit = (CalendarEvent) event;
+				calendarEdit.removeEvent(calendarEdit.getEditEvent(edit.getId(),CalendarService.EVENT_REMOVE_CALENDAR));
+			}
+			removeCalendar(calendarEdit);
+		} catch (IdUnusedException e) {
+			log.warn("No calendar found for site: " + siteId);
+		} catch (PermissionException e) {
+			log.error("The current user does not have permission to access the calendar for context: {}", siteId, e);
+		} catch (InUseException ex) {
+			log.error("InUseException exception occurred for calendar for site: {}", siteId, ex);
+		}catch (Exception ex){
+			log.error("Unknown exception occurred in calendar for site: {}", siteId, ex);
+		}
+		//move outside of catch block, do delete urls if calendar does not exist
+		m_storage.deleteUrlsForContext(siteId);
+
+
+
+		// remove any alias
+		try
+		{
+			aliasService.removeTargetAliases(calendarId);
+		}
+		catch (PermissionException e) {
+		}
+
+    }
 
 	private String getDirectToolUrl(String siteId) throws IdUnusedException {
 		ToolConfiguration toolConfig = siteService.getSite(siteId).getToolForCommonId("sakai.schedule");
