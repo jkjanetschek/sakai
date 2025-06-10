@@ -27,7 +27,8 @@ export class SakaiRubricGradingComment extends RubricsElement {
       startupFocus: true,
       versionCheck: false,
       removePlugins: "wordcount",
-      height: 60,
+      height: 400,
+      width: 400
     };
 
     if (sakai && sakai.editor) {
@@ -40,7 +41,21 @@ export class SakaiRubricGradingComment extends RubricsElement {
     const editorFunction = sakai && sakai.editor ? sakai.editor.launch : CKEDITOR.replace;
     this._commentEditor = editorFunction(editorKey, editorOptions);
 
+
     this._commentEditor.focus();
+
+
+    // listener to focus on ckEditor, when dropdown is opened
+    // --> focus in line above is called when grading view is initialized and cke is still closed
+    const dropdownButton = this.querySelector("#rubricGradingDropdownButton");
+    const dropdownMenu = this.querySelector(".rubric-comment-dropdown.dropdown-menu");
+    dropdownButton.addEventListener("click", () => {
+    // Check if the dropdown menu is open
+      if (dropdownMenu && dropdownMenu.classList.contains("show")) {
+        this._commentEditor.focus();
+      }
+    });
+
 
     this._commentEditor.on("blur", () => {
 
@@ -79,7 +94,7 @@ export class SakaiRubricGradingComment extends RubricsElement {
 
     return html`
       <div class="dropdown">
-        <button class="btn btn-icon"
+        <button id="rubricGradingDropdownButton" class="btn btn-icon"
             type="button"
             data-bs-toggle="dropdown"
             data-bs-auto-close="false"
