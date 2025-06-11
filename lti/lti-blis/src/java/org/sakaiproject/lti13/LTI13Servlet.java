@@ -72,6 +72,7 @@ import static org.sakaiproject.lti.util.SakaiLTIUtil.LTI13_PATH;
 import static org.sakaiproject.lti.util.SakaiLTIUtil.getOurServerUrl;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.component.cover.ServerConfigurationService;
+import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.lti.api.LTIService;
 import org.sakaiproject.lti13.LineItemUtil;
@@ -126,6 +127,7 @@ public class LTI13Servlet extends HttpServlet {
 	private static final String APPLICATION_JWT = "application/jwt";
 	private static final String ERROR_DETAIL = "X-Sakai-LTI13-Error-Detail";
 	protected static LTIService ltiService = null;
+	private SqlService sqlService;
 
 	// Used for signing and checking tokens
 	// TODO: Rotate these after a while
@@ -146,6 +148,10 @@ public class LTI13Servlet extends HttpServlet {
 		if (ltiService == null) {
 			ltiService = (LTIService) ComponentManager.get("org.sakaiproject.lti.api.LTIService");
 		}
+		if (sqlService == null) {
+			sqlService = (SqlService) ComponentManager.get(SqlService.class.getName());
+		}
+
 
         cacheManager = (CacheManager) ComponentManager.get("org.sakaiproject.ignite.SakaiCacheManager");
         cache = cacheManager.getCache(CACHE_NAME);
@@ -542,6 +548,10 @@ public class LTI13Servlet extends HttpServlet {
 			byte [] bytes = jws.getBytes();
 			java.net.URL url = new java.net.URL(callback);
 			java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+			if (sqlService.isMCISafetySwitchEnabled("mci.safetySwitch.lti.useTimeouts")) {
+				con.setConnectTimeout(10000); // 10 seconds
+				con.setReadTimeout(20000);    // 20 seconds
+			}
 			con.setRequestMethod("POST");
 	        con.setDoOutput(true);
 			con.setFixedLengthStreamingMode(bytes.length);
