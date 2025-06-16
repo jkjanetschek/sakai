@@ -329,6 +329,10 @@ public abstract class ClusterEventTracking extends BaseEventTrackingService impl
 		{
 			notifyObservers(event, true);
 		}
+		catch (NullPointerException e)
+		{
+			log.warn("postEvent, notifyObservers(), event: {}; NullpointerException", event.toString());
+		}
 		catch (Exception t)
 		{
 			log.warn("postEvent, notifyObservers(), event: {}", event.toString(), t);
