@@ -26,6 +26,7 @@ import org.sakaiproject.exception.InUseException;
 import org.sakaiproject.exception.TypeException;
 import org.sakaiproject.exception.ServerOverloadException;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -84,6 +85,19 @@ public class GlobalExceptionHandler {
         log.error("Uncaught exception", ex);
         return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", ex);
     }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<Object> handleIOException(IOException ex, WebRequest request) {
+        log.debug("IOException", ex);
+
+        if (ex.toString().contains("ClientAbortException")) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected IOException error occurred", ex);
+        }
+    }
+
+
 
     private ResponseEntity<Object> createErrorResponse(HttpStatus status, String message, Exception ex) {
         Map<String, Object> body = new LinkedHashMap<>();

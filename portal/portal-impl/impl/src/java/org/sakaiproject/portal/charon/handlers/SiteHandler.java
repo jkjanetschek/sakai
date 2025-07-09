@@ -1110,8 +1110,12 @@ public class SiteHandler extends WorksiteHandler
 				if ( mc.find() ) return bufferedResponse;
 			}
 		} catch (ToolException | IOException e) {
-			log.warn("Failed to buffer content.", e);
-			return Boolean.FALSE;
+            if (checkIfNestedViewExpiredException(e)) {
+                log.warn("Failed to buffer content. {}", e.getMessage());
+            } else {
+                log.warn("Failed to buffer content. ", e);
+            }
+            return Boolean.FALSE;
 		}
 		String tidAllow = serverConfigurationService.getString(LEGACY_IFRAME_SUPPRESS_PROP, IFRAME_SUPPRESS_DEFAULT);
 		tidAllow = serverConfigurationService.getString(IFRAME_SUPPRESS_PROP, tidAllow);
@@ -1198,6 +1202,19 @@ public class SiteHandler extends WorksiteHandler
 			return pp;
 		}
 		return null;
+	}
+
+
+	private boolean checkIfNestedViewExpiredException(Throwable e) {
+		Throwable current = e;
+		while (current != null) {
+			Throwable cause = current.getCause();
+			if (cause != null && cause.toString().contains("javax.faces.application.ViewExpiredException")) {
+				return true;
+			}
+			current = cause;
+		}
+		return false;
 	}
 
 	private int findEndOfTag(String string, int startPos)

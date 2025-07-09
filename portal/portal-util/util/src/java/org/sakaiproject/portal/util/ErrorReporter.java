@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.List;
+
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -273,7 +275,10 @@ public class ErrorReporter
 	{
 		// logging and emailing should use the system default locale instead of the user's locale
 		ResourceBundle rb = rbDefault;
-		
+
+
+		if (!shouldLogAndSendException(problem, placementDisplay)) return;
+
 		// log
 		log.warn(rb.getString("bugreport.bugreport") + " "
 				+ rb.getString("bugreport.bugid") + ": " + bugId + " "
@@ -365,6 +370,18 @@ public class ErrorReporter
 			ComponentManager.get(EmailService.class).send(from, emailAddr, subject, body, emailAddr, null, null);
 		}
 	}
+
+	private boolean shouldLogAndSendException(String problem, String placementDisplay) {
+
+		List<String> list = List.of("ClientAbortException",
+									"Error servicing SakaiRSF request");
+
+		if (problem != null && list.stream().anyMatch(problem::contains)) {
+			return false;
+		} else {
+			return placementDisplay == null || !placementDisplay.contains("No Placement");
+		}
+    }
 
 	/**
 	 * Handle the inital report of an error, from an uncaught throwable, with a
