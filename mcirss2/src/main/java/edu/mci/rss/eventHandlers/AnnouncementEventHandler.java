@@ -34,7 +34,7 @@ public class AnnouncementEventHandler extends AbstractEventHandler {
         UserNotification noti = itemData.getUserNotification();
 
 
-        atomEntry.setSummary(createContentObjectForSummay(buildSummary(itemData)));
+        atomEntry.setSummary(createContentObjectAsType(buildSummary(itemData), TYPE_HTML));
 
 
     }

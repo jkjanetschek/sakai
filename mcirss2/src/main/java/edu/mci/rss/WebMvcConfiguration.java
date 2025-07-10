@@ -12,7 +12,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 
-import javax.annotation.PostConstruct;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -21,11 +21,10 @@ import java.util.List;
 @Configuration
 @EnableWebMvc
 @ComponentScan("edu.mci.rss")
-public class MciRssWebMvcConfiguration implements WebMvcConfigurer {
+public class WebMvcConfiguration implements WebMvcConfigurer {
 
 
-    @PostConstruct
-    public void postConstruct() {}
+
 
     @Bean
     public StringHttpMessageConverter stringHttpMessageConverter() {

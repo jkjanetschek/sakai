@@ -28,7 +28,7 @@ public class SamigoEventHandler extends AbstractEventHandler {
 
     @Override
     protected void addToolSpecificDetails(NewsItemProcessingData itemData, Entry atomEntry) {
-        System.out.println("AnnouncementEventHandler.addToolSpecificDetails");
+        System.out.println("SamigoEventHandler.addToolSpecificDetails");
 
         atomEntry.setCategories(createCategoryAsList(CATEGORIE));
 
@@ -46,7 +46,7 @@ public class SamigoEventHandler extends AbstractEventHandler {
         } catch (IndexOutOfBoundsException | NullPointerException e) {
             log.warn("Error getting dueDate for assessment ref {}", noti.getRef());
         }
-        atomEntry.setSummary(createContentObjectForSummay(buildSummary(itemData)));
+        atomEntry.setSummary(createContentObjectAsType(buildSummary(itemData), TYPE_HTML));
     }
 
     protected String buildSummary(NewsItemProcessingData itemData) {

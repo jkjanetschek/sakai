@@ -34,12 +34,13 @@ public class AssignmentEventHandler extends AbstractEventHandler {
 
     @Override
     protected void addToolSpecificDetails(NewsItemProcessingData itemData, Entry atomEntry) {
-        System.out.println("AnnouncementEventHandler.addToolSpecificDetails");
+        System.out.println("AssignmentEventHandler.addToolSpecificDetails");
         atomEntry.setCategories(createCategoryAsList(CATEGORIE));
 
         String userId = itemData.getUserId();
+        System.out.println("userId: "  + userId);
         UserNotification noti = itemData.getUserNotification();
-
+        System.out.println("noti: " + noti.getTitle());
         String bodyText;
         Date dueDate;
         try {
@@ -55,8 +56,7 @@ public class AssignmentEventHandler extends AbstractEventHandler {
         } finally {
             mciRssSessionUtils.switchToUserAndOrEid(null, null);
         }
-
-        atomEntry.setSummary(createContentObjectForSummay(buildSummary(itemData)));
+        atomEntry.setSummary(createContentObjectAsType(buildSummary(itemData), TYPE_HTML));
 
 
 

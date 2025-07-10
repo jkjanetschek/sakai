@@ -27,8 +27,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -55,20 +57,19 @@ public class NewsFeedService {
 
 
     public Feed createFeedForUserId(String userId) {
-        System.out.println("Creating Feed for userId: " + userId);
 
         List<UserNotification> userNotifications = getUserNotifications(userId);
+
         if (userNotifications.isEmpty()) {
-            System.out.println("No user notifications found for userId: " + userId);
             return FeedUtils.createAtomFeed();
         }
-        // TODO linked List notwenig? --> ja weil linkedlIst schneller ist als arraylist bei vielen insertions und hier kein retrieval notwenig ist
+
+
         LinkedList<UserNotification> userNotificationsFiltered= filterUserNotifications(userNotifications, userId);
         if (userNotifications.isEmpty()) {
             System.out.println("No user notifications in TimeRange found for userId: " + userId);
             return FeedUtils.createAtomFeed();
         }
-
 
         System.out.println("NewsFeedService.getUserNotifications() -> size filtered NewsItems: " + userNotificationsFiltered.size());
         Feed feed = processFilteredNotifications(userNotificationsFiltered, userId);
@@ -86,8 +87,6 @@ public class NewsFeedService {
              throw new IllegalStateException("Error getting UserNotifications for userId: " + userId);
          }
 
-         //TODO
-        System.out.println("NewsFeedService.getUserNotifications() --> UserNotification.size: " + academicAlerts.size());
          return academicAlerts;
     }
 
@@ -111,17 +110,15 @@ public class NewsFeedService {
         mciRssSessionUtils.switchToUserAndOrEid(userId,null);
 
 
-        for (UserNotification userNotification : userNotifications) {
+
+        for (UserNotification userNotification : newsItemFilterCriteriaUtils.filterByEventAndSortByTime(userNotifications)) {
 
 
-            Instant newsTimeInstant = getEventTimeFromUserNotifications(userNotification);
+            Instant newsTimeInstant = newsItemFilterCriteriaUtils.getEventTimeFromUserNotifications(userNotification);
             if (newsTimeInstant == null) {
-                System.out.println("newsTimeInstant is null");
                 continue;
             }
-            // check if add nesItem to filtered list --> consider timerange and item Count
             if (newsItemFilterCriteriaUtils.checkTimeRangeAndCountOfItem(newsTimeInstant)) {
-                System.out.println("add item to filterd");
                 userNotificationsFiltered.add(userNotification);
             }
         }
@@ -130,87 +127,24 @@ public class NewsFeedService {
     }
 
 
-    /**
-     *  get Event Time from userNotification based on event Type
-     *
-     * @param userNotification
-     * @return Instant
-     */
-
-
-    private Instant getEventTimeFromUserNotifications(UserNotification userNotification) {
-        System.out.println("GetEventTimeFromNews: event = " + userNotification.getEvent());
-        return  switch (userNotification.getEvent()) {
-            case AnnouncementService.SECURE_ANNC_ADD -> userNotification.getEventDate();
-            case AssignmentConstants.EVENT_ADD_ASSIGNMENT, AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT -> {
-                String referenceString = userNotification.getRef();
-                Reference assiReference = entityManager.newReference(referenceString);
-                try {
-                    Assignment assignment = assignmentService.getAssignment(assiReference);
-                    yield assignment.getDueDate();
-                } catch (IdUnusedException | PermissionException e) {
-                    log.error("Error getting assignment for mci rss news item {}",e.getMessage());
-                    yield null;
-                }
-            }
-            case SamigoConstants.EVENT_ASSESSMENT_AVAILABLE, SamigoConstants.EVENT_ASSESSMENT_UPDATE_AVAILABLE -> {
-                String referenceString = userNotification.getRef();
-                List<String> refParts = TestsAndQuizzesUserNotificationHandler.regexHelper(referenceString);
-                PublishedAssessmentData pubData = null;
-                try{
-                    String publishedAssessmentId = refParts.get(1);
-                    pubData = publishedAssessmentService.getBasicInfoOfPublishedAssessment(publishedAssessmentId);
-                } catch (IndexOutOfBoundsException e) {
-                    log.warn("Error getting pubData for assessment ref {}", referenceString);
-                    yield  null;
-                }
-                if (pubData != null) {
-                    try{
-                        yield pubData.getDueDate().toInstant();
-                    }catch (NullPointerException dueDateEx){
-                        yield  pubData.getStartDate().toInstant();
-                    }
-                }
-                yield null;
-            }
-            // event type is not handled
-            default -> null;
-        };
-    }
 
 
 
-    /*
-List<Entry> entries = feed.getEntries();
-if (entries == null) {
-entries = new ArrayList<>();
-}
-entries.add(newEntry);
-feed.setEntries(entries);
-     */
+
     private Feed processFilteredNotifications(LinkedList<UserNotification> filteredUserNotifications, String userId) {
         Feed atomFeed = FeedUtils.createAtomFeed();
 
         List<Entry> entries = new LinkedList<>();
-
         for (UserNotification item : filteredUserNotifications) {
-
-            // entries.add(eventHandlerFactory.getHandlers().get(item.getEvent()).processEvent(item));
 
 
             MciRssEventHandler handler =  eventHandlerFactory.getHandlers().get(item.getEvent());
 
-            // TODO
-            if (handler != null) {
-                System.out.println(handler.toString());
-            } else {
-                System.out.println("no handler found");
-                throw new RuntimeException("no handler found");
+            if (handler == null) {
+                throw new RuntimeException("no handler found for news item event. List of items should be filtered by event at this point");
             }
 
-            System.out.println("process item for event: " + item.getEvent());
             Entry entry = handler.processEvent(new NewsItemProcessingData(userId, item));
-            //Entry entry = eventHandlerFactory.getHandlers().get(item.getEvent()).processEvent(item);
             entries.add(entry);
 
         }

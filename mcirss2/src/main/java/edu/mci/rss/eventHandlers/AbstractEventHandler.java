@@ -26,6 +26,8 @@ public abstract class AbstractEventHandler implements MciRssEventHandler {
 
     protected final String UNKNOWN_TITLE = "Unknown Title";
     protected final String UNKNOWN_SITE_ID = "Unknown Site";
+    protected final String TYPE_TEXT = "text";
+    protected final String TYPE_HTML = "html";
 
     private Pattern pattern = Pattern.compile(".+?\\\"(?= \\()");
     @Autowired
@@ -38,8 +40,6 @@ public abstract class AbstractEventHandler implements MciRssEventHandler {
     protected abstract String buildSummary(NewsItemProcessingData itemData);
 
     public Entry processEvent(NewsItemProcessingData itemData) {
-        //TODO
-
 
         Entry atomEntry = new Entry();
 
@@ -52,7 +52,8 @@ public abstract class AbstractEventHandler implements MciRssEventHandler {
 
    private void generalEntryDetails(UserNotification noti, Entry atomEntry) {
        atomEntry.setId(Long.toString(noti.getId()));
-       atomEntry.setTitle(noti.getTitle());
+       //atomEntry.setTitle(noti.getTitle());
+       atomEntry.setTitleEx(createContentObjectAsType(noti.getTitle(), TYPE_TEXT));
        Date date = Date.from(noti.getEventDate());
        atomEntry.setPublished(date);
        atomEntry.setUpdated(date);
@@ -62,9 +63,9 @@ public abstract class AbstractEventHandler implements MciRssEventHandler {
 
 
     protected String shortenTitle(String siteId) {
+        System.out.println("Shorten title: " + siteService.getSiteDisplay(siteId));
         Matcher matcher = pattern.matcher(siteService.getSiteDisplay(siteId));
-        matcher.find();
-        return matcher.group(0);
+        return matcher.find() ? matcher.group(0) : "\"" + siteId + "\"";
     }
 
     protected List<Category> createCategoryAsList(String term) {
@@ -75,6 +76,7 @@ public abstract class AbstractEventHandler implements MciRssEventHandler {
 
     private List<Link> createLinkAsList(String url) {
         Link link = new Link();
+        link.setRel(null);
         link.setHref(url);
         return Collections.singletonList(link);
     }
@@ -87,10 +89,10 @@ public abstract class AbstractEventHandler implements MciRssEventHandler {
         return Objects.requireNonNullElse(noti.getSiteId(), UNKNOWN_SITE_ID);
     }
 
-    protected Content createContentObjectForSummay(String summary) {
+    protected Content createContentObjectAsType(String contentString, String type) {
         Content content = new Content();
-        content.setType("text"); // or "html", "xhtml"
-        content.setValue(summary);
+        content.setType(type); // or "html", "xhtml"
+        content.setValue(contentString);
         return content;
     }
 

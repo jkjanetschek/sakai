@@ -16,6 +16,7 @@ public class MciRssSessionUtils {
    // public MciRssSessionUtils()
 
     public  void switchToUserAndOrEid(String userId, String eid) {
+        System.out.println("switchToUserAndOrEid");
         Session session = sessionManager.getCurrentSession();
         session.setUserId(userId);
         if (eid != null) {

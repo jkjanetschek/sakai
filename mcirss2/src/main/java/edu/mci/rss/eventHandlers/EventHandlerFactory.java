@@ -78,6 +78,11 @@ public class EventHandlerFactory {
     @PostConstruct
     public void postConstruct() {
         System.out.println("postConstruct()");
+        handlers.forEach(
+                (key, handler) -> {
+                    System.out.println("key: " + key + " handler: " + handler.getClass().getName());
+                }
+        );
     }
 
 
