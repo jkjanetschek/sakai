@@ -141,7 +141,7 @@ public class NewsFeedService {
             MciRssEventHandler handler =  eventHandlerFactory.getHandlers().get(item.getEvent());
 
             if (handler == null) {
-                throw new RuntimeException("no handler found for news item event. List of items should be filtered by event at this point");
+                throw new RuntimeException("no handler found for news item event. List of news items should be filtered also by handled events at this point");
             }
 
             Entry entry = handler.processEvent(new NewsItemProcessingData(userId, item));

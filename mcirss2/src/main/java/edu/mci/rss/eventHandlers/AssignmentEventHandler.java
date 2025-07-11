@@ -38,9 +38,7 @@ public class AssignmentEventHandler extends AbstractEventHandler {
         atomEntry.setCategories(createCategoryAsList(CATEGORIE));
 
         String userId = itemData.getUserId();
-        System.out.println("userId: "  + userId);
         UserNotification noti = itemData.getUserNotification();
-        System.out.println("noti: " + noti.getTitle());
         String bodyText;
         Date dueDate;
         try {

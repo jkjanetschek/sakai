@@ -9,10 +9,6 @@ public class ExpectedUserNotification {
 
     private Long id;
 
-    private String fromUser;
-
-    private String toUser;
-
     private String event;
 
     private String ref;
@@ -24,16 +20,6 @@ public class ExpectedUserNotification {
     private String url;
 
     private Instant eventDate;
-
-    private Boolean deferred = Boolean.FALSE;
-
-    private Boolean viewed = Boolean.FALSE;
-
-    private String tool;
-
-    private String fromDisplayName;
-
-    private String formattedEventDate;
 
     private String siteTitle;
 

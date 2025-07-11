@@ -98,8 +98,11 @@ public class NewsItemFilterCriteriaUtils {
     }
 
 
-
-
+    /**
+     *  align switch cases with list handledEvents
+     * @param userNotification
+     * @return
+     */
     public Instant getEventTimeFromUserNotifications(UserNotification userNotification) {
         System.out.println("GetEventTimeFromNews: event = " + userNotification.getEvent());
         return  switch (userNotification.getEvent()) {

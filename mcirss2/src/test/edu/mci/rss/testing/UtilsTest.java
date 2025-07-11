@@ -123,12 +123,13 @@ public class UtilsTest {
 
     }
 
-    @Test
-    public void testListOfSortedItems() {}
-
     private Instant createInstantMinusGivenDays(int days) {
         return now.minus(days, ChronoUnit.DAYS);
     }
+
+    @Test
+    public void testListOfSortedItems() {}
+
 
 
 
