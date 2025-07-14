@@ -2,20 +2,55 @@ package edu.mci.rss.testing;
 
 
 import edu.mci.rss.utils.NewsItemFilterCriteriaUtils;
+import edu.mci.rss.testing.UserNotificationTestDataFactory;
+import edu.mci.rss.testing.UserNotificationTestDataFactory.TestConfig;
+import edu.mci.rss.testing.UserNotificationTestDataFactory.TimeRangeMode;
+import edu.mci.rss.testing.UserNotificationTestDataFactory.HandledEvents;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.sakaiproject.assignment.api.AssignmentService;
+import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.component.cover.ComponentManager;
+import org.sakaiproject.entity.api.EntityManager;
+import org.sakaiproject.entity.api.Reference;
+import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.exception.PermissionException;
+import org.sakaiproject.messaging.api.model.UserNotification;
+import org.sakaiproject.tool.assessment.TestsAndQuizzesUserNotificationHandler;
+import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
+import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+
+
 
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 @RunWith(SpringRunner.class)
@@ -23,9 +58,15 @@ import java.time.temporal.ChronoUnit;
 @ContextConfiguration(classes = {TestConfiguration.class})
 public class UtilsTest {
 
+    @Autowired
+    EntityManager entityManager;
+    @Autowired
+    AssignmentService assignmentService;
+
 
     private NewsItemFilterCriteriaUtils filterCriteriaUtils;
     private Instant now;
+    private UserNotificationTestDataFactory testDataFactory;
 
     // init ComponentManager in testing mode before dependecies are resolved
     static {
@@ -45,6 +86,7 @@ public class UtilsTest {
         // Mock the current time
         now = Instant.now();
         filterCriteriaUtils = new NewsItemFilterCriteriaUtils();
+        testDataFactory = new UserNotificationTestDataFactory();
     }
 
 /**
@@ -128,11 +170,111 @@ public class UtilsTest {
     }
 
     @Test
-    public void testListOfSortedItems() {}
+    public void testGetEventTimeFromUserNotifications() throws PermissionException, IdUnusedException, NoSuchFieldException, IllegalAccessException {
+
+        //stubbing
+        FakeMCIReference mockSpy = spy(FakeMCIReference.class);
+        when(entityManager.newReference(anyString())).thenAnswer(invocation -> {
+            String input = invocation.getArgument(0);
+            mockSpy.setRef(input);
+            return mockSpy;
+        });
+
+
+
+        TestConfig config = new TestConfig(null, TimeRangeMode.ALL, HandledEvents.ANNOUNCEMENT);
+        UserNotification userNoti = testDataFactory.createMockedUserNotificationItem(config);
+        assertEquals(userNoti.getEventDate(), filterCriteriaUtils.getEventTimeFromUserNotifications(userNoti));
+
+
+
+        TestConfig config2 = new TestConfig(null, TimeRangeMode.ALL, HandledEvents.ASSIGNMENT);
+        UserNotification userNoti2 = testDataFactory.createMockedUserNotificationItem(config);
+        when(assignmentService.getAssignment(any(Reference.class))).thenAnswer(invocation -> {
+            Assignment ass = mock(Assignment.class);
+            ass.setDueDate(userNoti2.getEventDate());
+            return ass;
+        });
+        assertEquals(userNoti.getEventDate(), filterCriteriaUtils.getEventTimeFromUserNotifications(userNoti));
+
+
+        TestConfig config3 = new TestConfig(null, TimeRangeMode.ALL, HandledEvents.SAMIGO);
+        UserNotification userNoti3 = testDataFactory.createMockedUserNotificationItem(config);
+
+        PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
+        PublishedAssessmentService mockedPublishedAssessmentService = spy(publishedAssessmentService);
+        PublishedAssessmentData pubDataDueDate =  new PublishedAssessmentData(userNoti3.getId(),
+                userNoti3.getTitle(),
+                "releaseToPlaceholder",
+                Date.from(userNoti3.getEventDate()), null, null);
+
+        doReturn(pubDataDueDate)
+            .when(mockedPublishedAssessmentService)
+                .getBasicInfoOfPublishedAssessment(anyString());
+
+        Field field = NewsItemFilterCriteriaUtils.class.getDeclaredField("publishedAssessmentService");
+        field.setAccessible(true);
+        field.set(filterCriteriaUtils, mockedPublishedAssessmentService);
+        assertEquals(userNoti3.getEventDate(), filterCriteriaUtils.getEventTimeFromUserNotifications(userNoti3));
+
+    }
 
 
 
 
+    @Test
+    public void testListOfSortedItems() {
+        List<UserNotification> notis = new ArrayList<UserNotification>();
+        List<UserNotification> notisSpy = spy(notis);
+
+        // Create test configurations
+        /*
+        List<TestConfig> configs = List.of(
+                new TestConfig(1, TimeRangeMode.LONG, HandledEvents.ASSIGNMENT),
+                new TestConfig(1, TimeRangeMode.SHORT, HandledEvents.ANNOUNCEMENT),
+                new TestConfig(1, TimeRangeMode.LONG_BOUNDARY, HandledEvents.SAMIGO),
+                new TestConfig(1, TimeRangeMode.SHORT_BOUNDARY, HandledEvents.ALL)
+        );
+        configs.forEach(config -> {
+            notisSpy.add(testDataFactory.createMockedUserNotificationItem(config));
+        });
+
+         */
+        for(int i = 0; i < 100; i++) {
+            notisSpy.add(testDataFactory.createMockedUserNotificationItem(new TestConfig(null, TimeRangeMode.ALL, HandledEvents.ALL)));
+        }
+
+        NewsItemFilterCriteriaUtils filterSpy = spy(filterCriteriaUtils);
+
+        doAnswer(invocation -> {
+            UserNotification input = (UserNotification) invocation.getArguments()[0];
+            return input.getEventDate();
+        })
+        .when(filterSpy)
+        .getEventTimeFromUserNotifications(any(UserNotification.class));
+
+        List<UserNotification> sortedList =  filterSpy.filterByEventAndSortByTime(notisSpy);
+        System.out.println("sortedList: " + sortedList.size());
+        Iterator<UserNotification> it = sortedList.iterator();
+        UserNotification first = it.next();
+        while (it.hasNext()) {
+            Assert.assertTrue("NewsItemFilterCriteriaUitls.filterByEventAndSortByTime: sorted items are not in correct order", first.getEventDate().isBefore(it.next().getEventDate()));
+        }
+    }
+
+
+
+
+
+    public static abstract class FakeMCIReference implements Reference {
+        private String ref;
+
+        public FakeMCIReference(String ref) {this.ref = ref;}
+        public FakeMCIReference() {}
+
+        public String getRef() {return this.ref;}
+        public void setRef(String ref) {this.ref = ref;}
+    }
 
 
 

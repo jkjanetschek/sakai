@@ -43,6 +43,7 @@ public class NewsItemFilterCriteriaUtils {
     @Autowired
     private AssignmentService assignmentService;
 
+
     private PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
 
 

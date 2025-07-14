@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Configuration
 @Import(WebMvcConfiguration.class)
@@ -47,7 +48,6 @@ public class TestConfiguration {  //     extents SakaiTestConfiguration --> some
     public EntityManager entityManager() {
         return mock(EntityManager.class);
     }
-
 
     @Bean(name = "org.sakaiproject.assignment.api.AssignmentService")
     public AssignmentService assignmentService() {

@@ -22,12 +22,15 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class UserNotificationTestDataFactory {
 
 
 
-    private Long idCounter = 0L;
-    private Long siteIdCounter = 10000L;
+    private long idCounter = 0L;
+    private long siteIdCounter = 10000L;
 
     private Instant timeStamp;
     private Instant sixMontsAgo;
@@ -41,7 +44,7 @@ public class UserNotificationTestDataFactory {
     public UserNotificationTestDataFactory() {
         random = ThreadLocalRandom.current();
         this.timeStamp = Instant.now();
-        this.sixMontsAgo = timeStamp.minus(6, ChronoUnit.DAYS);
+        this.sixMontsAgo = timeStamp.minus(180, ChronoUnit.DAYS);
         this.fourtheenDaysAgo = timeStamp.minus(14, ChronoUnit.DAYS);
     }
 
@@ -50,23 +53,40 @@ public class UserNotificationTestDataFactory {
 
         List<ExpectedUserNotification> exampleUserNotifications = new ArrayList<ExpectedUserNotification>();
         for (int i = 0; i < config.getAmountTestNotifications(); i++) {
-            exampleUserNotifications.add(createExpectedUserNotificationItem(config, i));
+            exampleUserNotifications.add(createExpectedUserNotificationItem(config));
         }
         return exampleUserNotifications;
     }
 
-    private ExpectedUserNotification createExpectedUserNotificationItem(TestConfig config, int i) {
+
+
+    public ExpectedUserNotification createExpectedUserNotificationItem(TestConfig config) {
         if (config.event.equals(HandledEvents.ALL)) {
             config.setEvent(HandledEvents.values()[random.nextInt(HandledEvents.values().length)]);
         }
+        long id = getIdCounter();
+
         ExpectedUserNotification noti = new ExpectedUserNotification();
-        noti.setId(getIdCounter());
-        noti.setEvent(config.getEvent().getEventNames().get(i % config.getEvent().getEventNames().size()));
+        noti.setId(id);
+        noti.setEvent(config.getEvent().getEventNames().get((int) id % config.getEvent().getEventNames().size()));
         noti.setEventDate(getRandomTimestamp(config.getTimeRangeMode()));
         noti.setSiteId(siteIdGenerator());
-        noti.setTitle(titleGenerator(config.getEvent(), i));
+        noti.setTitle(titleGenerator(config.getEvent(), (int) id));
         noti.setUrl(urlGenerator(noti.getSiteId()));
         noti.setRef(notificationReferenceGenerator(config.getEvent(),noti.getSiteId()));
+        return noti;
+    }
+
+    public UserNotification createMockedUserNotificationItem(TestConfig config) {
+        UserNotification noti = mock(UserNotification.class);
+        ExpectedUserNotification exNoti = createExpectedUserNotificationItem(config);
+        when(noti.getId()).thenReturn(exNoti.getId());
+        when(noti.getRef()).thenReturn(exNoti.getRef());
+        when(noti.getTitle()).thenReturn(exNoti.getTitle());
+        when(noti.getUrl()).thenReturn(exNoti.getUrl());
+        when(noti.getSiteId()).thenReturn(exNoti.getSiteId());
+        when(noti.getEventDate()).thenReturn(exNoti.getEventDate());
+        when(noti.getEvent()).thenReturn(exNoti.getEvent());
         return noti;
     }
 
@@ -134,7 +154,7 @@ public class UserNotificationTestDataFactory {
         };
     }
 
-    private enum TimeRangeMode {
+    public enum TimeRangeMode {
         SHORT,
         LONG,
         LONG_BOUNDARY,
@@ -143,7 +163,7 @@ public class UserNotificationTestDataFactory {
     }
 
 
-    private enum HandledEvents {
+    public enum HandledEvents {
         ANNOUNCEMENT(List.of(
                 AnnouncementService.SECURE_ANNC_ADD
         )),
