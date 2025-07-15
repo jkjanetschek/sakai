@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.sakaiproject.announcement.api.AnnouncementService;
 import org.sakaiproject.assignment.api.AssignmentConstants;
+import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.messaging.api.model.UserNotification;
 import org.sakaiproject.samigo.util.SamigoConstants;
 
@@ -89,6 +90,7 @@ public class UserNotificationTestDataFactory {
         when(noti.getEvent()).thenReturn(exNoti.getEvent());
         return noti;
     }
+
 
 
 
@@ -176,8 +178,7 @@ public class UserNotificationTestDataFactory {
                     Stream.concat(ANNOUNCEMENT.eventNames.stream(),
                             ASSIGNMENT.eventNames.stream()),
                     SAMIGO.eventNames.stream())
-                .collect(Collectors.toUnmodifiableList())
-        );
+                .collect(Collectors.toUnmodifiableList()));
 
 
         private final List<String> eventNames;

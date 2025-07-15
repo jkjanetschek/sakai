@@ -2,6 +2,7 @@ package edu.mci.rss.testing;
 
 
 import edu.mci.rss.WebMvcConfiguration;
+import edu.mci.rss.utils.MciRssSessionUtils;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.messaging.api.UserMessagingService;
@@ -28,6 +29,12 @@ import static org.mockito.Mockito.when;
 public class TestConfiguration {  //     extents SakaiTestConfiguration --> some beans creation does not work, if test are run via mvn test
 
 
+    // mockito      3.12.4
+    // junit        4.13.2
+    // hamcrest     1.3
+    // spring       5.3.39
+
+
     @Bean(name = "org.sakaiproject.site.api.SiteService")
     public SiteService siteService() {
         return mock(SiteService.class);
@@ -45,9 +52,7 @@ public class TestConfiguration {  //     extents SakaiTestConfiguration --> some
 
 
     @Bean(name = "org.sakaiproject.entity.api.EntityManager")
-    public EntityManager entityManager() {
-        return mock(EntityManager.class);
-    }
+    public EntityManager entityManager() {return mock(EntityManager.class);}
 
     @Bean(name = "org.sakaiproject.assignment.api.AssignmentService")
     public AssignmentService assignmentService() {
@@ -59,6 +64,9 @@ public class TestConfiguration {  //     extents SakaiTestConfiguration --> some
     public UserDirectoryService userDirectoryService() {
         return mock(UserDirectoryService.class);
     }
+
+    @Bean
+    public MciRssSessionUtils mciRssSessionUtils() {return mock(MciRssSessionUtils.class);}
 
 
 

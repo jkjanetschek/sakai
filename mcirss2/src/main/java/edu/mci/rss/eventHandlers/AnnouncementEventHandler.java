@@ -28,7 +28,7 @@ public class AnnouncementEventHandler extends AbstractEventHandler {
 
     @Override
     protected void addToolSpecificDetails(NewsItemProcessingData itemData, Entry atomEntry) {
-        System.out.println("AnnouncementEventHandler.addToolSpecificDetails");
+
 
         atomEntry.setCategories(createCategoryAsList(CATEGORIE));
         UserNotification noti = itemData.getUserNotification();

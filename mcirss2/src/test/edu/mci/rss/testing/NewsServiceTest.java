@@ -1,36 +1,59 @@
 package edu.mci.rss.testing;
 
+import edu.mci.rss.eventHandlers.EventHandlerFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.sakaiproject.component.cover.ComponentManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 @Slf4j
-//@RunWith(SpringJUnit4ClassRunner.class)
-//@ContextConfiguration(classes = {ConversationsTestConfiguration.class})
+@RunWith(SpringRunner.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = {TestConfiguration.class})
 public class NewsServiceTest {
 
-    // mockito      3.12.4
-    // junit        4.13.2
-    // hamcrest     1.3
-    // spring       5.3.39
-
-
- //   @Before
-    public void initCoponentmanager() throws NoSuchFieldException, IllegalAccessException {
-
-        Class<?> clazz = ComponentManager.class;
-        Field testingModeField = clazz.getDeclaredField("testingMode");
-        testingModeField.setAccessible(true);
-        testingModeField.set(null, true);
-        ComponentManager.getInstance();
-
+    static {
+        try {
+            Class<?> clazz = ComponentManager.class;
+            Field testingModeField = clazz.getDeclaredField("testingMode");
+            testingModeField.setAccessible(true);
+            testingModeField.set(null, true);
+            ComponentManager.getInstance();
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            log.error("ComponentManager could not set to testing mode for Junit Run", e);
+        }
     }
 
 
-  //  @Test
-    public void testNewsService() {
-        System.out.println("testNewsService");
+    private UserNotificationTestDataFactory testDataFactory;
+    @Autowired
+    private EventHandlerFactory eventHandlerFactory;
+
+
+    @Before
+    public void setup() {
+        testDataFactory = new UserNotificationTestDataFactory();
+    }
+
+
+    @Test
+    public void testEventHandlers() {
+        List<ExpectedUserNotification> notis = testDataFactory.createTestUserNotificationsList(new UserNotificationTestDataFactory.TestConfig(300, UserNotificationTestDataFactory.TimeRangeMode.SHORT, UserNotificationTestDataFactory.HandledEvents.ALL));
+        notis.forEach(n -> {
+            Assert.assertNotNull("no handler found", eventHandlerFactory.getHandlers().get(n.getEvent()));
+        });
+
+
     }
 
 }

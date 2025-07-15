@@ -34,17 +34,14 @@ public class AssignmentEventHandler extends AbstractEventHandler {
 
     @Override
     protected void addToolSpecificDetails(NewsItemProcessingData itemData, Entry atomEntry) {
-        System.out.println("AssignmentEventHandler.addToolSpecificDetails");
         atomEntry.setCategories(createCategoryAsList(CATEGORIE));
 
         String userId = itemData.getUserId();
         UserNotification noti = itemData.getUserNotification();
-        String bodyText;
         Date dueDate;
         try {
             mciRssSessionUtils.switchToUserAndOrEid(userId, null);
             Assignment assignment = assignmentService.getAssignment(entityManager.newReference(noti.getRef()));
-            bodyText = assignment.getInstructions();  // USED???
             dueDate = Date.from(assignment.getDueDate());
             itemData.setDueDate(dueDate);
         } catch (IdUnusedException e) {
@@ -55,8 +52,6 @@ public class AssignmentEventHandler extends AbstractEventHandler {
             mciRssSessionUtils.switchToUserAndOrEid(null, null);
         }
         atomEntry.setSummary(createContentObjectAsType(buildSummary(itemData), TYPE_HTML));
-
-
 
     }
 

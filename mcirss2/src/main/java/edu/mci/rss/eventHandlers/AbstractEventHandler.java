@@ -63,7 +63,6 @@ public abstract class AbstractEventHandler implements MciRssEventHandler {
 
 
     protected String shortenTitle(String siteId) {
-        System.out.println("Shorten title: " + siteService.getSiteDisplay(siteId));
         Matcher matcher = pattern.matcher(siteService.getSiteDisplay(siteId));
         return matcher.find() ? matcher.group(0) : "\"" + siteId + "\"";
     }

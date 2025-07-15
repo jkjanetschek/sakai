@@ -25,7 +25,6 @@ public class SamigoEventHandler extends AbstractEventHandler {
 
     @Override
     protected void addToolSpecificDetails(NewsItemProcessingData itemData, Entry atomEntry) {
-        System.out.println("SamigoEventHandler.addToolSpecificDetails");
 
         atomEntry.setCategories(createCategoryAsList(CATEGORIE));
 

@@ -1,6 +1,8 @@
 package edu.mci.rss.testing;
 
 
+import com.rometools.rome.feed.atom.Feed;
+import edu.mci.rss.utils.FeedUtils;
 import edu.mci.rss.utils.NewsItemFilterCriteriaUtils;
 import edu.mci.rss.testing.UserNotificationTestDataFactory;
 import edu.mci.rss.testing.UserNotificationTestDataFactory.TestConfig;
@@ -68,6 +70,7 @@ public class UtilsTest {
     private Instant now;
     private UserNotificationTestDataFactory testDataFactory;
 
+
     // init ComponentManager in testing mode before dependecies are resolved
     static {
         try {
@@ -87,6 +90,7 @@ public class UtilsTest {
         now = Instant.now();
         filterCriteriaUtils = new NewsItemFilterCriteriaUtils();
         testDataFactory = new UserNotificationTestDataFactory();
+
     }
 
 /**
@@ -254,16 +258,14 @@ public class UtilsTest {
         .getEventTimeFromUserNotifications(any(UserNotification.class));
 
         List<UserNotification> sortedList =  filterSpy.filterByEventAndSortByTime(notisSpy);
-        System.out.println("sortedList: " + sortedList.size());
         Iterator<UserNotification> it = sortedList.iterator();
-        UserNotification first = it.next();
+        Instant leftOperand = it.next().getEventDate();
         while (it.hasNext()) {
-            Assert.assertTrue("NewsItemFilterCriteriaUitls.filterByEventAndSortByTime: sorted items are not in correct order", first.getEventDate().isBefore(it.next().getEventDate()));
+            Instant rightOperand = it.next().getEventDate();
+            Assert.assertTrue("NewsItemFilterCriteriaUitls.filterByEventAndSortByTime: sorted items are not in correct order", leftOperand.isBefore(rightOperand));
+            leftOperand = rightOperand;
         }
     }
-
-
-
 
 
     public static abstract class FakeMCIReference implements Reference {
@@ -275,8 +277,6 @@ public class UtilsTest {
         public String getRef() {return this.ref;}
         public void setRef(String ref) {this.ref = ref;}
     }
-
-
 
 
 }

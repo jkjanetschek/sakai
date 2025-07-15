@@ -46,7 +46,7 @@ public class MciRssTests {
 
     private MockMvc mockMvc;
 
-    // init ComponentManager in testing mode before dependecies are resolved
+
     static {
         try {
             Class<?> clazz = ComponentManager.class;

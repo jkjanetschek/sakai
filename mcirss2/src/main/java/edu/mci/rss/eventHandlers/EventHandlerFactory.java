@@ -74,7 +74,7 @@ public class EventHandlerFactory {
 
     }
 
-
+/*
     @PostConstruct
     public void postConstruct() {
         System.out.println("postConstruct()");
@@ -84,6 +84,8 @@ public class EventHandlerFactory {
                 }
         );
     }
+
+ */
 
 
 }
