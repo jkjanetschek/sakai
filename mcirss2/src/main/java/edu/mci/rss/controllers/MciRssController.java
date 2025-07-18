@@ -4,6 +4,7 @@ package edu.mci.rss.controllers;
 import com.rometools.rome.feed.atom.Feed;
 import edu.mci.rss.services.NewsFeedService;
 import edu.mci.rss.utils.FeedUtils;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -24,9 +25,6 @@ import org.sakaiproject.user.api.UserNotDefinedException;
 public class MciRssController {
 
 
-    public MciRssController() {
-        System.out.println("MciRssController");
-    }
 
 
     @Autowired
@@ -67,6 +65,7 @@ public class MciRssController {
 
     @ExceptionHandler
     public ResponseEntity<String> handleIllegalStateException(IllegalStateException ex) {
+        System.out.println("IllegalStateException: "+ ex.getMessage());
         log.error("IllegalStateException: {}", ex.getMessage());
         log.error("IllegalStateException: ", ex);
         return ResponseEntity.badRequest().build();

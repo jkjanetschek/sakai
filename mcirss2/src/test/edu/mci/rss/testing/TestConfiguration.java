@@ -2,6 +2,7 @@ package edu.mci.rss.testing;
 
 
 import edu.mci.rss.WebMvcConfiguration;
+import edu.mci.rss.services.NewsFeedService;
 import edu.mci.rss.utils.MciRssSessionUtils;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.entity.api.EntityManager;
@@ -9,11 +10,13 @@ import org.sakaiproject.messaging.api.UserMessagingService;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.tool.api.SessionManager;
 import org.sakaiproject.user.api.UserDirectoryService;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @Configuration
@@ -34,7 +37,13 @@ public class TestConfiguration {  //     extents SakaiTestConfiguration --> some
     // hamcrest     1.3
     // spring       5.3.39
 
-
+/*
+    @Bean
+    public NewsFeedService newsFeedService() {
+        NewsFeedService newsFeedService = new NewsFeedService(); // spring will process field injection
+        return spy(newsFeedService);
+    }
+*/
     @Bean(name = "org.sakaiproject.site.api.SiteService")
     public SiteService siteService() {
         return mock(SiteService.class);
@@ -68,6 +77,21 @@ public class TestConfiguration {  //     extents SakaiTestConfiguration --> some
     @Bean
     public MciRssSessionUtils mciRssSessionUtils() {return mock(MciRssSessionUtils.class);}
 
+/*
 
+    @Bean
+    public BeanPostProcessor spyBeanPostProcessor() {
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) {
+                if (bean instanceof NewsFeedService) {
+                    return spy(bean);
+                }
+                return bean;
+            }
+        };
+    }
+
+ */
 
 }

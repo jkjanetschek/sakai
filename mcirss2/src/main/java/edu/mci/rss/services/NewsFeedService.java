@@ -9,28 +9,23 @@ import edu.mci.rss.utils.FeedUtils;
 import edu.mci.rss.utils.MciRssSessionUtils;
 import edu.mci.rss.utils.NewsItemFilterCriteriaUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.sakaiproject.announcement.api.AnnouncementService;
-import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentService;
-import org.sakaiproject.assignment.api.model.Assignment;
+
 import org.sakaiproject.entity.api.EntityManager;
-import org.sakaiproject.entity.api.Reference;
-import org.sakaiproject.exception.IdUnusedException;
-import org.sakaiproject.exception.PermissionException;
+
 import org.sakaiproject.messaging.api.UserMessagingService;
 import org.sakaiproject.messaging.api.model.UserNotification;
-import org.sakaiproject.samigo.util.SamigoConstants;
-import org.sakaiproject.tool.assessment.TestsAndQuizzesUserNotificationHandler;
-import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
+
 import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.Comparator;
+
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 
 @Slf4j
@@ -48,6 +43,8 @@ public class NewsFeedService {
     private EventHandlerFactory eventHandlerFactory;
     @Autowired
     private MciRssSessionUtils mciRssSessionUtils;
+    @Autowired
+    private ObjectProvider<NewsItemFilterCriteriaUtils> newsItemFilterCriteriaUtilsBeanProvider;
 
     private final PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
 
@@ -67,16 +64,15 @@ public class NewsFeedService {
 
         LinkedList<UserNotification> userNotificationsFiltered= filterUserNotifications(userNotifications, userId);
         if (userNotifications.isEmpty()) {
-            System.out.println("No user notifications in TimeRange found for userId: " + userId);
             return FeedUtils.createAtomFeed();
         }
 
-        System.out.println("NewsFeedService.getUserNotifications() -> size filtered NewsItems: " + userNotificationsFiltered.size());
+
         Feed feed = processFilteredNotifications(userNotificationsFiltered, userId);
 
 
 
-        System.out.println("feed: "  + feed.toString());
+
         return feed;
     }
 
@@ -103,8 +99,9 @@ public class NewsFeedService {
 
     private LinkedList<UserNotification> filterUserNotifications(List<UserNotification> userNotifications, String userId) {
 
-        NewsItemFilterCriteriaUtils newsItemFilterCriteriaUtils = new NewsItemFilterCriteriaUtils();
-        LinkedList<UserNotification> userNotificationsFiltered = new LinkedList<UserNotification>();
+       // NewsItemFilterCriteriaUtils newsItemFilterCriteriaUtils = new NewsItemFilterCriteriaUtils();
+        NewsItemFilterCriteriaUtils newsItemFilterCriteriaUtils  = newsItemFilterCriteriaUtilsBeanProvider.getObject();
+        LinkedList<UserNotification> userNotificationsFiltered = new LinkedList<>();
 
 
         mciRssSessionUtils.switchToUserAndOrEid(userId,null);
@@ -148,7 +145,6 @@ public class NewsFeedService {
             entries.add(entry);
 
         }
-        System.out.println("set atomFeed with entry size:  " + entries.size());
         atomFeed.setEntries(entries);
         return atomFeed;
     }

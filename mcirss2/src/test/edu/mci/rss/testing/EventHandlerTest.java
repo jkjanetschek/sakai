@@ -199,38 +199,5 @@ public class EventHandlerTest {
 
 
     }
-/*
-
- PublishedAssessmentData pubData = publishedAssessmentService.getBasicInfoOfPublishedAssessment(publishedAssessmentId);
-            dueDate = pubData.getDueDate();
-            if (dueDate != null ) {
-                itemData.setDueDate(dueDate);
-            }
-        } catch (IndexOutOfBoundsException | NullPointerException e) {
-            log.warn("Error getting dueDate for assessment ref {}", noti.getRef())
-
-
-
-
-   PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
-        PublishedAssessmentService mockedPublishedAssessmentService = spy(publishedAssessmentService);
-        PublishedAssessmentData pubDataDueDate =  new PublishedAssessmentData(userNoti3.getId(),
-                userNoti3.getTitle(),
-                "releaseToPlaceholder",
-                Date.from(userNoti3.getEventDate()), null, null);
-
-        doReturn(pubDataDueDate)
-                .when(mockedPublishedAssessmentService)
-                .getBasicInfoOfPublishedAssessment(anyString());
-
-        Field field = NewsItemFilterCriteriaUtils.class.getDeclaredField("publishedAssessmentService");
-        field.setAccessible(true);
-        field.set(filterCriteriaUtils, mockedPublishedAssessmentService);
-
- */
-
-    //  publishedAssessmentService.getBasicInfoOfPublishedAssessment(publishedAssessmentId);
-
-
 
 }

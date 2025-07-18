@@ -20,6 +20,7 @@ import org.sakaiproject.tool.assessment.TestsAndQuizzesUserNotificationHandler;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
 import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -35,12 +36,13 @@ import java.util.stream.Collectors;
 @Setter
 @Slf4j
 @Component
+@Scope("prototype")
 public class NewsItemFilterCriteriaUtils {
 
 
-    @Autowired
+
     private EntityManager entityManager;
-    @Autowired
+
     private AssignmentService assignmentService;
 
 
@@ -73,7 +75,10 @@ public class NewsItemFilterCriteriaUtils {
     private int longRangeItemCounter = 0;
     private final int MAX_LONG_RANGE_ITEMS = 10;
 
-    public NewsItemFilterCriteriaUtils() {
+    @Autowired
+    public NewsItemFilterCriteriaUtils(EntityManager entityManager, AssignmentService assignmentService) {
+        this.entityManager = entityManager;
+        this.assignmentService = assignmentService;
         timeRangeShortInstant  = Instant.now().minusMillis(TIME_RANGE_SHORT);
         timeRangeLongInstant = Instant.now().minusMillis(TIME_RANGE_LONG);
         itemRangeTrigger = ItemRangeTrigger.LONG;
