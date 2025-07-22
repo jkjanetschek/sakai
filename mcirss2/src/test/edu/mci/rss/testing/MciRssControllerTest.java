@@ -14,6 +14,7 @@ import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.user.api.UserDirectoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -36,10 +37,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringRunner.class)
 @WebAppConfiguration // weil --> AnnotationConfigWebApplicationContext
 @ContextConfiguration(classes = TestConfiguration.class)
+/*
 @TestExecutionListeners(
         listeners = TestExecutionListener.class,
         mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
 )
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+
+ */
 public class MciRssControllerTest {
 
     static {

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -37,13 +38,14 @@ public class TestConfiguration {  //     extents SakaiTestConfiguration --> some
     // hamcrest     1.3
     // spring       5.3.39
 
-/*
+
     @Bean
+    @Primary
     public NewsFeedService newsFeedService() {
         NewsFeedService newsFeedService = new NewsFeedService(); // spring will process field injection
         return spy(newsFeedService);
     }
-*/
+
     @Bean(name = "org.sakaiproject.site.api.SiteService")
     public SiteService siteService() {
         return mock(SiteService.class);

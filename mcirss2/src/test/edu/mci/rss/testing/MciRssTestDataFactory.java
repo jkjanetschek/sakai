@@ -2,12 +2,10 @@ package edu.mci.rss.testing;
 
 
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.sakaiproject.announcement.api.AnnouncementService;
 import org.sakaiproject.assignment.api.AssignmentConstants;
-import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.messaging.api.model.UserNotification;
 import org.sakaiproject.samigo.util.SamigoConstants;
 
@@ -17,7 +15,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -26,7 +23,7 @@ import java.util.stream.Stream;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class UserNotificationTestDataFactory {
+public class MciRssTestDataFactory {
 
 
 
@@ -39,15 +36,23 @@ public class UserNotificationTestDataFactory {
     private ThreadLocalRandom random;
 
 
+    private ExpectedUserNotification expectedUserNotificationOldVersion = new ExpectedUserNotification();
 
 
 
-    public UserNotificationTestDataFactory() {
+    public MciRssTestDataFactory() {
         random = ThreadLocalRandom.current();
         this.timeStamp = Instant.now();
         this.sixMontsAgo = timeStamp.minus(180, ChronoUnit.DAYS);
         this.fourtheenDaysAgo = timeStamp.minus(14, ChronoUnit.DAYS);
+
+
+
+
     }
+
+
+
 
 
     public List<ExpectedUserNotification> createTestUserNotificationsList(TestConfig config) {
@@ -81,6 +86,18 @@ public class UserNotificationTestDataFactory {
     public UserNotification createMockedUserNotificationItem(TestConfig config) {
         UserNotification noti = mock(UserNotification.class);
         ExpectedUserNotification exNoti = createExpectedUserNotificationItem(config);
+        when(noti.getId()).thenReturn(exNoti.getId());
+        when(noti.getRef()).thenReturn(exNoti.getRef());
+        when(noti.getTitle()).thenReturn(exNoti.getTitle());
+        when(noti.getUrl()).thenReturn(exNoti.getUrl());
+        when(noti.getSiteId()).thenReturn(exNoti.getSiteId());
+        when(noti.getEventDate()).thenReturn(exNoti.getEventDate());
+        when(noti.getEvent()).thenReturn(exNoti.getEvent());
+        return noti;
+    }
+
+    public UserNotification createMockedUserNotificationItemFromExcepected(ExpectedUserNotification exNoti) {
+        UserNotification noti = mock(UserNotification.class);
         when(noti.getId()).thenReturn(exNoti.getId());
         when(noti.getRef()).thenReturn(exNoti.getRef());
         when(noti.getTitle()).thenReturn(exNoti.getTitle());
@@ -156,6 +173,92 @@ public class UserNotificationTestDataFactory {
         };
     }
 
+
+    public CompleteAtomFeedTestData createFeedTestData() {
+
+
+        // noti for Assignemnt
+        TestConfig configAssignment = new TestConfig(1,TimeRangeMode.SHORT,HandledEvents.ASSIGNMENT);
+        ExpectedUserNotification noti = new ExpectedUserNotification();
+        long idAssignmentFeed = getIdCounter();
+        noti.setId(idAssignmentFeed);
+        noti.setEvent(configAssignment.getEvent().getEventNames().get((int) idAssignmentFeed % configAssignment.getEvent().getEventNames().size()));
+        noti.setEventDate(getRandomTimestamp(configAssignment.getTimeRangeMode()));
+        noti.setSiteId(siteIdGenerator());
+        noti.setTitle(titleGenerator(configAssignment.getEvent(), (int) idAssignmentFeed));
+        noti.setUrl(urlGenerator(noti.getSiteId()));
+        noti.setRef(notificationReferenceGenerator(configAssignment.getEvent(),noti.getSiteId()));
+
+
+        // noti for Annc
+        TestConfig configAnnc = new TestConfig(1,TimeRangeMode.SHORT,HandledEvents.ANNOUNCEMENT);
+        ExpectedUserNotification noti2 = new ExpectedUserNotification();
+        long idAnncFeed = getIdCounter();
+        noti2.setId(idAnncFeed);
+        noti2.setEvent(configAnnc.getEvent().getEventNames().get((int) idAnncFeed % configAnnc.getEvent().getEventNames().size()));
+        noti2.setEventDate(getRandomTimestamp(configAnnc.getTimeRangeMode()));
+        noti2.setSiteId(siteIdGenerator());
+        noti2.setTitle(titleGenerator(configAnnc.getEvent(), (int) idAnncFeed));
+        noti2.setUrl(urlGenerator(noti2.getSiteId()));
+        noti2.setRef(notificationReferenceGenerator(configAnnc.getEvent(),noti2.getSiteId()));
+
+
+        // noti for samigo
+        TestConfig configSamigo = new TestConfig(1,TimeRangeMode.SHORT,HandledEvents.SAMIGO);
+        ExpectedUserNotification noti3 = new ExpectedUserNotification();
+        long idSamigoFeed = getIdCounter();
+        noti3.setId(idSamigoFeed);
+        noti3.setEvent(configSamigo.getEvent().getEventNames().get((int) idSamigoFeed % configSamigo.getEvent().getEventNames().size()));
+        noti3.setEventDate(getRandomTimestamp(configSamigo.getTimeRangeMode()));
+        noti3.setSiteId(siteIdGenerator());
+        noti3.setTitle(titleGenerator(configSamigo.getEvent(), (int) idSamigoFeed));
+        noti3.setUrl(urlGenerator(noti3.getSiteId()));
+        noti3.setRef(notificationReferenceGenerator(configSamigo.getEvent(),noti3.getSiteId()));
+
+
+
+        String oldAtomFeedVersionTemplate = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <feed xmlns="http://www.w3.org/2005/Atom">
+                  <entry>
+                    <title type="text">{{titleAss}}</title>
+                    <link href="{{hrefAss}}" />
+                    <category term="Assignment" />
+                    <id>{{idAss}}</id>
+                    <updated>{{updatedAss}}</updated>
+                    <published>{{publishedAss}}</published>
+                    <summary type="html">{{summaryAss}}</summary>
+                  </entry>
+                  <entry>
+                    <title type="text">{{titleAnnc}}</title>
+                    <link href="{{hrefAnnc}}" />
+                    <category term="Announcement" />
+                    <id>{{idAnnc}}</id>
+                    <updated>{{updatedAnnc}}</updated>
+                    <published>{{publishedAnnc}}</published>
+                    <summary type="html">{{summaryAnnc}}</summary>
+                  </entry>
+                  <entry>
+                    <title type="text">{{titleSamigo}}</title>
+                    <link href="{{hrefSamigo}}" />
+                    <category term="Assessment" />
+                    <id>{{idSamigo}}</id>
+                    <updated>{{updatedSamigo}}</updated>
+                    <published>{{publishedSamigo}}</published>
+                    <summary type="html">{{summarySamigo}}</summary>
+                  </entry>
+                </feed>
+                """;
+
+        List<ExpectedUserNotification> list = new ArrayList<>();
+        list.add(noti);
+        list.add(noti2);
+        list.add(noti3);
+        return new CompleteAtomFeedTestData(oldAtomFeedVersionTemplate, list);
+
+    }
+
+
     public enum TimeRangeMode {
         SHORT,
         LONG,
@@ -209,15 +312,13 @@ public class UserNotificationTestDataFactory {
             }
         }
     }
-/*
-    public TestConfig getTestConfigFor(int amountTestNotifications, TimeRangeMode timeRangeMode, HandledEvents event) {
-        return new TestConfig(amountTestNotifications, timeRangeMode, event);
-    }
-*/
 
-/*
-    public record TestConfig(int amountTestNotifications, TimeRangeMode timeRangeMode, HandledEvents event) {}
-*/
+
+
+
+
+    public record CompleteAtomFeedTestData(String atomFeedXmlTemplate, List<ExpectedUserNotification> userNotiList) {}
+
 
 
 

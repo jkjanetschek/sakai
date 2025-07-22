@@ -82,6 +82,7 @@ public class NewsItemFilterCriteriaUtils {
         timeRangeShortInstant  = Instant.now().minusMillis(TIME_RANGE_SHORT);
         timeRangeLongInstant = Instant.now().minusMillis(TIME_RANGE_LONG);
         itemRangeTrigger = ItemRangeTrigger.LONG;
+
     }
 
 

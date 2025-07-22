@@ -1,19 +1,15 @@
 package edu.mci.rss.testing;
 
 
-import com.rometools.rome.feed.atom.Feed;
-import edu.mci.rss.utils.FeedUtils;
 import edu.mci.rss.utils.NewsItemFilterCriteriaUtils;
-import edu.mci.rss.testing.UserNotificationTestDataFactory;
-import edu.mci.rss.testing.UserNotificationTestDataFactory.TestConfig;
-import edu.mci.rss.testing.UserNotificationTestDataFactory.TimeRangeMode;
-import edu.mci.rss.testing.UserNotificationTestDataFactory.HandledEvents;
+import edu.mci.rss.testing.MciRssTestDataFactory.TestConfig;
+import edu.mci.rss.testing.MciRssTestDataFactory.TimeRangeMode;
+import edu.mci.rss.testing.MciRssTestDataFactory.HandledEvents;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.component.cover.ComponentManager;
@@ -22,7 +18,6 @@ import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.messaging.api.model.UserNotification;
-import org.sakaiproject.tool.assessment.TestsAndQuizzesUserNotificationHandler;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
 import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,14 +38,11 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -64,11 +56,13 @@ public class UtilsTest {
     EntityManager entityManager;
     @Autowired
     AssignmentService assignmentService;
+    @Autowired
+    NewsItemFilterCriteriaUtils filterCriteriaUtils;
 
 
-    private NewsItemFilterCriteriaUtils filterCriteriaUtils;
+
     private Instant now;
-    private UserNotificationTestDataFactory testDataFactory;
+    private MciRssTestDataFactory testDataFactory;
 
 
     // init ComponentManager in testing mode before dependecies are resolved
@@ -88,8 +82,7 @@ public class UtilsTest {
     public void setUp() {
         // Mock the current time
         now = Instant.now();
-        filterCriteriaUtils = new NewsItemFilterCriteriaUtils();
-        testDataFactory = new UserNotificationTestDataFactory();
+        testDataFactory = new MciRssTestDataFactory();
 
     }
 

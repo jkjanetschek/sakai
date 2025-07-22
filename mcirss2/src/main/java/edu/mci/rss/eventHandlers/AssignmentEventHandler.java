@@ -24,7 +24,7 @@ import java.util.Optional;
 public class AssignmentEventHandler extends AbstractEventHandler {
 
 
-    private final String CATEGORIE = "Assignment";
+    public static final String CATEGORIE = "Assignment";
 
 
     @Autowired

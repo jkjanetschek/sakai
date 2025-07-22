@@ -24,7 +24,7 @@ public class AnnouncementEventHandler extends AbstractEventHandler {
 
 
 
-    private final String CATEGORIE = "Announcement";
+    public static final String CATEGORIE = "Announcement";
 
     @Override
     protected void addToolSpecificDetails(NewsItemProcessingData itemData, Entry atomEntry) {

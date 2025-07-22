@@ -27,7 +27,7 @@ public class TestExecutionListener extends AbstractTestExecutionListener {
     }
 
     @Override
-    public void beforeTestClass(TestContext testContext) throws Exception {
+    public void beforeTestClass(TestContext testContext) {
         ConfigurableApplicationContext context = (ConfigurableApplicationContext) testContext.getApplicationContext();
         ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
         if (context.containsBean("newsFeedService")) {

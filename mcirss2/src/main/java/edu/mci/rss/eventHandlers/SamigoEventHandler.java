@@ -19,7 +19,7 @@ import java.util.List;
 public class SamigoEventHandler extends AbstractEventHandler {
 
 
-    private final String CATEGORIE = "Assessment";
+    public static final String CATEGORIE = "Assessment";
 
     private PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
 

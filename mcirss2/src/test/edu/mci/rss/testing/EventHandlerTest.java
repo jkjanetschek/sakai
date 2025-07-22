@@ -2,21 +2,16 @@ package edu.mci.rss.testing;
 
 
 import com.rometools.rome.feed.atom.Entry;
-import com.rometools.rome.feed.atom.Feed;
-import edu.mci.rss.eventHandlers.AbstractEventHandler;
 import edu.mci.rss.eventHandlers.EventHandlerFactory;
 import edu.mci.rss.eventHandlers.MciRssEventHandler;
 import edu.mci.rss.eventHandlers.SamigoEventHandler;
 import edu.mci.rss.model.NewsItemProcessingData;
-import edu.mci.rss.testing.UserNotificationTestDataFactory.*;
-import edu.mci.rss.utils.FeedUtils;
-import edu.mci.rss.utils.NewsItemFilterCriteriaUtils;
+import edu.mci.rss.testing.MciRssTestDataFactory.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.invocation.InvocationOnMock;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.component.cover.ComponentManager;
@@ -25,18 +20,15 @@ import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.messaging.api.model.UserNotification;
-import org.sakaiproject.samigo.api.SamigoReferenceReckoner;
-import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
 import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
-import org.sakaiproject.user.api.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import java.beans.EventHandler;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -55,6 +47,7 @@ import static org.mockito.Mockito.when;
 @RunWith(SpringRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = {TestConfiguration.class})
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class EventHandlerTest {
 
     static {
@@ -69,7 +62,7 @@ public class EventHandlerTest {
         }
     }
 
-    private UserNotificationTestDataFactory testDataFactory;
+    private MciRssTestDataFactory testDataFactory;
     @Autowired
     private EventHandlerFactory eventHandlerFactory;
     @Autowired
@@ -82,7 +75,7 @@ public class EventHandlerTest {
     private int sampleSize = 100;
     @Before
     public void setup() {
-        testDataFactory = new UserNotificationTestDataFactory();
+        testDataFactory = new MciRssTestDataFactory();
     }
 
 
@@ -108,8 +101,7 @@ public class EventHandlerTest {
 
     @Test
     public void testAnnouncementEventHandler()  {
-        when(siteService.getSiteDisplay(anyString())).thenAnswer(
-                invocation -> "(" + invocation.getArgument(0) + ")");
+        mockSetupForAnnouncementEventHandler();
 
         List<UserNotification> userNotifications = createUserNotficationsList(TimeRangeMode.ALL, HandledEvents.ANNOUNCEMENT);
 
@@ -129,15 +121,7 @@ public class EventHandlerTest {
 
     @Test
     public void testAssignmentEventHandler() throws PermissionException, IdUnusedException {
-        when(siteService.getSiteDisplay(anyString())).thenAnswer(
-                invocation -> "(" + invocation.getArgument(0) + ")");
-        when(entityManager.newReference(anyString())).thenReturn(mock(Reference.class));
-        when(assignmentService.getAssignment(any(Reference.class))).thenAnswer(invocation -> {
-            Assignment assMock = mock(Assignment.class);
-            when(assMock.getDueDate()).thenReturn(Instant.now());
-            return assMock;
-        });
-
+        mockSetupForAssignmentEventHandler();
 
         List<UserNotification> userNotifications = createUserNotficationsList(TimeRangeMode.ALL, HandledEvents.ASSIGNMENT);
 
@@ -159,27 +143,8 @@ public class EventHandlerTest {
 
     @Test
     public void testSamigoEventHandler() throws PermissionException, IdUnusedException, IllegalAccessException, NoSuchFieldException {
-        when(siteService.getSiteDisplay(anyString())).thenAnswer(
-                invocation -> "(" + invocation.getArgument(0) + ")");
-        when(entityManager.newReference(anyString())).thenReturn(mock(Reference.class));
-        when(assignmentService.getAssignment(any(Reference.class))).thenAnswer(invocation -> {
-            Assignment assMock = mock(Assignment.class);
-            when(assMock.getDueDate()).thenReturn(Instant.now());
-            return assMock;
-        });
+        mockSetupForSamigoEventHandler();
 
-
-        PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
-        PublishedAssessmentService mockedPublishedAssessmentService = spy(publishedAssessmentService);
-        doAnswer(a -> {
-            PublishedAssessmentData mockData = mock(PublishedAssessmentData.class);
-            when(mockData.getDueDate()).thenReturn(new Date());
-            return mockData;
-        }).when(mockedPublishedAssessmentService).getBasicInfoOfPublishedAssessment(anyString());
-
-        Field field = SamigoEventHandler.class.getDeclaredField("publishedAssessmentService");
-        field.setAccessible(true);
-        field.set(eventHandlerFactory.getHandlers().get(HandledEvents.SAMIGO.getEventNames().get(0)), mockedPublishedAssessmentService);
 
 
         List<UserNotification> userNotifications = createUserNotficationsList(TimeRangeMode.ALL, HandledEvents.SAMIGO);
@@ -196,8 +161,48 @@ public class EventHandlerTest {
 
         }
 
+    }
 
+
+    protected void mockSetupForAnnouncementEventHandler() {
+        when(siteService.getSiteDisplay(anyString())).thenAnswer(
+                invocation -> "(" + invocation.getArgument(0) + ")");
 
     }
+    protected void mockSetupForAssignmentEventHandler() throws PermissionException, IdUnusedException {
+        when(siteService.getSiteDisplay(anyString())).thenAnswer(
+                invocation -> "(" + invocation.getArgument(0) + ")");
+        when(entityManager.newReference(anyString())).thenReturn(mock(Reference.class));
+        when(assignmentService.getAssignment(any(Reference.class))).thenAnswer(invocation -> {
+            Assignment assMock = mock(Assignment.class);
+            when(assMock.getDueDate()).thenReturn(Instant.now());
+            return assMock;
+        });
+
+    }
+    protected void mockSetupForSamigoEventHandler() throws PermissionException, IdUnusedException, NoSuchFieldException, IllegalAccessException {
+        when(siteService.getSiteDisplay(anyString())).thenAnswer(
+                invocation -> "(" + invocation.getArgument(0) + ")");
+        when(entityManager.newReference(anyString())).thenReturn(mock(Reference.class));
+        when(assignmentService.getAssignment(any(Reference.class))).thenAnswer(invocation -> {
+            Assignment assMock = mock(Assignment.class);
+            when(assMock.getDueDate()).thenReturn(Instant.now());
+            return assMock;
+        });
+        PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
+        PublishedAssessmentService mockedPublishedAssessmentService = spy(publishedAssessmentService);
+        doAnswer(a -> {
+            PublishedAssessmentData mockData = mock(PublishedAssessmentData.class);
+            when(mockData.getDueDate()).thenReturn(new Date());
+            return mockData;
+        }).when(mockedPublishedAssessmentService).getBasicInfoOfPublishedAssessment(anyString());
+
+        Field field = SamigoEventHandler.class.getDeclaredField("publishedAssessmentService");
+        field.setAccessible(true);
+        field.set(eventHandlerFactory.getHandlers().get(HandledEvents.SAMIGO.getEventNames().get(0)), mockedPublishedAssessmentService);
+
+    }
+
+
 
 }
