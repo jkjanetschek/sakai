@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -36,7 +37,6 @@ public class MciRssTestDataFactory {
     private ThreadLocalRandom random;
 
 
-    private ExpectedUserNotification expectedUserNotificationOldVersion = new ExpectedUserNotification();
 
 
 
@@ -45,10 +45,6 @@ public class MciRssTestDataFactory {
         this.timeStamp = Instant.now();
         this.sixMontsAgo = timeStamp.minus(180, ChronoUnit.DAYS);
         this.fourtheenDaysAgo = timeStamp.minus(14, ChronoUnit.DAYS);
-
-
-
-
     }
 
 
@@ -151,6 +147,10 @@ public class MciRssTestDataFactory {
 
     private String siteIdGenerator() {
         return "Course-ID-SLVA-" + siteIdCounter++;
+    }
+
+    private String siteTitleGenerator(String siteId) {
+        return "WS " + ThreadLocalRandom.current().nextInt(2010, java.time.Year.now().getValue() + 1) + " " + siteId;
     }
 
     private Long getIdCounter() {
@@ -314,10 +314,26 @@ public class MciRssTestDataFactory {
     }
 
 
-
-
-
     public record CompleteAtomFeedTestData(String atomFeedXmlTemplate, List<ExpectedUserNotification> userNotiList) {}
+
+
+
+    public DummySite createDummySiteObject() {
+        DummySite dummySite = new DummySite();
+        dummySite.setSiteId(siteIdGenerator());
+        dummySite.setTitle(siteTitleGenerator(dummySite.getSiteId()));
+        return dummySite;
+    }
+
+
+    public List<DummySite> createDummySiteObjects(int howMany) {
+        List<DummySite> dummySites = new ArrayList<>();
+        for (int i = 0; i < howMany; i++) {
+            DummySite dummySite = createDummySiteObject();
+            dummySites.add(dummySite);
+        }
+        return dummySites;
+    }
 
 
 

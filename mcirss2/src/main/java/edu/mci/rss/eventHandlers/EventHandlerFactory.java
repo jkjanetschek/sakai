@@ -58,8 +58,6 @@ public class EventHandlerFactory {
             }
         }
 */
-
-        System.out.println("EventHandlerFactory method#2()");
         Map<String, Object> beans = applicationContext.getBeansWithAnnotation(EventType.class);
         for (Map.Entry<String, Object> entry : beans.entrySet()) {
             Object beanInstance = entry.getValue();

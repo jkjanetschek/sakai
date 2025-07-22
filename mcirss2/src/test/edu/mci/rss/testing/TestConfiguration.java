@@ -2,6 +2,7 @@ package edu.mci.rss.testing;
 
 
 import edu.mci.rss.WebMvcConfiguration;
+import edu.mci.rss.services.CalendarFeedService;
 import edu.mci.rss.services.NewsFeedService;
 import edu.mci.rss.utils.MciRssSessionUtils;
 import org.sakaiproject.assignment.api.AssignmentService;
@@ -18,32 +19,26 @@ import org.springframework.context.annotation.Primary;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+
 
 @Configuration
 @Import(WebMvcConfiguration.class)
+public class TestConfiguration {
 
-/*
- @ComponentScan(
-    basePackages = "edu.mci.rss",
-    excludeFilters = @ComponentScan.Filter(type = FilterType.REGEX, pattern = "org\\.sakaiproject\\..*")
-)
-
- */
-public class TestConfiguration {  //     extents SakaiTestConfiguration --> some beans creation does not work, if test are run via mvn test
-
-
-    // mockito      3.12.4
-    // junit        4.13.2
-    // hamcrest     1.3
-    // spring       5.3.39
 
 
     @Bean
     @Primary
     public NewsFeedService newsFeedService() {
-        NewsFeedService newsFeedService = new NewsFeedService(); // spring will process field injection
+        NewsFeedService newsFeedService = new NewsFeedService();
         return spy(newsFeedService);
+    }
+
+    @Bean
+    @Primary
+    public CalendarFeedService calendarFeedService() {
+        CalendarFeedService calendarFeedService = new CalendarFeedService();
+        return spy(calendarFeedService);
     }
 
     @Bean(name = "org.sakaiproject.site.api.SiteService")
@@ -79,21 +74,6 @@ public class TestConfiguration {  //     extents SakaiTestConfiguration --> some
     @Bean
     public MciRssSessionUtils mciRssSessionUtils() {return mock(MciRssSessionUtils.class);}
 
-/*
 
-    @Bean
-    public BeanPostProcessor spyBeanPostProcessor() {
-        return new BeanPostProcessor() {
-            @Override
-            public Object postProcessAfterInitialization(Object bean, String beanName) {
-                if (bean instanceof NewsFeedService) {
-                    return spy(bean);
-                }
-                return bean;
-            }
-        };
-    }
-
- */
 
 }

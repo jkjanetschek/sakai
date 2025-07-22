@@ -2,6 +2,7 @@ package edu.mci.rss.controllers;
 
 
 import com.rometools.rome.feed.atom.Feed;
+import edu.mci.rss.services.CalendarFeedService;
 import edu.mci.rss.services.NewsFeedService;
 import edu.mci.rss.utils.FeedUtils;
 import lombok.NonNull;
@@ -28,9 +29,11 @@ public class MciRssController {
 
 
     @Autowired
-    UserDirectoryService userDirectoryService;
+    private UserDirectoryService userDirectoryService;
     @Autowired
-    NewsFeedService newsFeedService;
+    private NewsFeedService newsFeedService;
+    @Autowired
+    private CalendarFeedService calendarFeedService;
 
 
 
@@ -51,6 +54,25 @@ public class MciRssController {
 
         return FeedUtils.serializeAtomFeed(feed);
     }
+
+
+    @GetMapping(value = "calendar/user/{eid}", produces = "application/atom+xml")
+    public String getCalendar(@PathVariable("eid") String eid) throws UserNotDefinedException   {
+        if( eid == null ) {
+            throw new IllegalStateException();
+        }
+        Feed feed = null;
+        String userId =this.userDirectoryService.getUserId(eid);
+        if (userId != null) {
+            feed = calendarFeedService.createFeedForUserId(userId);
+        } else {
+            throw new UserNotDefinedException("null");
+        }
+
+
+        return FeedUtils.serializeAtomFeed(feed);
+    }
+
 
 
 

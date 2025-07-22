@@ -204,7 +204,6 @@ public class NewsServiceTest {
         transformer.setOutputProperty(OutputKeys.INDENT, "no");
         StringWriter out = new StringWriter();
         transformer.transform(new DOMSource(doc), new StreamResult(out));
-        System.out.println(out.toString().trim());
         return out.toString().trim();
     }
 

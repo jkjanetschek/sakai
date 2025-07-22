@@ -30,7 +30,7 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class NewsFeedService {
+public class NewsFeedService implements FeedService {
 
 
     @Autowired
@@ -56,19 +56,20 @@ public class NewsFeedService {
     public Feed createFeedForUserId(String userId) {
 
         List<UserNotification> userNotifications = getUserNotifications(userId);
+        Feed feed = FeedUtils.createAtomFeed();
 
         if (userNotifications.isEmpty()) {
-            return FeedUtils.createAtomFeed();
+            return feed;
         }
 
 
         LinkedList<UserNotification> userNotificationsFiltered= filterUserNotifications(userNotifications, userId);
         if (userNotifications.isEmpty()) {
-            return FeedUtils.createAtomFeed();
+            return feed;
         }
 
 
-        Feed feed = processFilteredNotifications(userNotificationsFiltered, userId);
+        feed = processFilteredNotifications(userNotificationsFiltered, userId);
 
 
 
