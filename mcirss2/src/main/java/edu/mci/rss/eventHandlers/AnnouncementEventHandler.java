@@ -54,7 +54,7 @@ public class AnnouncementEventHandler extends AbstractEventHandler {
 
 
     public String getName() {
-        return "AnnouncementHandler";
+        return "AnnouncementEventHandler";
     }
 
 }

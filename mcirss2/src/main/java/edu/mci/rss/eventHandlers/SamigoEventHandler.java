@@ -67,7 +67,7 @@ public class SamigoEventHandler extends AbstractEventHandler {
     }
 
     public String getName() {
-        return "SamigoHandler";
+        return "SamigoEventHandler";
     }
 
 

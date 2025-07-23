@@ -102,7 +102,6 @@ public class MciRssControllerTest {
         mockFeed.setFeedType("atom_1.0");
 
         String expectedResultString = FeedUtils.serializeAtomFeed(mockFeed);
-        System.out.println(expectedResultString);
         doAnswer(invocation ->  mockFeed)
         .when(newsFeedService).createFeedForUserId(anyString());
 

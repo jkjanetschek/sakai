@@ -71,7 +71,7 @@ public class AssignmentEventHandler extends AbstractEventHandler {
     }
 
     public String getName() {
-        return "AssignmentHandler";
+        return "AssignmentEventHandler";
     }
 
 }

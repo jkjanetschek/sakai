@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -69,20 +70,24 @@ public class NewsItemFilterCriteriaUtils {
     //2 month = 62 days = 5356800 seconds
     public final long TIME_RANGE_CALENDAR_SECONDS = 5356800l;
 
+    private final Instant now;
     private final Instant timeRangeShortInstant;
     private final Instant timeRangeLongInstant;
+    private final Instant timeRangeCalendarItems;
     private ItemRangeTrigger itemRangeTrigger;
     private int longRangeItemCounter = 0;
     private final int MAX_LONG_RANGE_ITEMS = 10;
+
 
     @Autowired
     public NewsItemFilterCriteriaUtils(EntityManager entityManager, AssignmentService assignmentService) {
         this.entityManager = entityManager;
         this.assignmentService = assignmentService;
-        timeRangeShortInstant  = Instant.now().minusMillis(TIME_RANGE_SHORT);
-        timeRangeLongInstant = Instant.now().minusMillis(TIME_RANGE_LONG);
+        now = Instant.now();
+        timeRangeShortInstant  = now.minusMillis(TIME_RANGE_SHORT);
+        timeRangeLongInstant = now.minusMillis(TIME_RANGE_LONG);
         itemRangeTrigger = ItemRangeTrigger.LONG;
-
+        timeRangeCalendarItems = now.minus(TIME_RANGE_CALENDAR_SECONDS, ChronoUnit.SECONDS);
     }
 
 
@@ -111,7 +116,6 @@ public class NewsItemFilterCriteriaUtils {
      * @return
      */
     public Instant getEventTimeFromUserNotifications(UserNotification userNotification) {
-        System.out.println("GetEventTimeFromNews: event = " + userNotification.getEvent());
         return  switch (userNotification.getEvent()) {
             case AnnouncementService.SECURE_ANNC_ADD -> userNotification.getEventDate();
             case AssignmentConstants.EVENT_ADD_ASSIGNMENT, AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT -> {
@@ -129,7 +133,7 @@ public class NewsItemFilterCriteriaUtils {
                 String referenceString = userNotification.getRef();
                 List<String> refParts = TestsAndQuizzesUserNotificationHandler.regexHelper(referenceString);
                 PublishedAssessmentData pubData = null;
-                try{
+                try {
                     String publishedAssessmentId = refParts.get(1);
                     pubData = publishedAssessmentService.getBasicInfoOfPublishedAssessment(publishedAssessmentId);
                 } catch (IndexOutOfBoundsException e) {
@@ -156,6 +160,12 @@ public class NewsItemFilterCriteriaUtils {
                 .sorted(Comparator.comparing(this::getEventTimeFromUserNotifications,
                         Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+
+
+    public boolean checkTimeRangeForAssignmentAndCalendar(Instant dueDate) {
+        return dueDate.isAfter(timeRangeCalendarItems);
     }
 
 

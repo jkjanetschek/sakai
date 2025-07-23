@@ -103,7 +103,7 @@ public class UtilsTest {
         Duration diff =Duration.between(timeRangeShort, before14Days).abs();
 
         if (diff.compareTo(leeway) > 0) {
-            Assert.fail("Difference between timeRangeShort and news Items from 14 days ago is bigger than leeway of 30 seconds");
+            Assert.fail("Difference between timeRangeShort and news Items from 14 days ago is bigger than leeway of 30 seconds. You should probably buy faster PC");
         }
 
         Assert.assertTrue("Time should be in time Range Short",
@@ -111,7 +111,6 @@ public class UtilsTest {
 
         Assert.assertFalse("Time should not be returned as to add because of time previously set to Short",
                 filterCriteriaUtils.checkTimeRangeAndCountOfItem(createInstantMinusGivenDays(16)));
-
     }
 
 
@@ -165,6 +164,10 @@ public class UtilsTest {
     private Instant createInstantMinusGivenDays(int days) {
         return now.minus(days, ChronoUnit.DAYS);
     }
+    private Instant createInstantMinusGivenSeconds(long seconds) {
+        Instant instant = now.minus(seconds, ChronoUnit.SECONDS);
+        System.out.println("createInstantMinusGivenSeconds: " + Date.from(instant));
+        return instant;}
 
     @Test
     public void testGetEventTimeFromUserNotifications() throws PermissionException, IdUnusedException, NoSuchFieldException, IllegalAccessException {
@@ -270,6 +273,17 @@ public class UtilsTest {
         public String getRef() {return this.ref;}
         public void setRef(String ref) {this.ref = ref;}
     }
+
+    @Test
+    public void testCheckTimeRangeForAssignmentAndCalendar() {
+        Assert.assertTrue(filterCriteriaUtils.checkTimeRangeForAssignmentAndCalendar(createInstantMinusGivenSeconds(filterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS - 1)));
+        Assert.assertFalse(filterCriteriaUtils.checkTimeRangeForAssignmentAndCalendar(createInstantMinusGivenSeconds(filterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS + 1)));
+
+    }
+
+
+
+
 
 
 }

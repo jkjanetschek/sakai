@@ -100,7 +100,7 @@ public class NewsFeedService implements FeedService {
 
     private LinkedList<UserNotification> filterUserNotifications(List<UserNotification> userNotifications, String userId) {
 
-       // NewsItemFilterCriteriaUtils newsItemFilterCriteriaUtils = new NewsItemFilterCriteriaUtils();
+
         NewsItemFilterCriteriaUtils newsItemFilterCriteriaUtils  = newsItemFilterCriteriaUtilsBeanProvider.getObject();
         LinkedList<UserNotification> userNotificationsFiltered = new LinkedList<>();
 
