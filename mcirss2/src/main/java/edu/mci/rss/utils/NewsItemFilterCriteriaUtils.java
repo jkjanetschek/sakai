@@ -60,15 +60,15 @@ public class NewsItemFilterCriteriaUtils {
 
 
     // two weeks: all news
-    public final long TIME_RANGE_SHORT = 1209600000l;
+    public static final long TIME_RANGE_SHORT = 1209600000l;
 
     // if no news in the last two weeks: display up to 10 news from the last 6
     // months (180 days)
-    public final long TIME_RANGE_LONG = 15552000000l;
+    public static final long TIME_RANGE_LONG = 15552000000l;
 
     // Half year for calendar rss 15778800l
     //2 month = 62 days = 5356800 seconds
-    public final long TIME_RANGE_CALENDAR_SECONDS = 5356800l;
+    public static final long TIME_RANGE_CALENDAR_SECONDS = 5356800l;
 
     private final Instant now;
     private final Instant timeRangeShortInstant;
@@ -164,9 +164,14 @@ public class NewsItemFilterCriteriaUtils {
 
 
 
-    public boolean checkTimeRangeForAssignmentAndCalendar(Instant dueDate) {
+    public boolean checkTimeRangeForCalendar(Instant dueDate) {
         return dueDate.isAfter(timeRangeCalendarItems);
     }
+
+    public boolean checkTimeRangeForCalendar(Date dueDate) {
+        return dueDate.after(Date.from(timeRangeCalendarItems));
+    }
+
 
 
 }

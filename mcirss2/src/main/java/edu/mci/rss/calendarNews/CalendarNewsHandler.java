@@ -1,12 +1,12 @@
 package edu.mci.rss.calendarNews;
 
 import com.rometools.rome.feed.atom.Entry;
+import edu.mci.rss.services.CalendarFeedService;
 
 import java.util.List;
 
 public interface CalendarNewsHandler {
 
-     void addToolSpecificCalendarDetails();
-     List<Entry> processCalendarNewsItems(List items);
+     <T> List<Entry> processCalendarNewsItems(List<T> items, CalendarFeedService.CalendarNewsItemData newsItemDatadata);
 
 }

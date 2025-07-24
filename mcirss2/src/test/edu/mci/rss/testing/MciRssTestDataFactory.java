@@ -2,28 +2,40 @@ package edu.mci.rss.testing;
 
 
 
+import edu.mci.rss.utils.NewsItemFilterCriteriaUtils;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.mockito.ArgumentCaptor;
 import org.sakaiproject.announcement.api.AnnouncementService;
 import org.sakaiproject.assignment.api.AssignmentConstants;
+import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.messaging.api.model.UserNotification;
 import org.sakaiproject.samigo.util.SamigoConstants;
+import org.sakaiproject.site.api.Site;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@Slf4j
 public class MciRssTestDataFactory {
 
 
@@ -105,6 +117,12 @@ public class MciRssTestDataFactory {
     }
 
 
+    public String createMockAssignemntDeeplink(String context, String id, String userID) throws UnknownHostException {
+
+        return "https://" +  InetAddress.getLocalHost().getHostName() + "/portal/directtool/" + UUID.randomUUID().toString()
+               + "?assignmentId=" + id + "&assignmentReference=/assignment/a/" + context + "/" + id + "&panel=Main&sakai_action=doView_submission";
+    }
+
 
 
     private String notificationReferenceGenerator(HandledEvents event, String siteId) {
@@ -174,11 +192,11 @@ public class MciRssTestDataFactory {
     }
 
 
-    public CompleteAtomFeedTestData createFeedTestData() {
+    public CompleteNewsAtomFeedTestData createNewsFeedTestData() {
 
 
         // noti for Assignemnt
-        TestConfig configAssignment = new TestConfig(1,TimeRangeMode.SHORT,HandledEvents.ASSIGNMENT);
+        TestConfig configAssignment = new TestConfig(1, TimeRangeMode.SHORT, HandledEvents.ASSIGNMENT);
         ExpectedUserNotification noti = new ExpectedUserNotification();
         long idAssignmentFeed = getIdCounter();
         noti.setId(idAssignmentFeed);
@@ -191,7 +209,7 @@ public class MciRssTestDataFactory {
 
 
         // noti for Annc
-        TestConfig configAnnc = new TestConfig(1,TimeRangeMode.SHORT,HandledEvents.ANNOUNCEMENT);
+        TestConfig configAnnc = new TestConfig(1, TimeRangeMode.SHORT, HandledEvents.ANNOUNCEMENT);
         ExpectedUserNotification noti2 = new ExpectedUserNotification();
         long idAnncFeed = getIdCounter();
         noti2.setId(idAnncFeed);
@@ -204,7 +222,7 @@ public class MciRssTestDataFactory {
 
 
         // noti for samigo
-        TestConfig configSamigo = new TestConfig(1,TimeRangeMode.SHORT,HandledEvents.SAMIGO);
+        TestConfig configSamigo = new TestConfig(1, TimeRangeMode.SHORT, HandledEvents.SAMIGO);
         ExpectedUserNotification noti3 = new ExpectedUserNotification();
         long idSamigoFeed = getIdCounter();
         noti3.setId(idSamigoFeed);
@@ -254,7 +272,7 @@ public class MciRssTestDataFactory {
         list.add(noti);
         list.add(noti2);
         list.add(noti3);
-        return new CompleteAtomFeedTestData(oldAtomFeedVersionTemplate, list);
+        return new CompleteNewsAtomFeedTestData(oldAtomFeedVersionTemplate, list);
 
     }
 
@@ -314,30 +332,53 @@ public class MciRssTestDataFactory {
     }
 
 
-    public record CompleteAtomFeedTestData(String atomFeedXmlTemplate, List<ExpectedUserNotification> userNotiList) {}
+    public record CompleteNewsAtomFeedTestData(String atomFeedXmlTemplate, List<ExpectedUserNotification> userNotiList) {}
 
 
 
-    public DummySite createDummySiteObject() {
+    public Site createDummySiteObject() {
         DummySite dummySite = new DummySite();
-        dummySite.setSiteId(siteIdGenerator());
-        dummySite.setTitle(siteTitleGenerator(dummySite.getSiteId()));
+        dummySite.setId(siteIdGenerator());
+        dummySite.setTitle(siteTitleGenerator(dummySite.getId()));
         return dummySite;
     }
 
 
-    public List<DummySite> createDummySiteObjects(int howMany) {
-        List<DummySite> dummySites = new ArrayList<>();
+    public List<Site> createDummySiteObjects(int howMany) {
+        List<Site> dummySites = new ArrayList<>();
         for (int i = 0; i < howMany; i++) {
-            DummySite dummySite = createDummySiteObject();
+            Site dummySite = createDummySiteObject();
             dummySites.add(dummySite);
         }
         return dummySites;
     }
 
+    public List<Assignment> createMockAssignmentsWithinTimeRange(int howMany) {
+        List<Assignment> assignments = new ArrayList<>();
+        for (int i = 0; i < howMany; i++) {
+            Assignment assignment = mock(Assignment.class);
+            final Map<String, String> state = new HashMap<>();
+            doAnswer(invocation -> {
+                state.put("context", invocation.getArgument(0).toString());
+                return null;
+            }).when(assignment).setContext(anyString());
+            when(assignment.getContext()).thenAnswer(inv2 -> state.get("context"));
+            when(assignment.getId()).thenReturn(UUID.randomUUID().toString());
+            when(assignment.getTitle()).thenReturn("Assignment #" + random5DigitNumber());
+            when(assignment.getDueDate()).thenAnswer(inv -> {
+                int dateOffset = ThreadLocalRandom.current().nextInt(1, (int) Duration.ofSeconds(NewsItemFilterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS - 1).toDays());
+                Instant dueDate = createInstantMinusGivenDays(dateOffset);
+                assignment.setDueDate(dueDate);
+                return dueDate;
+            });
+            assignments.add(assignment);
+        }
+        return assignments;
+    }
 
 
-
-
+    private Instant createInstantMinusGivenDays(int days) {
+        return  Instant.now().minus(days, ChronoUnit.DAYS);
+    }
 
 }

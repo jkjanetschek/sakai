@@ -2,6 +2,9 @@ package edu.mci.rss.testing;
 
 
 import edu.mci.rss.WebMvcConfiguration;
+import edu.mci.rss.calendarNews.AssignmentCalendarNewsHandler;
+import edu.mci.rss.calendarNews.CalendarNewsHandler;
+import edu.mci.rss.calendarNews.SamigoCalendarNewsHandler;
 import edu.mci.rss.services.CalendarFeedService;
 import edu.mci.rss.services.NewsFeedService;
 import edu.mci.rss.utils.MciRssSessionUtils;
@@ -10,6 +13,7 @@ import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.messaging.api.UserMessagingService;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.tool.api.SessionManager;
+import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
 import org.sakaiproject.user.api.UserDirectoryService;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Bean;
@@ -17,8 +21,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 
 @Configuration
@@ -40,6 +46,19 @@ public class TestConfiguration {
         CalendarFeedService calendarFeedService = new CalendarFeedService();
         return spy(calendarFeedService);
     }
+
+    @Bean
+    public CalendarNewsHandler assignmentCalendarNewsHandler() {
+        AssignmentCalendarNewsHandler assignmentCalendarNewsHandler = new AssignmentCalendarNewsHandler();
+        return spy(assignmentCalendarNewsHandler);
+    }
+    @Bean
+    public CalendarNewsHandler samigoCalendarNewsHandler() {
+        SamigoCalendarNewsHandler samigoCalendarNewsHandler = new SamigoCalendarNewsHandler();
+        return spy(samigoCalendarNewsHandler);
+    }
+
+
 
     @Bean(name = "org.sakaiproject.site.api.SiteService")
     public SiteService siteService() {
@@ -64,6 +83,9 @@ public class TestConfiguration {
     public AssignmentService assignmentService() {
         return mock(AssignmentService.class);
     }
+
+    @Bean()
+    public PublishedAssessmentService publishedAssessmentService() {return mock(PublishedAssessmentService.class);}
 
 
     @Bean(name = "org.sakaiproject.user.api.UserDirectoryService")

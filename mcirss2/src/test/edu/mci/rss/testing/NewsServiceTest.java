@@ -124,7 +124,7 @@ public class NewsServiceTest {
 
     @Test
     public void testAtomFeedXMLOutput() throws PermissionException, IdUnusedException, NoSuchFieldException, IllegalAccessException, ParserConfigurationException, IOException, TransformerException, SAXException {
-        MciRssTestDataFactory.CompleteAtomFeedTestData testData = testDataFactory.createFeedTestData();
+        MciRssTestDataFactory.CompleteNewsAtomFeedTestData testData = testDataFactory.createNewsFeedTestData();
         List<UserNotification> userNotifications = testData.userNotiList().stream()
                 .map(n -> testDataFactory.createMockedUserNotificationItemFromExcepected(n))
                 .toList();

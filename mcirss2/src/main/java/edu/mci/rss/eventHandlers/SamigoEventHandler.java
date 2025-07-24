@@ -2,6 +2,7 @@ package edu.mci.rss.eventHandlers;
 
 import com.rometools.rome.feed.atom.Entry;
 import edu.mci.rss.model.NewsItemProcessingData;
+import edu.mci.rss.utils.FeedUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.sakaiproject.messaging.api.model.UserNotification;
 import org.sakaiproject.samigo.util.SamigoConstants;
@@ -12,6 +13,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.List;
+
+import static edu.mci.rss.utils.FeedUtils.TYPE_HTML;
+import static edu.mci.rss.utils.FeedUtils.createCategoryAsList;
+import static edu.mci.rss.utils.FeedUtils.createContentObjectAsType;
 
 @Slf4j
 @EventType({SamigoConstants.EVENT_ASSESSMENT_AVAILABLE, SamigoConstants.EVENT_ASSESSMENT_UPDATE_AVAILABLE })

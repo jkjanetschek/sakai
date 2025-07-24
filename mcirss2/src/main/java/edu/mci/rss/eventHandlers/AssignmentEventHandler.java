@@ -3,6 +3,7 @@ package edu.mci.rss.eventHandlers;
 import com.rometools.rome.feed.atom.Entry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import edu.mci.rss.model.NewsItemProcessingData;
+import edu.mci.rss.utils.FeedUtils;
 import edu.mci.rss.utils.MciRssSessionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.sakaiproject.assignment.api.AssignmentConstants;
@@ -17,6 +18,10 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
+
+import static edu.mci.rss.utils.FeedUtils.TYPE_HTML;
+import static edu.mci.rss.utils.FeedUtils.createCategoryAsList;
+import static edu.mci.rss.utils.FeedUtils.createContentObjectAsType;
 
 @Slf4j
 @EventType({AssignmentConstants.EVENT_ADD_ASSIGNMENT, AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT})

@@ -276,8 +276,8 @@ public class UtilsTest {
 
     @Test
     public void testCheckTimeRangeForAssignmentAndCalendar() {
-        Assert.assertTrue(filterCriteriaUtils.checkTimeRangeForAssignmentAndCalendar(createInstantMinusGivenSeconds(filterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS - 1)));
-        Assert.assertFalse(filterCriteriaUtils.checkTimeRangeForAssignmentAndCalendar(createInstantMinusGivenSeconds(filterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS + 1)));
+        Assert.assertTrue(filterCriteriaUtils.checkTimeRangeForCalendar(createInstantMinusGivenSeconds(filterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS - 1)));
+        Assert.assertFalse(filterCriteriaUtils.checkTimeRangeForCalendar(createInstantMinusGivenSeconds(filterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS + 1)));
 
     }
 

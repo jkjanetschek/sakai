@@ -26,6 +26,17 @@ public class DummySite implements Site {
     private String title;
     private String description;
 
+
+    @Override
+    public String getId() {
+        return this.siteId;
+    }
+
+
+    public void setId(String id) {
+        this.siteId = id;
+    }
+
     /**
      * Add a member to the AuthzGroup, or, if the user is currently a member, update
      * the membership with the supplied details.
@@ -878,15 +889,6 @@ public class DummySite implements Site {
         return "";
     }
 
-    /**
-     * Access the id of the entity.
-     *
-     * @return The id.
-     */
-    @Override
-    public String getId() {
-        return "";
-    }
 
 
 }

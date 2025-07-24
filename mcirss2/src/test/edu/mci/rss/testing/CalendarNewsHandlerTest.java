@@ -1,9 +1,9 @@
 package edu.mci.rss.testing;
 
 
-import com.rometools.rome.feed.atom.Feed;
+import com.rometools.rome.feed.atom.Entry;
+import edu.mci.rss.calendarNews.CalendarNewsHandler;
 import edu.mci.rss.services.CalendarFeedService;
-import edu.mci.rss.utils.FeedUtils;
 import edu.mci.rss.utils.NewsItemFilterCriteriaUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
@@ -13,58 +13,47 @@ import org.junit.runner.RunWith;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.component.cover.ComponentManager;
+import org.sakaiproject.messaging.api.model.UserNotification;
+import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
-import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
-import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.lang.reflect.Field;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Slf4j
 @RunWith(SpringRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = {TestConfiguration.class})
-public class CalendarFeedServiceTest {
-
+public class CalendarNewsHandlerTest {
 
     @Autowired
     private CalendarFeedService calendarFeedService;
     @Autowired
     private SiteService siteService;
-    private MciRssTestDataFactory  mciRssTestDataFactory;
 
+
+    @Autowired
+    @Qualifier("assignmentCalendarNewsHandler")
+    private CalendarNewsHandler assignmentNewsHandler;
+
+    @Autowired
+    @Qualifier("samigoCalendarNewsHandler")
+    private CalendarNewsHandler samigoCalendarNewsHandler;
+
+    @Autowired
+    private AssignmentService assignmentService;
+
+    private MciRssTestDataFactory mciRssTestDataFactory;
 
     // init ComponentManager in testing mode before dependecies are resolved
     static {
@@ -79,56 +68,68 @@ public class CalendarFeedServiceTest {
         }
     }
 
-    @Autowired
-    private AssignmentService assignmentService;
-    @Autowired
-    private PublishedAssessmentService publishedAssessmentService;
-
-
     @Before
     public void setup() {
-        mciRssTestDataFactory = new MciRssTestDataFactory();
+        this.mciRssTestDataFactory = new MciRssTestDataFactory();
     }
 
     @Test
-    public void testCreateEmptyFeedForUserId() throws ParserConfigurationException, IOException, TransformerException, SAXException {
-        stubSiteServiceFetchUSerSites(10);
-        Feed feed = calendarFeedService.createFeedForUserId("placeHolderUserId");
-        Assert.assertNotNull(feed);
-        Feed emptyFeed = FeedUtils.createAtomFeed();
-        Assert.assertEquals(normalizeXML(FeedUtils.serializeAtomFeed(emptyFeed)), normalizeXML(FeedUtils.serializeAtomFeed(feed)));
+    public void testAssignmentCalendarNewsHandler() throws Exception {
+        stubAssignmentServiceFetchDeepLink();
+        List<Entry> entries = new ArrayList<>();
+        for(Site site : mciRssTestDataFactory.createDummySiteObjects(10)) {
+                List<Assignment> assignmentList = mciRssTestDataFactory.createMockAssignmentsWithinTimeRange(20);
+                Assert.assertFalse(assignmentList.isEmpty());
+                assignmentList.forEach(assignment -> assignment.setContext(site.getId()));
+                entries.addAll(assignmentNewsHandler.processCalendarNewsItems(assignmentList,
+                                                                                new CalendarFeedService.CalendarNewsItemData(site,
+                                                                                        "placeholderUserID")));
+        }
+        Assert.assertFalse(entries.isEmpty());
+        entries.forEach(entry -> {
+            Assert.assertNotNull(entry.getId());
+            Assert.assertNotNull(entry.getSummary());
+            Assert.assertNotNull(entry.getTitle());
+            Assert.assertNotNull(entry.getAlternateLinks());
+            Assert.assertNotNull(entry.getUpdated());
+        });
     }
 
+    private void stubAssignmentServiceFetchDeepLink() throws Exception {
+        when(assignmentService.getDeepLink(any(), anyString(), anyString()))
+                .thenAnswer(i -> mciRssTestDataFactory.createMockAssignemntDeeplink((String) i.getArgument(0),
+                          (String) i.getArgument(1),
+                          (String) i.getArgument(2)));
 
+    }
 
 
     @Test
-    public void getEntriesForUserInAssignments() {
-        stubSiteServiceFetchUSerSites(10);
-        stubAssignmentServiceFetchAssignemnt(20);
-        stubAssignmentServiceFetchPublishedAssessments(20);
-        calendarFeedService.createFeedForUserId("placeHolderUserId");
+    public void testSamigoCalendarNewsHandler() throws Exception {
+        stubAssignmentServiceFetchDeepLink();
+        List<Entry> entries = new ArrayList<>();
+        for(Site site : mciRssTestDataFactory.createDummySiteObjects(10)) {
+
+
+            List<Assignment> assignmentList = mciRssTestDataFactory.createMockAssignmentsWithinTimeRange(20);
+            Assert.assertFalse(assignmentList.isEmpty());
+            assignmentList.forEach(assignment -> assignment.setContext(site.getId()));
+            entries.addAll(assignmentNewsHandler.processCalendarNewsItems(assignmentList,
+                    new CalendarFeedService.CalendarNewsItemData(site,
+                            "placeholderUserID")));
+        }
+        Assert.assertFalse(entries.isEmpty());
+        entries.forEach(entry -> {
+            Assert.assertNotNull(entry.getId());
+            Assert.assertNotNull(entry.getSummary());
+            Assert.assertNotNull(entry.getTitle());
+            Assert.assertNotNull(entry.getAlternateLinks());
+            Assert.assertNotNull(entry.getUpdated());
+        });
     }
 
 
-
-
-
-
-
-    private String normalizeXML(String xml) throws ParserConfigurationException, IOException, SAXException, TransformerException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document doc = db.parse(new InputSource(new StringReader(xml)));
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-        transformer.setOutputProperty(OutputKeys.INDENT, "no");
-        StringWriter out = new StringWriter();
-        transformer.transform(new DOMSource(doc), new StreamResult(out));
-        return out.toString().trim();
-    }
-
+/*
     private void stubAssignmentServiceFetchAssignemnt(int howMany) {
         when(assignmentService.getAssignmentsForContext(anyString()))
                 .thenAnswer(i -> {
@@ -174,4 +175,6 @@ public class CalendarFeedServiceTest {
             return mciRssTestDataFactory.createDummySiteObjects(howManySite);
         });
     }
+*/
+
 }

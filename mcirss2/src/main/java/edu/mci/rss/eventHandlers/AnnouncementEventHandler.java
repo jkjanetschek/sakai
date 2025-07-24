@@ -4,6 +4,7 @@ import com.rometools.rome.feed.atom.Category;
 import com.rometools.rome.feed.atom.Entry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import edu.mci.rss.model.NewsItemProcessingData;
+import edu.mci.rss.utils.FeedUtils;
 import org.sakaiproject.announcement.api.AnnouncementService;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.Reference;
@@ -16,6 +17,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import static edu.mci.rss.utils.FeedUtils.TYPE_HTML;
+import static edu.mci.rss.utils.FeedUtils.createCategoryAsList;
+import static edu.mci.rss.utils.FeedUtils.createContentObjectAsType;
 
 
 @EventType({AnnouncementService.SECURE_ANNC_ADD})
