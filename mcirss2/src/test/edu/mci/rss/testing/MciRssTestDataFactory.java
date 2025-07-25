@@ -6,13 +6,13 @@ import edu.mci.rss.utils.NewsItemFilterCriteriaUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.mockito.ArgumentCaptor;
 import org.sakaiproject.announcement.api.AnnouncementService;
 import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.messaging.api.model.UserNotification;
 import org.sakaiproject.samigo.util.SamigoConstants;
 import org.sakaiproject.site.api.Site;
+import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -31,7 +31,6 @@ import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -374,6 +373,40 @@ public class MciRssTestDataFactory {
             assignments.add(assignment);
         }
         return assignments;
+    }
+
+
+    public List<PublishedAssessmentFacade> createMockPublishedAssessmentFacadeWithNoDueDate(int howMany) {
+        List<PublishedAssessmentFacade> pubList = new ArrayList<>();
+        for (int i = 0; i < howMany; i++) {
+            PublishedAssessmentFacade pub = mock(PublishedAssessmentFacade.class);
+            int id = random5DigitNumber();
+            int dateOffset = ThreadLocalRandom.current().nextInt(1, (int) Duration.ofSeconds(NewsItemFilterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS - 1).toDays());
+            Instant startDate = createInstantMinusGivenDays(dateOffset);
+            when(pub.getPublishedAssessmentId()).thenReturn((long) id);
+            when(pub.getTitle()).thenReturn("Published Assessment #" + id);
+            when(pub.getStartDate()).thenAnswer(inv2 -> Date.from(startDate));
+            pubList.add(pub);
+        }
+        return pubList;
+    }
+
+    public List<PublishedAssessmentFacade> createMockPublishedAssessmentFacadeWithinTimeRange(int howMany) {
+        List<PublishedAssessmentFacade> pubList = new ArrayList<>();
+        for (int i = 0; i < howMany; i++) {
+            PublishedAssessmentFacade pub = mock(PublishedAssessmentFacade.class);
+            int id = random5DigitNumber();
+            int dateOffset = ThreadLocalRandom.current().nextInt(1, (int) Duration.ofSeconds(NewsItemFilterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS - 1).toDays());
+            Instant dueDate = createInstantMinusGivenDays(dateOffset);
+            int startDateOffset = ThreadLocalRandom.current().nextInt(dateOffset, (int) Duration.ofSeconds(NewsItemFilterCriteriaUtils.TIME_RANGE_CALENDAR_SECONDS - 1).toDays());
+            Instant startDate = dueDate.minus(startDateOffset, ChronoUnit.DAYS);
+            when(pub.getPublishedAssessmentId()).thenReturn((long) id);
+            when(pub.getTitle()).thenReturn("Published Assessment #" + id);
+            when(pub.getDueDate()).thenAnswer(inv -> Date.from(dueDate));
+            when(pub.getStartDate()).thenAnswer(inv2 -> Date.from(startDate));
+            pubList.add(pub);
+        }
+        return pubList;
     }
 
 

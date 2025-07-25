@@ -36,7 +36,7 @@ public class FeedUtils {
 
     public static Content createContentObjectAsType(String contentString, String type) {
         Content content = new Content();
-        content.setType(type); // or "html", "xhtml"
+        content.setType(type);
         content.setValue(contentString);
         return content;
     }

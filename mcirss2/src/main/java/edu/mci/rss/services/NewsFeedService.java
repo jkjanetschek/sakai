@@ -16,7 +16,7 @@ import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.messaging.api.UserMessagingService;
 import org.sakaiproject.messaging.api.model.UserNotification;
 
-import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
+
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -46,8 +46,6 @@ public class NewsFeedService implements FeedService {
     @Autowired
     private ObjectProvider<NewsItemFilterCriteriaUtils> newsItemFilterCriteriaUtilsBeanProvider;
 
-    private final PublishedAssessmentService publishedAssessmentService = new PublishedAssessmentService();
-
 
 
 
@@ -59,19 +57,19 @@ public class NewsFeedService implements FeedService {
         Feed feed = FeedUtils.createAtomFeed();
 
         if (userNotifications.isEmpty()) {
+            log.debug("No user notifications found for userId {}", userId);
             return feed;
         }
 
 
         LinkedList<UserNotification> userNotificationsFiltered= filterUserNotifications(userNotifications, userId);
         if (userNotifications.isEmpty()) {
+            log.debug("No user notifications in time range found for userId {}", userId);
             return feed;
         }
 
 
         feed = processFilteredNotifications(userNotificationsFiltered, userId);
-
-
 
 
         return feed;

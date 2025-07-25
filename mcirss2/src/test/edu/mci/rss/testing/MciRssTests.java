@@ -26,15 +26,10 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-//
-// junit        4.13.2
-// hamcrest     1.3
-// spring       5.3.39
-
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@WebAppConfiguration // weil --> AnnotationConfigWebApplicationContext
+@WebAppConfiguration
 @ContextConfiguration(classes = {TestConfiguration.class})
 public class MciRssTests {
 
@@ -71,29 +66,18 @@ public class MciRssTests {
     }
 
 
-    /*
-Set-Cookie: SAKAI2SESSIONID=bc9bff56-7cac-4abb-9d9b-32c04394f55e.cddd874a9c5b; Path=/; HttpOnly
-X-Frame-Options: SAMEORIGIN
-Content-Type: application/atom+xml;charset=UTF-8
-Content-Length: 1331
-Date: Wed, 02 Jul 2025 08:34:20 GMT
-
-
-     */
 
     @Test
     public void testDispatcherServletRootMapping() throws Exception {
         mockMvc.perform(get("/"))
-                .andExpect(status().isNotFound()); // Assuming no handler is mapped to "/"
+                .andExpect(status().isNotFound());
     }
 
     @Test
     public void testStringHttpMessageConverterBean() {
-        // Retrieve the bean from the application context
         StringHttpMessageConverter stringHttpMessageConverter =
                 wac.getBean(StringHttpMessageConverter.class);
         assertNotNull("StringHttpMessageConverter bean should not be null", stringHttpMessageConverter);
-        // Verify the charset is set to UTF-8
         assertEquals("Charset should be UTF-8", StandardCharsets.UTF_8, stringHttpMessageConverter.getDefaultCharset());
         assertTrue("Supported media type should be application/atom+xml", stringHttpMessageConverter.getSupportedMediaTypes().contains(MediaType.APPLICATION_ATOM_XML));
     }

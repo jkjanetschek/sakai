@@ -2,7 +2,6 @@ package edu.mci.rss.eventHandlers;
 
 import com.rometools.rome.feed.atom.Entry;
 import edu.mci.rss.model.NewsItemProcessingData;
-import edu.mci.rss.utils.FeedUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.sakaiproject.messaging.api.model.UserNotification;
 import org.sakaiproject.samigo.util.SamigoConstants;
@@ -67,7 +66,7 @@ public class SamigoEventHandler extends AbstractEventHandler {
         } else {
             sb.append("</p>");
         }
-
+        log.debug("Summary: {}", sb.toString());
         return sb.toString();
     }
 

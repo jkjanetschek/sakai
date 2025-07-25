@@ -2,26 +2,24 @@ package edu.mci.rss.calendarNews;
 
 import com.rometools.rome.feed.atom.Entry;
 import edu.mci.rss.services.CalendarFeedService;
-import edu.mci.rss.utils.FeedUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.Assignment;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static edu.mci.rss.utils.FeedUtils.TYPE_TEXT;
 import static edu.mci.rss.utils.FeedUtils.createContentObjectAsType;
 import static edu.mci.rss.utils.FeedUtils.createLinkAsList;
 
-
-@Component
 @Slf4j
+@Component
+@Qualifier("assignmentCalendarNewsHandler")
 public class AssignmentCalendarNewsHandler implements CalendarNewsHandler {
 
 
@@ -52,7 +50,7 @@ public class AssignmentCalendarNewsHandler implements CalendarNewsHandler {
             log.debug("ID " + assignment.getId());
             entry.setSummary(createContentObjectAsType(newsItemDatadata.site().getTitle(), TYPE_TEXT));
             log.debug("Site Title " + newsItemDatadata.site().getTitle());
-            entry.setTitle(assignment.getTitle());
+            entry.setTitleEx(createContentObjectAsType(assignment.getTitle(), TYPE_TEXT));
             log.debug("Title " + assignment.getTitle());
             entry.setAlternateLinks(createLinkAsList(deepLink));
             entry.setUpdated(Date.from(assignment.getDueDate()));

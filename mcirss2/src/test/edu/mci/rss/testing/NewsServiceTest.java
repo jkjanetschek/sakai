@@ -8,13 +8,13 @@ import edu.mci.rss.eventHandlers.EventHandlerFactory;
 import edu.mci.rss.eventHandlers.MciRssEventHandler;
 import edu.mci.rss.eventHandlers.SamigoEventHandler;
 import edu.mci.rss.model.NewsItemProcessingData;
-import edu.mci.rss.services.NewsFeedService;
 import edu.mci.rss.utils.FeedUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.component.cover.ComponentManager;
@@ -22,7 +22,6 @@ import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
-import org.sakaiproject.messaging.api.UserMessagingService;
 import org.sakaiproject.messaging.api.model.UserNotification;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
@@ -33,20 +32,15 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -65,12 +59,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-//import javax.xml.parsers.DocumentBuilderFactory;
+
 
 @Slf4j
 @RunWith(SpringRunner.class)
@@ -96,10 +89,6 @@ public class NewsServiceTest {
     @Autowired
     private EventHandlerFactory eventHandlerFactory;
     @Autowired
-    private NewsFeedService newsFeedService;
-    @Autowired
-    private UserMessagingService userMessagingService;
-    @Autowired
     private EntityManager entityManager;
     @Autowired
     private AssignmentService assignmentService;
@@ -109,6 +98,7 @@ public class NewsServiceTest {
 
     @Before
     public void setup() {
+        Mockito.reset(entityManager, assignmentService, siteService);
         testDataFactory = new MciRssTestDataFactory();
     }
 

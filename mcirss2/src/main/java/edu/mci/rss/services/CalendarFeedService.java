@@ -4,7 +4,7 @@ package edu.mci.rss.services;
 import com.rometools.rome.feed.atom.Entry;
 import com.rometools.rome.feed.atom.Feed;
 import edu.mci.rss.HandledCalendarTools;
-import edu.mci.rss.calendarNews.AssignmentCalendarNewsHandler;
+import edu.mci.rss.calendarNews.CalendarNewsHandler;
 import edu.mci.rss.utils.FeedUtils;
 import edu.mci.rss.utils.MciRssSessionUtils;
 import edu.mci.rss.utils.NewsItemFilterCriteriaUtils;
@@ -17,16 +17,14 @@ import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
 import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -38,12 +36,23 @@ public class CalendarFeedService implements FeedService {
     private SiteService siteService;
     @Autowired
     private AssignmentService assignmentService;
-    @Autowired
+
     private PublishedAssessmentService publishedAssessmentService;
     @Autowired
     private ObjectProvider<NewsItemFilterCriteriaUtils> newsItemFilterCriteriaUtilsBeanProvider;
+
+
+    public CalendarFeedService() {
+        this.publishedAssessmentService = new PublishedAssessmentService();
+    }
+
     @Autowired
-    private AssignmentCalendarNewsHandler  assignmentCalendarNewsHandler;
+    @Qualifier("assignmentCalendarNewsHandler")
+    private CalendarNewsHandler assignmentNewsHandler;
+
+    @Autowired
+    @Qualifier("samigoCalendarNewsHandler")
+    private CalendarNewsHandler samigoCalendarNewsHandler;
 
 
     public record CalendarNewsItemData(Site site, String userId) {}
@@ -65,6 +74,10 @@ public class CalendarFeedService implements FeedService {
 
         mciRssSessionUtils.switchToUserAndOrEid(null, null);
 
+        if (!entries.isEmpty()) {
+            feed.setEntries(entries);
+        }
+
         return feed;
     }
 
@@ -73,45 +86,38 @@ public class CalendarFeedService implements FeedService {
         Collection<Assignment> assignments = assignmentService.getAssignmentsForContext(newsItemDatadata.site().getId());
 
         List<Assignment> filteredAssignments = checkItemsTimeRange(new FilterDetails(assignments, HandledCalendarTools.ASSIGNMENT, newsItemFilterCriteriaUtils));
-        return assignmentCalendarNewsHandler.processCalendarNewsItems(filteredAssignments, newsItemDatadata);
+        return assignmentNewsHandler.processCalendarNewsItems(filteredAssignments, newsItemDatadata);
     }
 
     private List<Entry> getEntriesForUserInAssessments(CalendarNewsItemData newsItemDatadata, NewsItemFilterCriteriaUtils newsItemFilterCriteriaUtils) {
         List<PublishedAssessmentFacade> assessments = publishedAssessmentService.getBasicInfoOfAllPublishedAssessments(null, "dueDate", false, newsItemDatadata.site().getId());
-        List<PublishedAssessmentFacade> filteredAssessments  =checkItemsTimeRange(new FilterDetails(assessments, HandledCalendarTools.SAMIGO, newsItemFilterCriteriaUtils));
-        // samigoCalendarNewsHandler.
-        //entries.addAll();
-        return null;
+        List<PublishedAssessmentFacade> filteredAssessments  = checkItemsTimeRange(new FilterDetails(assessments, HandledCalendarTools.SAMIGO, newsItemFilterCriteriaUtils));
+        return samigoCalendarNewsHandler.processCalendarNewsItems(filteredAssessments, newsItemDatadata);
     }
 
 
 
-
-
-
     private List checkItemsTimeRange(FilterDetails filterDetails) {
-        Instant today = Instant.now();
-        List filtedItems = new ArrayList();
-
        return switch(filterDetails.handledCalendarTools) {
             case SAMIGO -> checkItemsTimeRangeForSamigo(filterDetails);
             case ASSIGNMENT -> checkItemsTimeRangeForAssignment(filterDetails);
         };
     }
 
-
+    @SuppressWarnings("unchecked")
     private List<PublishedAssessmentFacade> checkItemsTimeRangeForSamigo(FilterDetails filterDetails) {
         return filterDetails.items.stream()
                 .filter(item -> item instanceof PublishedAssessmentFacade pub
-                        && filterDetails.newsItemFilterCriteriaUtils.checkTimeRangeForCalendar(pub.getDueDate()))
+                        && pub.getDueDate() != null && filterDetails.newsItemFilterCriteriaUtils.checkTimeRangeForCalendar(pub.getDueDate()))
                 .map(PublishedAssessmentFacade.class::cast)
                 .toList();
     }
 
+    @SuppressWarnings("unchecked")
     private List<Assignment> checkItemsTimeRangeForAssignment(FilterDetails filterDetails) {
         return filterDetails.items.stream()
                 .filter(item ->  item instanceof Assignment a
-                        && filterDetails.newsItemFilterCriteriaUtils.checkTimeRangeForCalendar(a.getDueDate()))
+                        && a.getDueDate() != null && filterDetails.newsItemFilterCriteriaUtils.checkTimeRangeForCalendar(a.getDueDate()))
                 .map(Assignment.class::cast)
                 .toList();
     }

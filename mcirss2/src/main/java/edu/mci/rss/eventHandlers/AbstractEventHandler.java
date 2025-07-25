@@ -1,10 +1,8 @@
 package edu.mci.rss.eventHandlers;
 
-import com.rometools.rome.feed.atom.Category;
+
 import com.rometools.rome.feed.atom.Entry;
-import com.rometools.rome.feed.atom.Link;
 import edu.mci.rss.model.NewsItemProcessingData;
-import edu.mci.rss.utils.FeedUtils;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.messaging.api.model.UserNotification;
 import org.sakaiproject.site.api.SiteService;
@@ -12,9 +10,8 @@ import org.sakaiproject.site.api.SiteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
+
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;

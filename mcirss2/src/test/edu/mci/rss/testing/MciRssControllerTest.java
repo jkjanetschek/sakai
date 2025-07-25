@@ -2,7 +2,7 @@ package edu.mci.rss.testing;
 
 
 import com.rometools.rome.feed.atom.Feed;
-import edu.mci.rss.controllers.MciRssController;
+
 import edu.mci.rss.services.NewsFeedService;
 import edu.mci.rss.utils.FeedUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -10,13 +10,14 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.user.api.UserDirectoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
+
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestExecutionListeners;
+
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,23 +29,14 @@ import java.lang.reflect.Field;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@WebAppConfiguration // weil --> AnnotationConfigWebApplicationContext
+@WebAppConfiguration
 @ContextConfiguration(classes = TestConfiguration.class)
-/*
-@TestExecutionListeners(
-        listeners = TestExecutionListener.class,
-        mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS
-)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-
- */
 public class MciRssControllerTest {
 
     static {
@@ -59,22 +51,6 @@ public class MciRssControllerTest {
         }
     }
 
-    /*
-    Best Practices
-
-    Exception Handling:
-        Always test the exception handlers to ensure proper error responses.
-
-    Use MockMvc:
-        This ensures the controller is tested in isolation without requiring a full application context.
-
-    Descriptive Test Names:
-        Use clear and concise test method names to describe the behavior being tested.
-
-    Verify Mock Interactions:
-        Use Mockito.verify() to check that the mocked services are called as expected.
-
-     */
 
     @Autowired
     private UserDirectoryService userDirectoryService;
@@ -88,6 +64,7 @@ public class MciRssControllerTest {
 
     @Before
     public void setup() {
+        Mockito.reset(userDirectoryService, newsFeedService);
         this.mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
     }
 
@@ -129,13 +106,4 @@ public class MciRssControllerTest {
                 .andExpect(MockMvcResultMatchers.status().is4xxClientError());
     }
 
-
-
-
-/*
-    content().xml(String expectedXml)
-    String expectedResponse = FeedUtils.serializeAtomFeed(mockFeed);
-XmlAssert.assertThat(actualResponse).and(expectedResponse).areIdentical();
-
-*/
 }

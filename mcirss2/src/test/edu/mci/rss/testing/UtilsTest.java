@@ -10,6 +10,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.sakaiproject.assignment.api.AssignmentService;
 import org.sakaiproject.assignment.api.model.Assignment;
 import org.sakaiproject.component.cover.ComponentManager;
@@ -43,12 +44,12 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+
 import static org.mockito.Mockito.when;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@WebAppConfiguration // weil --> AnnotationConfigWebApplicationContext
+@WebAppConfiguration
 @ContextConfiguration(classes = {TestConfiguration.class})
 public class UtilsTest {
 
@@ -80,7 +81,7 @@ public class UtilsTest {
 
    @Before
     public void setUp() {
-        // Mock the current time
+        Mockito.reset(entityManager, assignmentService);
         now = Instant.now();
         testDataFactory = new MciRssTestDataFactory();
 
@@ -227,19 +228,6 @@ public class UtilsTest {
         List<UserNotification> notis = new ArrayList<UserNotification>();
         List<UserNotification> notisSpy = spy(notis);
 
-        // Create test configurations
-        /*
-        List<TestConfig> configs = List.of(
-                new TestConfig(1, TimeRangeMode.LONG, HandledEvents.ASSIGNMENT),
-                new TestConfig(1, TimeRangeMode.SHORT, HandledEvents.ANNOUNCEMENT),
-                new TestConfig(1, TimeRangeMode.LONG_BOUNDARY, HandledEvents.SAMIGO),
-                new TestConfig(1, TimeRangeMode.SHORT_BOUNDARY, HandledEvents.ALL)
-        );
-        configs.forEach(config -> {
-            notisSpy.add(testDataFactory.createMockedUserNotificationItem(config));
-        });
-
-         */
         for(int i = 0; i < 100; i++) {
             notisSpy.add(testDataFactory.createMockedUserNotificationItem(new TestConfig(null, TimeRangeMode.ALL, HandledEvents.ALL)));
         }

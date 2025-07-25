@@ -1,22 +1,11 @@
 package edu.mci.rss.eventHandlers;
 
-import com.rometools.rome.feed.atom.Category;
-import com.rometools.rome.feed.atom.Entry;
-import com.rometools.rome.feed.synd.SyndFeed;
-import edu.mci.rss.model.NewsItemProcessingData;
-import edu.mci.rss.utils.FeedUtils;
-import org.sakaiproject.announcement.api.AnnouncementService;
-import org.sakaiproject.entity.api.EntityManager;
-import org.sakaiproject.entity.api.Reference;
-import org.sakaiproject.messaging.api.model.UserNotification;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import com.rometools.rome.feed.atom.Entry;
+import edu.mci.rss.model.NewsItemProcessingData;
+import org.sakaiproject.announcement.api.AnnouncementService;
+import org.sakaiproject.messaging.api.model.UserNotification;
+import org.springframework.stereotype.Component;
 
 import static edu.mci.rss.utils.FeedUtils.TYPE_HTML;
 import static edu.mci.rss.utils.FeedUtils.createCategoryAsList;
@@ -34,14 +23,9 @@ public class AnnouncementEventHandler extends AbstractEventHandler {
     @Override
     protected void addToolSpecificDetails(NewsItemProcessingData itemData, Entry atomEntry) {
 
-
         atomEntry.setCategories(createCategoryAsList(CATEGORIE));
-        UserNotification noti = itemData.getUserNotification();
-
 
         atomEntry.setSummary(createContentObjectAsType(buildSummary(itemData), TYPE_HTML));
-
-
     }
 
 

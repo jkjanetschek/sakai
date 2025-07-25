@@ -5,7 +5,6 @@ import com.rometools.rome.feed.atom.Feed;
 import edu.mci.rss.services.CalendarFeedService;
 import edu.mci.rss.services.NewsFeedService;
 import edu.mci.rss.utils.FeedUtils;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -87,9 +86,7 @@ public class MciRssController {
 
     @ExceptionHandler
     public ResponseEntity<String> handleIllegalStateException(IllegalStateException ex) {
-        System.out.println("IllegalStateException: "+ ex.getMessage());
         log.error("IllegalStateException: {}", ex.getMessage());
-        log.error("IllegalStateException: ", ex);
         return ResponseEntity.badRequest().build();
     }
 

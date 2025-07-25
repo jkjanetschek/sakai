@@ -2,12 +2,11 @@ package edu.mci.rss.calendarNews;
 
 import com.rometools.rome.feed.atom.Entry;
 import edu.mci.rss.services.CalendarFeedService;
-import edu.mci.rss.utils.FeedUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
@@ -18,6 +17,7 @@ import static edu.mci.rss.utils.FeedUtils.createContentObjectAsType;
 
 @Slf4j
 @Component
+@Qualifier("samigoCalendarNewsHandler")
 public class SamigoCalendarNewsHandler implements CalendarNewsHandler  {
 
 
@@ -49,7 +49,7 @@ public class SamigoCalendarNewsHandler implements CalendarNewsHandler  {
             log.debug("id: {}", String.valueOf(pubAss.getPublishedAssessmentId()));
             entry.setSummary(createContentObjectAsType(newsItemData.site().getTitle(), TYPE_TEXT));
             log.debug("summary: {}", newsItemData.site().getTitle());
-            entry.setTitle(pubAss.getTitle());
+            entry.setTitleEx(createContentObjectAsType(pubAss.getTitle(), TYPE_TEXT));
             log.debug("title: {}", pubAss.getTitle());
             entry.setUpdated(dueDate);
             log.debug("updated: {}", dueDate.toString());
