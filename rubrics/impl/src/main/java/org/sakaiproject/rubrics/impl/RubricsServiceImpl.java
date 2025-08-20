@@ -57,6 +57,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jsoup.Jsoup;
 import org.sakaiproject.assignment.api.AssignmentConstants;
 import org.sakaiproject.assignment.api.AssignmentService;
+import org.sakaiproject.assignment.api.model.AssignmentSubmission;
 import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.SecurityService;
@@ -67,6 +68,7 @@ import org.sakaiproject.entity.api.EntityTransferrer;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.event.api.EventTrackingService;
 import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.grading.api.GradingService;
 import org.sakaiproject.rubrics.api.RubricsConstants;
 import org.sakaiproject.rubrics.api.RubricsService;
@@ -1386,7 +1388,36 @@ public class RubricsServiceImpl implements RubricsService, EntityTransferrer {
             paragraph.add(resourceLoader.getFormattedMessage("export_total_points", points));
             paragraph.add(Chunk.NEWLINE);
         }
+
+        // ## BEGIN MCI#2025081910000288 — Sakai Rubrics PDF
+        if (showEvaluated) {
+            Evaluation evaluation = optEvaluation.get();
+            evaluation.getEvaluatedItemId();
+            try {
+                AssignmentSubmission submission = assignmentService.getSubmission(evaluation.getEvaluatedItemId());
+                String gradeDisplay = assignmentService.getGradeDisplay(submission.getGrade(), submission.getAssignment().getTypeOfGrade(),
+                        submission.getFactor());
+                String feedbackComment = submission.getFeedbackComment();
+
+                paragraph.add(resourceLoader.getFormattedMessage("final_grade", gradeDisplay));
+                paragraph.add(Chunk.NEWLINE);
+                String feedbackCommentWithoutHtmlTags = formattedText.stripHtmlFromText(feedbackComment, true);
+                paragraph.add(resourceLoader.getFormattedMessage("feedback_comment", feedbackCommentWithoutHtmlTags));
+                paragraph.add(Chunk.NEWLINE);
+            } catch (IdUnusedException | PermissionException e) {
+                log.warn("Failed to retrieve additional mci-specific infos while generating pdf! params: ({},{},{},{},{}), Exception: {}",
+                        siteId, rubricId, toolId, itemId, evaluatedItemId,
+                        e.getMessage());
+
+            }
+        }
+        // ## END MCI#2025081910000288 — Sakai Rubrics PDF
+
+
         paragraph.add(Chunk.NEWLINE);
+
+
+
         header.addElement(paragraph);
         table.addCell(header);
         table.completeRow();
