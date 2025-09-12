@@ -26,11 +26,13 @@ $more-sites-single-column: "only screen and (max-width : #{$break-more-sites-sin
 /* Typography*/
 
 //Google family Fonts URL
-$font-family-url: "https://fonts.googleapis.com/css?family=Open+Sans:400,600,700" !default;
+// $font-family-url: "https://fonts.googleapis.com/css?family=Open+Sans:400,600,700" !default;
+$font-family-url: "/static/fonts/montserrat.css" !default;
 @import url(#{$font-family-url});
 
 //Typography variables
-$default-font-size: 14px !default;
+//$default-font-size: 14px !default;
+$default-font-size: 15px !default;
 $default-font-size-small: 12px !default;
 $default-font-weight: 400 !default;										// 400 or 700 as you wish
 $default-line-height: 1.42857 !default;											// 20px / 14px = 1.42857
@@ -58,7 +60,8 @@ $tool-tab-text-size:                                      12px !default;
 $tool-tab-text-weight:                                    400 !default;
 $tool-tab-text-transform:                                 none !default;
 $tool-tab-text-letter-spacing:                            normal !default;
-$tool-tab-active-text-size:                               12px !default;
+//$tool-tab-active-text-size:                               12px !default;
+$tool-tab-active-text-size:                               12.5px !default;
 
 $top-header-separators-thickness: 0px !default;
 $top-header-item-spacing: calc(#{$standard-spacing} / 2) !default;
@@ -246,7 +249,8 @@ $focus-outline-offset: 2px !default;
 //Used to give round elements an round focus and not square
 $sakai-box-shadow-emulate-focus: 0px 0px 0px $focus-outline-width !default;
 
-$font-family: "Open Sans",sans-serif !default;
+//$font-family: "Open Sans",sans-serif !default;
+$font-family: "Montserrat" !default;
 $header-font-family: $font-family !default;
 $header-font-weight: 700 !default;										// 400 or 700 as you wish
 

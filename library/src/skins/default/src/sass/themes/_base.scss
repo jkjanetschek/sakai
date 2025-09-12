@@ -193,4 +193,22 @@ $theme-color-interval: 9 !default;
   --bs-border-width: 1px;
   --bs-border-radius: 4px;
   --bs-border-color: var(--sakai-border-color);
+
+  //MCI Color palette
+  //https://pinetools.com/invert-color
+  @include defineColorHSL(--mci-blue, 206.6, 100%, 26%);
+  @include defineColorHSL(--mci-orange, 36, 100%, 50%);
+  @include defineColorHSL(--mci-gray, 260, 2%, 25%);
+  @include defineColorHSL(--mci-true, 0, 0%, 40%);
+  @include defineColorHSL(--sakai-nice, 0, 0%, 79%);
+  @include defineColorHSL(--sakai-silver, 0, 0%, 85%);
+  @include defineColorHSL(--sakai-white, 0, 0%, 100%);
+
+  //--mci-blue: #004983;
+  //--mci-orange: #FF9900;
+  //--mci-gray: #3e3d40;
+  //--mci-true: #666;
+  //--mci-nice: #cacaca;
+  //--mci-silver: #dadada;
+  //--mci-white: #FFFFFF;
 }
