@@ -1,0 +1,116 @@
+CKEDITOR.plugins
+		.add(
+				'extraicons',
+				{
+					requires : 'dialog',
+					icons : 'extraicons',
+					hidpi : true,
+					init : function(editor) {
+						editor.config.extraicons_path = editor.config.extraicons_path
+								|| (this.path + 'images/');
+						editor.addCommand('extraicons',
+								new CKEDITOR.dialogCommand('extraiconsDialog'));
+
+						editor.ui.addButton('Extraicons', {
+							label : 'Insert predefined Icons or Pictures',
+							command : 'extraicons',
+							toolbar : 'Full'
+						});
+
+						CKEDITOR.dialog.add('extraiconsDialog', this.path
+								+ 'dialogs/extraicons.js');
+
+					}
+				});
+
+/**
+ * The base path used to build the URL for the extraicons images. It must end
+ * with a slash.
+ * 
+ * config.extraicons_path = 'http://www.example.com/images/extraicons/';
+ * 
+ * config.extraicons_path = '/images/extraicons/';
+ * 
+ * @cfg {String} [extraicons_path=CKEDITOR.basePath +
+ *      'plugins/extraicons/images/']
+ * @member CKEDITOR.config
+ */
+
+/**
+ * The file names for the extraicons to be displayed. These files must be
+ * contained inside the URL path defined with the {@link #extraicons_path}
+ * setting. // This is actually the default value. config.extraicons_images = [
+ * 'regular_smile.png','sad_smile.png','wink_smile.png','teeth_smile.png','confused_smile.png','tongue_smile.png',
+ * 'embarrassed_smile.png','omg_smile.png','whatchutalkingabout_smile.png','angry_smile.png','angel_smile.png','shades_smile.png',
+ * 'devil_smile.png','cry_smile.png','lightbulb.png','thumbs_down.png','thumbs_up.png','heart.png',
+ * 'broken_heart.png','kiss.png','envelope.png' ];
+ * 
+ * @cfg
+ * @member CKEDITOR.config
+ */
+CKEDITOR.config.extraicons_images = [ 'blue/assessment.png',
+		'blue/connections.png', 'blue/discussion.png', 'blue/exercise.png',
+		'blue/groupwork.png', 'blue/individualwork.png',
+		'blue/learninggoals.png', 'blue/multimedia.png', 'blue/overview.png',
+		'blue/readings.png', 'blue/test.png', 'blue/time.png',
+		'blue/tools.png', 'blue/weblink.png', 'grey/assessment.png',
+		'grey/connections.png', 'grey/discussion.png', 'grey/exercise.png',
+		'grey/groupwork.png', 'grey/individualwork.png',
+		'grey/learninggoals.png', 'grey/multimedia.png', 'grey/overview.png',
+		'grey/readings.png', 'grey/test.png', 'grey/time.png',
+		'grey/tools.png', 'grey/weblink.png', 'orange/assessment.png',
+		'orange/connections.png', 'orange/discussion.png',
+		'orange/exercise.png', 'orange/groupwork.png',
+		'orange/individualwork.png', 'orange/learninggoals.png',
+		'orange/multimedia.png', 'orange/overview.png', 'orange/readings.png',
+		'orange/test.png', 'orange/time.png', 'orange/tools.png',
+		'orange/weblink.png', 'white/assessment.png', 'white/connection.png',
+		'white/discussion.png', 'white/exercise.png', 'white/groupwork.png',
+		'white/individualwork.png', 'white/learninggoals.png',
+		'white/multimedia.png', 'white/overview.png', 'white/readings.png',
+		'white/test.png', 'white/time.png', 'white/tools.png',
+		'white/weblink.png' ];
+
+/**
+ * The description to be used for each of the extraicons defined in the
+ * {@link CKEDITOR.config#extraicons_images} setting. Each entry in this array
+ * list must match its relative pair in the
+ * {@link CKEDITOR.config#extraicons_images} setting. // Default settings.
+ * config.extraicons_descriptions = [ 'smiley', 'sad', 'wink', 'laugh', 'frown',
+ * 'cheeky', 'blush', 'surprise', 'indecision', 'angry', 'angel', 'cool',
+ * 'devil', 'crying', 'enlightened', 'no', 'yes', 'heart', 'broken heart',
+ * 'kiss', 'mail' ]; // Use textual emoticons as description.
+ * config.extraicons_descriptions = [ ':)', ':(', ';)', ':D', ':/', ':P', ':*)',
+ * ':-o', ':|', '>:(', 'o:)', '8-)', '>:-)', ';(', '', '', '', '', '', ':-*', '' ];
+ * 
+ * @cfg
+ * @member CKEDITOR.config
+ */
+CKEDITOR.config.extraicons_descriptions = [ 'blue assessment',
+		'blue connections', 'blue discussion', 'blue exercise',
+		'blue groupwork', 'blue individualwork', 'blue learninggoals',
+		'blue multimedia', 'blue overview', 'blue readings', 'blue test',
+		'blue time', 'blue tools', 'blue weblink', 'grey assessment',
+		'grey connections', 'grey discussion', 'grey exercise',
+		'grey groupwork', 'grey individualwork', 'grey learninggoals',
+		'grey multimedia', 'grey overview', 'grey readings', 'grey test',
+		'grey time', 'grey tools', 'grey weblink', 'orange assessment',
+		'orange connections', 'orange discussion', 'orange exercise',
+		'orange groupwork', 'orange individualwork', 'orange learninggoals',
+		'orange multimedia', 'orange overview', 'orange readings',
+		'orange test', 'orange time', 'orange tools', 'orange weblink',
+		'white assessment', 'white connection', 'white discussion',
+		'white exercise', 'white groupwork', 'white individualwork',
+		'white learninggoals', 'white multimedia', 'white overview',
+		'white readings', 'white test', 'white time', 'white tools',
+		'white weblink' ];
+
+/**
+ * The number of columns to be generated by the smilies matrix.
+ * 
+ * config.extraicons_columns = 6;
+ * 
+ * @since 3.3.2
+ * @cfg {Number} [extraicons_columns=8]
+ * @member CKEDITOR.config
+ */

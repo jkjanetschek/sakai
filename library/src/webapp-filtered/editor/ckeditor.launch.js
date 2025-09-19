@@ -277,7 +277,7 @@ sakai.editor.editors.ckeditor.launch = function(targetId, config, w, h) {
             'colordialog',
             'copyformatting',
             // 'devtools',
-            // 'dialog',
+             'dialog',
             // 'dialogadvtab',
             'div',
             // 'divarea',
@@ -304,7 +304,7 @@ sakai.editor.editors.ckeditor.launch = function(targetId, config, w, h) {
             'link',
             'liststyle',
             // 'magicline',
-            // 'mathjax',
+             'mathjax',
             // 'mentions',
             // 'newpage',
             // 'pagebreak',
@@ -347,6 +347,8 @@ sakai.editor.editors.ckeditor.launch = function(targetId, config, w, h) {
             'notification',
             'removeformat',
             'wordcount',
+            'ckeditorfa',
+            'extraicons',
             (sakai.editor.sakaiDropdownToolbar ? 'sakaidropdowntoolbar' : ''),
             (sakai.editor.enableSakaiPreview ? 'sakaipreview' : 'preview'),
             (sakai.editor.enableResourceSearch ? 'resourcesearch' : ''),
@@ -384,6 +386,7 @@ sakai.editor.editors.ckeditor.launch = function(targetId, config, w, h) {
             ['BidiLtr', 'BidiRtl' ],
             ['Blockquote', 'HorizontalRule', 'Anchor', 'Html5video', 'AudioRecorder', 'Smiley', 'SpecialChar', 'CreateDiv', 'CodeSnippet'],
             [(sakai.editor.contentItemUrl ? 'ContentItem' : undefined),(sakai.editor.enableResourceSearch ? 'ResourceSearch' : undefined)],
+            ['Mathjax','ckeditorfa', 'Extraicons'],
             ['atd-ckeditor'],
             '/',
             ['Styles', 'Font', 'FontSize', 'Print', 'SakaiPreview'],
@@ -441,6 +444,8 @@ sakai.editor.editors.ckeditor.launch = function(targetId, config, w, h) {
 
     // Merge config values into ckconfig
     ckconfig = objectMerge(ckconfig, config);
+    //Sets the path to the MathJax library. It can be both a local resource and a location different than the default CDN.
+    ckconfig.mathJaxLib = "/static/MathJax/MathJax.js?config=default"
 
     if (config && config.toolbarSet && ckconfig['toolbar_' + config.toolbarSet]) {
         ckconfig.toolbar = config.toolbarSet;
@@ -493,6 +498,8 @@ sakai.editor.editors.ckeditor.launch = function(targetId, config, w, h) {
         CKEDITOR.plugins.addExternal('a11ychecker',webJars+'a11ychecker/${ckeditor.a11ychecker.version}/', 'plugin.js');
         // FMathEditor plugin
         CKEDITOR.plugins.addExternal('FMathEditor', fmathPath, 'plugin.js');
+        CKEDITOR.plugins.addExternal('ckeditorfa', basePath+'ckeditorfa/', 'plugin.js');
+        CKEDITOR.plugins.addExternal('extraicons', basePath+'extraicons/', 'plugin.js');
 
         /*
            To enable after the deadline uncomment these two lines and add atd-ckeditor to toolbar

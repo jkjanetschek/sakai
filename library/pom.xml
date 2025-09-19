@@ -17,7 +17,7 @@
 		<ckeditor.version>4.22.1</ckeditor.version>
 		<bootstrap-version>5.2.0</bootstrap-version>
 		<!-- Default extra plugins enabled -->
-		<ckeditor-extra-plugins>sakaipreview,sakaidropdowntoolbar,sakaiopenlink,</ckeditor-extra-plugins>
+		<ckeditor-extra-plugins>sakaipreview,sakaidropdowntoolbar,sakaiopenlink</ckeditor-extra-plugins>
 		<!-- Default math extra plugins enabled -->
 		<ckeditor-math-extra-plugins></ckeditor-math-extra-plugins>
 		<!-- Empty defaults for a11y-->
