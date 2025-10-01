@@ -69,7 +69,7 @@
                 <module>emailtemplateservice</module>
                 <module>entitybroker</module>
                 <module>external-calendaring-service</module>
-                <module>feedback</module>
+            <!--    <module>feedback</module -->
                 <module>gradebookng</module>
                 <module>help</module>
                 <module>hierarchy</module>
