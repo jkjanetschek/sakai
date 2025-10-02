@@ -375,7 +375,7 @@ public class SkinnableLogin extends HttpServlet implements Login {
 					complete(returnUrl, session, tool, res);
 					log.info("Login attempt successful: ID=" + credentials.getIdentifier() + ", IP Address=" + credentials.getRemoteAddr());
 				} else {
-					throw new LoginException(EXCEPTION_INVALID_CREDENTIALS);
+					throw new LoginException(MCI_EXCEPTION_MISSING_MCI_MAIL_SUFFIX);
 				}//end change
 
 			} catch (LoginException le) {
@@ -390,6 +390,11 @@ public class SkinnableLogin extends HttpServlet implements Login {
 					rcontext.put(ATTR_MSG, rb.getString("log.invalid.credentials"));
 					showAdvice = true;
 					logFailedAttempt(credentials);
+				}
+				else if (message.equals(MCI_EXCEPTION_MISSING_MCI_MAIL_SUFFIX)) {
+						rcontext.put(ATTR_MSG, rb.getString("log.missing.mci.suffix"));
+						showAdvice = true;
+						logFailedAttempt(credentials);
 				} else if (message.equals(EXCEPTION_DISABLED)) {
 					rcontext.put(ATTR_MSG, rb.getString("log.disabled.user"));
 					logFailedAttempt(credentials);

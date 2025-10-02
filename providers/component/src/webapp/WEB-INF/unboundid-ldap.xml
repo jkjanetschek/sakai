@@ -11,14 +11,14 @@
 		<property name="memoryService" ref="org.sakaiproject.memory.api.MemoryService"/>
 		
 		<!-- Required. Uses Unboundid SingleServerSet by default. Easy to modify code to use FailoverServerSet or RoundRobinServerSet. -->
-        <property name="ldapHost" value="${mci.ldap.hosts}" />
+		<property name="ldapHost" value="${mci.ldap.hosts}" />
 
 		<!-- Required. LDAP connection port. Typically defaults to 
 			UnboundidDirectoryProvider.DEFAULT_LDAP_PORT (389). Secure
 			connection is usually on 636 -->
 		<property name="ldapPort">
 			<list>
-                <value>${mci.ldap.port}</value> <!-- 389 no StartTLS on 389 -->
+				<value>${mci.ldap.port}</value> <!-- 389 no StartTLS on 389 => fix later-->
 			</list>
 		</property>
 
@@ -31,6 +31,10 @@
 		<!-- Optional. Password for ldapUser defined above -->
 		<property name="ldapPassword">
             <value>${mci.ldap.password}</value>
+		</property>
+        <!-- Optional, but usually specified. Base DN for directory searches. -->
+		<property name="basePath">
+			<value>${mci.ldap.basePath}</value>
 		</property>
 
 		<!-- Optional. Enables/disables secure LDAP connections.
@@ -45,10 +49,6 @@
 			<value>true</value>
 		</property>
 
-		<!-- Optional, but usually specified. Base DN for directory searches. -->
-		<property name="basePath">
-            <value>${mci.ldap.basePath}</value>
-		</property>
 
 		<!-- Optional. Indicate if connections should follow
 			referrals. Defaults to  
@@ -231,7 +231,7 @@
     example describes availabel configuration options for SimpleLdapAttributeMapper
     (the default LdapAttributeMapper implementation). -->
 	<bean id="org.sakaiproject.unboundid.LdapAttributeMapper"
-			class="org.sakaiproject.unboundid.SimpleLdapAttributeMapper"
+			class="org.sakaiproject.unboundid.MciElearningOnlyLdapAttributeMapper"
 			init-method="init">
 
 	<!-- Non-default bean definition which can be used to support encrypted LDAP properties.
@@ -257,6 +257,7 @@
 -->
 				<entry key="login"><value>uid</value></entry>         
 				<entry key="firstName"><value>givenName</value></entry> 
+				<entry key="employeeType"><value>employeeType</value></entry>
 				<!--entry key="preferredFirstName"><value>preferredName</value></entry -->
 				<entry key="lastName"><value>sn</value></entry> 
 				<entry key="email"><value>mail</value></entry>  
@@ -277,7 +278,7 @@
 		<property name="userTypeMapper">
 			<!-- Select one of the following beans -->
 			<ref bean="org.sakaiproject.unboundid.EmptyStringUserTypeMapper" />
-			<!-- ref bean="org.sakaiproject.unboundid.EntryAttributeToUserTypeMapper" /-->
+			<!-- <ref bean="org.sakaiproject.unboundid.EntryAttributeToUserTypeMapper" /> -->
 			<!-- ref bean="org.sakaiproject.unboundid.EntryContainerRdnToUserTypeMapper" /-->
 			<!-- ref bean="org.sakaiproject.unboundid.StringUserTypeMapper" /-->
 		</property>
@@ -313,14 +314,14 @@
 		configurable "miss" behavior. -->
 	<bean id="org.sakaiproject.unboundid.EntryAttributeToUserTypeMapper"
 		class="org.sakaiproject.unboundid.EntryAttributeToUserTypeMapper">
-		
+
 		<!-- Optional. If not present or empty, behavior is
 		determined by the value of returnLiteralAttributeValueIfNoMapping
 		(see below). -->
 		<!-- property name="attributeValueToSakaiUserTypeMap">
 			<map>
-				<entry key="faculty"><value>faculty</value></entry> 
-				<entry key="students"><value>student</value></entry> 
+				<entry key="faculty"><value>faculty</value></entry>
+				<entry key="students"><value>student</value></entry>
 			</map>
 		</property -->
 				

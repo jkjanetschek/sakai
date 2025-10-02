@@ -22,8 +22,10 @@ public interface Login {
 	 */
 	public static final String DEFAULT_LOGIN_CONTEXT = "default";
 	
+	public static final String MCI_EXCEPTION_MISSING_MCI_MAIL_SUFFIX = "missing-mci-mail-suffix";
+
 	public static final String EXCEPTION_INVALID_CREDENTIALS = "invalid-credentials";
-	
+
 	public static final String EXCEPTION_MISSING_CREDENTIALS = "missing-credentials";
 	
 	public static final String EXCEPTION_INVALID_WITH_PENALTY = "invalid-credentials-with-penalty";
