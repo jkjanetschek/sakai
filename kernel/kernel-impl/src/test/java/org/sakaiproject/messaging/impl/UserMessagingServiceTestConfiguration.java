@@ -20,6 +20,7 @@ import javax.annotation.Resource;
 import static org.mockito.Mockito.*;
 
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.springframework.orm.hibernate.AdditionalHibernateMappings;
 import org.sakaiproject.email.api.DigestService;
 import org.sakaiproject.email.api.EmailService;
@@ -99,5 +100,8 @@ public class UserMessagingServiceTestConfiguration extends SakaiTestConfiguratio
         when(scs.getInt("messaging.threadpool.size", 20)).thenReturn(20);
         return scs;
     }
+
+    @Bean(name="org.sakaiproject.db.api.SqlService")
+    public SqlService sqlService() {return mock(SqlService.class);}
 
 }
