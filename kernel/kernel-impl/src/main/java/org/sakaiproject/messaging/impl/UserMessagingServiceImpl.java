@@ -20,17 +20,20 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
+import nl.martijndwars.webpush.PushAsyncService;
 import nl.martijndwars.webpush.Subscription;
 import nl.martijndwars.webpush.Utils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpResponse;
+import org.asynchttpclient.Response;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.email.api.DigestService;
 import org.sakaiproject.email.api.EmailService;
 import org.sakaiproject.emailtemplateservice.api.EmailTemplateService;
@@ -89,7 +92,9 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
@@ -115,6 +120,7 @@ public class UserMessagingServiceImpl implements UserMessagingService, Observer 
     @Autowired private UserNotificationRepository userNotificationRepository;
     @Qualifier("org.sakaiproject.time.api.UserTimeService")
     @Autowired private UserTimeService userTimeService;
+    @Autowired private SqlService sqlService;
 
     @Setter private ResourceLoader resourceLoader;
     @Setter private TransactionTemplate transactionTemplate;
@@ -125,6 +131,7 @@ public class UserMessagingServiceImpl implements UserMessagingService, Observer 
     private ExecutorService executor;
     private boolean pushEnabled = false;
     private PushService pushService;
+    private PushAsyncService pushAsyncService;
 
     public UserMessagingServiceImpl() {
         objectMapper = MapperFactory.createDefaultJsonMapper();
@@ -160,6 +167,7 @@ public class UserMessagingServiceImpl implements UserMessagingService, Observer 
                         String publicKey = String.join("", Files.readAllLines(publicKeyPath));
                         String privateKey = String.join("", Files.readAllLines(privateKeyPath));
                         pushService = new PushService(publicKey, privateKey);
+                        pushAsyncService = new PushAsyncService(publicKey, privateKey);
                     } catch (Exception e) {
                         log.error("Failed to setup push service: {}", e.toString());
                     }
@@ -185,6 +193,7 @@ public class UserMessagingServiceImpl implements UserMessagingService, Observer 
                         }
 
                         pushService = new PushService(publicKeyBase64, privateKeyBase64);
+                        pushAsyncService = new PushAsyncService(publicKeyBase64, privateKeyBase64);
                     } catch (Exception e) {
                         log.error("Failed to generate key pair: {}", e.toString());
                     }
@@ -194,6 +203,12 @@ public class UserMessagingServiceImpl implements UserMessagingService, Observer 
                     String defaultSubject = serverConfigurationService.getServerUrl();
                     String pushSubject = serverConfigurationService.getString("portal.notifications.push.subject", defaultSubject);
                     pushService.setSubject(pushSubject);
+                    log.info("Push service configured with VAPID subject: {}", pushSubject);
+                }
+                if(pushAsyncService != null) {
+                    String defaultSubject = serverConfigurationService.getServerUrl();
+                    String pushSubject = serverConfigurationService.getString("portal.notifications.push.subject", defaultSubject);
+                    pushAsyncService.setSubject(pushSubject);
                     log.info("Push service configured with VAPID subject: {}", pushSubject);
                 }
             }
@@ -542,32 +557,55 @@ public class UserMessagingServiceImpl implements UserMessagingService, Observer 
             }
 
             Subscription sub = new Subscription(pushEndpoint, new Subscription.Keys(pushUserKey, pushAuth));
-            try {
-                String notificationJson = objectMapper.writeValueAsString(un);
-                HttpResponse pushResponse = pushService.send(new Notification(sub, notificationJson));
+            if (!sqlService.isMCISafetySwitchEnabled("mci.safetySwitch.usePushAsyncService")) {
+                try {
+                    String notificationJson = objectMapper.writeValueAsString(un);
+                    HttpResponse pushResponse = pushService.send(new Notification(sub, notificationJson));
 
-                int statusCode = pushResponse.getStatusLine().getStatusCode();
-                if (statusCode >= 200 && statusCode < 300) {
-                    log.debug("Successfully sent push notification to {} with status {}", 
-                            pushEndpoint, statusCode);
-                } else {
-                    String reason = pushResponse.getStatusLine().getReasonPhrase();
-                    log.warn("Push notification to {} failed with status {} and reason {}", 
-                            pushEndpoint, statusCode, reason);
-                    
-                    // Handle subscription cleanup for permanent failures
-                    if (statusCode == 410 || statusCode == 404 || statusCode == 400) {
-                        log.info("Removing invalid push subscription for user {} due to status {}", 
-                                un.getToUser(), statusCode);
-                        // Clear the invalid subscription
-                        clearPushSubscription(pushSubscription);
-                    } else if (statusCode == 403) {
-                        log.warn("Push authentication failed (403) - check VAPID configuration");
+                    int statusCode = pushResponse.getStatusLine().getStatusCode();
+                    if (statusCode >= 200 && statusCode < 300) {
+                        log.debug("Successfully sent push notification to {} with status {}",
+                                pushEndpoint, statusCode);
+                    } else {
+                        String reason = pushResponse.getStatusLine().getReasonPhrase();
+                        log.warn("Push notification to {} failed with status {} and reason {}",
+                                pushEndpoint, statusCode, reason);
+
+                        // Handle subscription cleanup for permanent failures
+                        if (statusCode == 410 || statusCode == 404 || statusCode == 400) {
+                            log.info("Removing invalid push subscription for user {} due to status {}",
+                                    un.getToUser(), statusCode);
+                            // Clear the invalid subscription
+                            clearPushSubscription(pushSubscription);
+                        } else if (statusCode == 403) {
+                            log.warn("Push authentication failed (403) - check VAPID configuration");
+                        }
                     }
+                } catch (Exception e) {
+                    log.error("Failed to serialize notification for push: {}", e.toString());
+                    log.debug("Stacktrace", e);
                 }
-            } catch (Exception e) {
-                log.error("Failed to serialize notification for push: {}", e.toString());
-                log.debug("Stacktrace", e);
+            } else {
+                try {
+                    CompletableFuture<Response> pushResponseFuture = pushAsyncService
+                            .send(new Notification(sub, objectMapper.writeValueAsString(un)))
+                            .orTimeout(5, TimeUnit.SECONDS) // Optional timeout
+                            .exceptionally(ex -> {
+                                log.debug("Async push to {} failed: {}", pushEndpoint, ex.toString());
+                                return null;
+                            });
+                    pushResponseFuture.thenAccept(response -> {
+                        if (response != null) {
+                            log.debug("The push response from {} returned code {} and reason {}",
+                                    pushEndpoint,
+                                    response.getStatusCode(),
+                                    response.getStatusText()
+                            );
+                        }
+                    });
+                } catch (Exception e) {
+                    log.error("Exception while pushing notification: {}", e.toString());
+                }
             }
         });
     }
