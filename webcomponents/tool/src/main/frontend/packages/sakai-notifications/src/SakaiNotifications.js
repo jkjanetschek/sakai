@@ -154,6 +154,8 @@ export class SakaiNotifications extends SakaiElement {
       this._decorateLessonsCommentNotification(noti);
     } else if (toolEventPrefix === "test") {
       this._decorateTestNotification(noti);
+    } else if (toolEventPrefix === "content") {
+      this._decorateContentNotification(noti);
     }
   }
 
@@ -181,6 +183,12 @@ export class SakaiNotifications extends SakaiElement {
 
     if (noti.event === "sam.assessment.available" || noti.event === "sam.assessment.update.available") {
       noti.title = this._i18n.samigoCreated.replace("{0}", noti.title).replace("{1}", noti.siteTitle);
+    }
+  }
+
+  _decorateContentNotification(noti) {
+    if (noti.event === "content.available" || noti.event === "content.upd.visibility") {
+      noti.title = this._i18n.contentCreated.replace("{0}", noti.title).replace("{1}", noti.siteTitle);
     }
   }
 
