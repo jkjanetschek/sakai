@@ -64,6 +64,7 @@ public interface UserMessagingService {
      */
     public List<UserNotification> getNotifications();
 
+    public List<UserNotification> getNotificationsForUser(String userId);
     /**
      * Register a handler for broadcast messages. The first registered handler that
      * handles a given event will receive it exclusively.

@@ -127,6 +127,7 @@
                 <module>webservices</module>
                 <module>wicket</module>
                 <module>admin-bulk-user-membership</module>
+                <module>git-sakai-mcirss2</module>
             </modules>
         </profile>
         <profile>
