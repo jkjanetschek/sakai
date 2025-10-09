@@ -3,9 +3,28 @@
 .portal-header {
   background-color: var(--mci-gray)!important;
 }
+.portal-header-hamburger-button {
+  color: white !important;
+}
+
+.portal-header-breadcrumb-item > a, .portal-header-breadcrumb-separator {
+  color: white !important
+}
+
+#sakai-system-indicators button {
+  color: white !important
+}
+
+a.manage-overview-link  {
+  color: var(--sakai-color-blue--lighter-4) !important;
+  &:hover {
+    color: var(--sakai-color-blue--lighter-3) !important;
+  }
+}
 
 
-.bg-primary {
+
+.mciLogoWrapper {
   background-color: var(--mci-blue) !important;
 }
 .xloginMCI {
@@ -120,3 +139,17 @@ td.cke_dialog_contents_body {
     }
   }
 }
+
+
+
+/*
+ *  Preferences
+ */
+
+
+div.manage-hidden-entry {
+  span.title {
+    color: rgb(51, 51, 51)
+  }
+}
+

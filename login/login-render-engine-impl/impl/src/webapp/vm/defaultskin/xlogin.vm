@@ -63,7 +63,7 @@
         <div id="login-footer-optional">
             <p align="center">Trotz des richtigen Passwortes Login-Probleme? / Login still not working, despite correct password? <br />
                 Inhalte verschwunden / Content disappeared?<br />
-                IT-FAQs: <a href="https://www.mci4me.at/de/services/it-services#faq" target="legal">Deutsch</a> | <a href="https://www.mci4me.at/en/services/it-services#faq" target="legal">English</a>
+                IT-FAQs: <a href="https://services.mci.edu/it-services/knowledge-base#sakai-lernmanagementsystem-lernplattform" target="legal">Deutsch</a> | <a href="https://services.mci.edu/en/it-services/knowledge-base-en#sakai-lernmanagementsystem-lernplattform" target="legal">English</a>
             </p>
 
             <!-- end xlogin.vm -->
