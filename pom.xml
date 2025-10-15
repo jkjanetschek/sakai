@@ -128,6 +128,7 @@
                 <module>wicket</module>
                 <module>admin-bulk-user-membership</module>
                 <module>git-sakai-mcirss2</module>
+                <module>git-sakai-bbb-tool</module>
             </modules>
         </profile>
         <profile>
