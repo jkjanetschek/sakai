@@ -1,5 +1,25 @@
 @import "defaults";
 
+/*  Login  */
+.mciLogoWrapper {
+  background-color: var(--mci-blue) !important;
+}
+.xloginMCI {
+  background-color: var(--mci-true)!important;
+}
+
+.xloginMCIButton {
+  background: var(--mci-blue) !important;
+  color: var(--sakai-color-white) !important;
+
+  &:hover {
+    background: var(--mci-true) !important;
+  }
+}
+
+
+
+
 .portal-header {
   background-color: var(--mci-gray)!important;
 }
@@ -23,22 +43,11 @@ a.manage-overview-link  {
 }
 
 
-
-.mciLogoWrapper {
-  background-color: var(--mci-blue) !important;
-}
-.xloginMCI {
-  background-color: var(--mci-true)!important;
+#sakai-login-dialog {
+  --sakai-border-color: var(--sakai-color-gray--lighter-4);
 }
 
-.xloginMCIButton {
-  background: var(--mci-blue) !important;
-  color: var(--sakai-color-white) !important;
 
-  &:hover {
-    background: var(--button-primary-hover-background) !important;
-  }
-}
 
 
 
