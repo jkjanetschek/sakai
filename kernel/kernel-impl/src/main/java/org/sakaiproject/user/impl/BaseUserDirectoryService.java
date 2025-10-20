@@ -46,6 +46,7 @@ import org.sakaiproject.authz.api.GroupNotDefinedException;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.component.cover.ComponentManager;
+import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.HttpAccess;
@@ -145,6 +146,8 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Abstractions, etc.
 	 *********************************************************************************************************************************************************************************************************************************************************/
+
+	protected abstract SqlService sqlService();
 
 	/**
 	 * Construct storage for this service.
@@ -1760,6 +1763,11 @@ public abstract class BaseUserDirectoryService implements UserDirectoryService, 
 			// locally stored users.
 			try
 			{
+
+				if (sqlService().isMCISafetySwitchEnabled("mci.safetySwitch.login.clearCacheOnAuthenticationAttempt")) {
+					String calculatedUserreference = userReference(m_storage.checkMapForId(loginId));
+					removeCachedUser(calculatedUserreference, loginId);
+				}
 				user = (UserEdit)getUserByAid(loginId);
 			} catch (UserNotDefinedException e)
 			{

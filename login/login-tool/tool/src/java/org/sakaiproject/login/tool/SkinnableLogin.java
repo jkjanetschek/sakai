@@ -397,7 +397,7 @@ public class SkinnableLogin extends HttpServlet implements Login {
 						logFailedAttempt(credentials);
 				} else if (message.equals(EXCEPTION_DISABLED)) {
 					rcontext.put(ATTR_MSG, rb.getString("log.disabled.user"));
-					logFailedAttempt(credentials);
+					logFailedAttemptDueToAccessRestricted(credentials);
 					String disabledUrl = serverConfigurationService.getString("disabledSiteUrl");
 					if(disabledUrl != null && !"".equals(disabledUrl)){
 						res.sendRedirect(disabledUrl);
@@ -642,6 +642,16 @@ public class SkinnableLogin extends HttpServlet implements Login {
 			try{
 				log.warn("Login attempt failed. ID=" + StringUtils.abbreviate(credentials.getIdentifier().replaceAll("(\\r|\\n)", ""),255) + ", IP Address=" + credentials.getRemoteAddr());
 			} catch(NullPointerException npe) { //SAKAIME-727
+				log.warn("Login attempt with null user failed.");
+			}
+		}
+	}
+	
+	private void logFailedAttemptDueToAccessRestricted(LoginCredentials credentials) {
+		if(serverConfigurationService.getBoolean("login.log-failed", true)) {
+			try{
+				log.warn("Login attempt failed due to: Access Restricted. ID=" + StringUtils.abbreviate(credentials.getIdentifier().replaceAll("(\\r|\\n)", ""),255) + ", IP Address=" + credentials.getRemoteAddr());
+			} catch(NullPointerException npe) {
 				log.warn("Login attempt with null user failed.");
 			}
 		}
