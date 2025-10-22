@@ -29,6 +29,7 @@ import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.event.api.EventTrackingService;
 import org.sakaiproject.id.api.IdManager;
@@ -139,6 +140,9 @@ public class BaseUserDirectoryServiceTest extends SakaiKernelTestBase  {
             }
             protected AuthzGroupService authzGroupService() {
                 return (AuthzGroupService)getService(AuthzGroupService.class.getName());
+            }
+            protected SqlService sqlService() {
+                return (SqlService) getService(SqlService.class.getName());
             }
         };
     }
