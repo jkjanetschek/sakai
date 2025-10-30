@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.Transient;
 
 /**
  * A LetterGradePlusMinusMapping defines the set of grades available to a
@@ -33,8 +34,9 @@ import javax.persistence.Entity;
 @Entity
 @DiscriminatorValue("3")
 public class LetterGradePlusMinusMapping extends GradeMapping {
-
+    @Transient
     private List grades;
+    @Transient
     private List defaultValues;
 
     @Override

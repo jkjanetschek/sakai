@@ -18,6 +18,7 @@ package org.sakaiproject.grading.api.model;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.Transient;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,8 +34,9 @@ import java.util.List;
 @Entity
 @DiscriminatorValue("1")
 public class PassNotPassMapping extends GradeMapping {
-
+    @Transient
     private List<String> grades;
+    @Transient
     private List<Double> defaultValues;
 
     @Override

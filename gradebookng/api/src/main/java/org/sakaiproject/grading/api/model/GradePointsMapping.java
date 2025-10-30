@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.Transient;
 
 /**
  * This is a modified LetterGradePlusMinusMapping.
@@ -34,7 +35,9 @@ public class GradePointsMapping extends GradeMapping {
 
     private static final long serialVersionUID = 1L;
 
+    @Transient
     private List<String> grades;
+    @Transient
     private List<Double> defaultValues;
 
     @Override
