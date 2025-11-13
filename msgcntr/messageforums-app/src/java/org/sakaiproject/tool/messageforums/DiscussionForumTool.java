@@ -160,6 +160,7 @@ import org.sakaiproject.tool.messageforums.ui.PermissionBean;
 import org.sakaiproject.tool.messageforums.ui.SiteGroupBean;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryService;
+import org.sakaiproject.util.NumberUtil;
 import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.StringUtil;
 import org.sakaiproject.util.api.FormattedText;
@@ -6284,44 +6285,38 @@ public class DiscussionForumTool {
 	  }
   }
  
-  public boolean isNumber(String validateString) 
-  {
-      NumberFormat numberFormat = DecimalFormat.getInstance(new ResourceLoader().getLocale());
-
-      try  
-      {
-          double d = numberFormat.parse(validateString).doubleValue();
-          if(d >= 0)
-              return true;
-          else
-              return false;
-      }
-      catch (ParseException e) 
-      {
-          return false;
-      }
-  }   
-  
-   public boolean isFewerDigit(String validateString)
-   {
-	   	   NumberFormat numberFormat = DecimalFormat.getInstance(new ResourceLoader().getLocale());
-	   	   DecimalFormatSymbols dfs = ((DecimalFormat)numberFormat).getDecimalFormatSymbols();
-	   	   if(validateString.lastIndexOf(dfs.getDecimalSeparator()) >= 0)
-	   	   {
-	   		   String subString = validateString.substring(validateString.lastIndexOf(dfs.getDecimalSeparator()));
-	   		   if(subString != null && subString.length() > 3)
-	   			   return false;
-	   	   }
-     
-     return true;
-   }
-  
-   private boolean validateGradeInput()
-   {
-       GradingService gradingService = getGradingService();
-       if (gradingService == null) {
-           return false;
-       }
+	/**
+	 * Returns {@code true} when the supplied value parses to a non-negative, finite number for the current locale.
+	 */
+	public boolean isNumber(String validateString) 
+	{
+			Double parsed = NumberUtil.parseLocaleDouble(validateString, rb.getLocale());
+			return parsed != null && parsed >= 0 && Double.isFinite(parsed);
+	}	 
+     public boolean isFewerDigit(String validateString)
+     {
+         if (validateString == null) {
+             return true;
+         }
+         // Normalize first so separators are consistent with the locale; if parsing fails, defer to other validators
+         final String normalized = NumberUtil.normalizeLocaleDouble(validateString, rb.getLocale());
+         final DecimalFormatSymbols dfs = ((DecimalFormat) DecimalFormat.getInstance(rb.getLocale()))
+                 .getDecimalFormatSymbols();
+         int idx = normalized.lastIndexOf(dfs.getDecimalSeparator());
+         // Also handle dot-decimal input when the locale uses a comma
+         if (idx < 0 && dfs.getDecimalSeparator() != '.') {
+             idx = normalized.lastIndexOf('.');
+         }
+         // true if no decimal point or at most two digits after it
+         return idx < 0 || (normalized.length() - idx - 1) <= 2;
+     }
+	
+	 private boolean validateGradeInput()
+	 {
+			 GradingService gradingService = getGradingService();
+			 if (gradingService == null) {
+					 return false;
+			 }
 
        String gradebookUid = getSiteId();
        boolean gradeValid = gradingService.isGradeValid(gradebookUid, gradePoint);
@@ -7109,74 +7104,31 @@ public class DiscussionForumTool {
   	
   }
   
-  public String generatePermissionScript(){
-  	  	    	
-  	PermissionLevel ownerLevel = permissionLevelManager.getDefaultOwnerPermissionLevel();
-  	PermissionLevel authorLevel = permissionLevelManager.getDefaultAuthorPermissionLevel();
-  	PermissionLevel noneditingAuthorLevel = permissionLevelManager.getDefaultNoneditingAuthorPermissionLevel();
-  	PermissionLevel reviewerLevel = permissionLevelManager.getDefaultReviewerPermissionLevel();
-  	PermissionLevel noneLevel = permissionLevelManager.getDefaultNonePermissionLevel();
-  	PermissionLevel contributorLevel = permissionLevelManager.getDefaultContributorPermissionLevel();
-  	  	
-  	StringBuilder sBuffer = new StringBuilder();  	
-  	sBuffer.append("<script>\n");
-  	sBuffer.append("var ownerLevelArray = " + ownerLevel + ";\n");
-  	sBuffer.append("var authorLevelArray = " + authorLevel + ";\n");
-  	sBuffer.append("var noneditingAuthorLevelArray = " + noneditingAuthorLevel + ";\n");
-  	sBuffer.append("var reviewerLevelArray = " + reviewerLevel + ";\n");
-  	sBuffer.append("var noneLevelArray = " + noneLevel + ";\n");
-  	sBuffer.append("var contributorLevelArray = " + contributorLevel + ";\n");
-  	sBuffer.append("var owner = 'Owner';\n");
-  	sBuffer.append("var author = 'Author';\n");
-  	sBuffer.append("var nonEditingAuthor = 'Nonediting Author';\n");
-  	sBuffer.append("var reviewer = 'Reviewer';\n");
-  	sBuffer.append("var none = 'None';\n");
-  	sBuffer.append("var contributor = 'Contributor';\n");  	
-  	sBuffer.append("var custom = 'Custom';\n");
-  	sBuffer.append("var all = 'All';\n");
-  	sBuffer.append("var own = 'Own';\n");  	  	
-  	
-  	sBuffer.append("function checkLevel(selectedLevel){\n" +  			           
-  			           "  var ownerVal = true;\n" +
-  			           "  var authorVal = true;\n" +
-  			           "  var noneditingAuthorVal = true;\n" +
-  			           "  var reviewerVal = true;\n" +
-  			           "  var noneVal = true;\n" +
-  			           "  var contributorVal = true;\n\n" +  			           
-  			           "  for (var i = 0; i < selectedLevel.length; i++){\n" +
-  			           "    if (ownerVal && ownerLevelArray[i] != selectedLevel[i])\n" +
-  	               "      ownerVal = false;\n" +
-  			           "    if (authorVal && authorLevelArray[i] != selectedLevel[i])\n" +
-  	               "      authorVal = false;\n" +
-  	               "    if (noneditingAuthorVal && noneditingAuthorLevelArray[i] != selectedLevel[i])\n" +
-  	               "      noneditingAuthorVal = false;\n" +
-  	               "    if (reviewerVal && reviewerLevelArray[i] != selectedLevel[i])\n" +
-  	               "      reviewerVal = false;\n" +
-  	               "    if (noneVal && noneLevelArray[i] != selectedLevel[i])\n" +
-  	               "      noneVal = false;\n" +
-  	               "    if (contributorVal && contributorLevelArray[i] != selectedLevel[i])\n" +
-  	               "      contributorVal = false;\n" +
-  	               "  }\n\n" +  	  	    
-  	               "  if (ownerVal)\n" +  	               
-  	               "    return 'Owner';\n" +  	               
-  	               "  else if (authorVal)\n" +  	               
-  	               "    return 'Author';\n" +
-  	               "  else if (noneditingAuthorVal)\n" +  	               
-  	               "    return 'Nonediting Author';\n" + 
-  	               "  else if (reviewerVal)\n" +
-  	               "    return 'Reviewer';\n" +
-  	               "  else if (noneVal)\n" +
-  	               "    return 'None';\n" +
-  	               "  else if (contributorVal)\n" +
-  	               "    return 'Contributor';\n" +
-  	               "  else return 'Custom';\n" +
-  	               "}\n"
-  	);
-  			              	
-  	sBuffer.append("</script>");  	
-  	return sBuffer.toString();
+  // Getter methods for permission level arrays (for JSF access)
+  public String getOwnerLevelArray() {
+  	return permissionLevelManager.getDefaultOwnerPermissionLevel().toString();
   }
-  
+
+  public String getAuthorLevelArray() {
+  	return permissionLevelManager.getDefaultAuthorPermissionLevel().toString();
+  }
+
+  public String getNoneditingAuthorLevelArray() {
+  	return permissionLevelManager.getDefaultNoneditingAuthorPermissionLevel().toString();
+  }
+
+  public String getReviewerLevelArray() {
+  	return permissionLevelManager.getDefaultReviewerPermissionLevel().toString();
+  }
+
+  public String getNoneLevelArray() {
+  	return permissionLevelManager.getDefaultNonePermissionLevel().toString();
+  }
+
+  public String getContributorLevelArray() {
+  	return permissionLevelManager.getDefaultContributorPermissionLevel().toString();
+  }
+
   public void setObjectPermissions(Object target){
     if (permissions != null) {
       Area area = null;

@@ -26,10 +26,13 @@ import org.sakaiproject.email.api.DigestService;
 import org.sakaiproject.email.api.EmailService;
 import org.sakaiproject.emailtemplateservice.api.EmailTemplateService;
 import org.sakaiproject.event.api.EventTrackingService;
-import org.sakaiproject.ignite.EagerIgniteSpringBean;
 import org.sakaiproject.test.SakaiTestConfiguration;
 import org.sakaiproject.time.api.UserTimeService;
 import org.sakaiproject.user.api.PreferencesService;
+import org.sakaiproject.util.api.FormattedText;
+import org.apache.ignite.IgniteSpringBean;
+import org.apache.ignite.IgniteCluster;
+import org.apache.ignite.IgniteMessaging;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,8 +40,6 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import org.apache.ignite.IgniteCluster;
-import org.apache.ignite.IgniteMessaging;
 
 import lombok.Getter;
 
@@ -72,17 +73,6 @@ public class UserMessagingServiceTestConfiguration extends SakaiTestConfiguratio
         return mock(EventTrackingService.class);
     }
 
-    @Bean(name = "org.sakaiproject.ignite.SakaiIgnite")
-    public EagerIgniteSpringBean ignite() {
-
-        EagerIgniteSpringBean ignite = mock(EagerIgniteSpringBean.class);
-        IgniteCluster cluster = mock(IgniteCluster.class);
-        when(cluster.forLocal()).thenReturn(null);
-        IgniteMessaging messaging = mock(IgniteMessaging.class);
-        when(ignite.message(any())).thenReturn(messaging);
-        when(ignite.cluster()).thenReturn(cluster);
-        return ignite;
-    }
 
     @Bean(name = "org.sakaiproject.user.api.PreferencesService")
     public PreferencesService preferencesService() {
@@ -100,6 +90,26 @@ public class UserMessagingServiceTestConfiguration extends SakaiTestConfiguratio
         when(scs.getInt("messaging.threadpool.size", 20)).thenReturn(20);
         return scs;
     }
+
+    @Bean(name = "org.sakaiproject.util.api.FormattedText")
+    public FormattedText formattedText() {
+        FormattedText ft = mock(FormattedText.class);
+        when(ft.processFormattedText(any(String.class), any(StringBuilder.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ft.convertFormattedTextToPlaintext(any(String.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        return ft;
+    }
+
+    @Bean(name = "org.sakaiproject.ignite.SakaiIgnite")
+    public IgniteSpringBean ignite() {
+        IgniteSpringBean ignite = mock(IgniteSpringBean.class);
+        IgniteCluster cluster = mock(IgniteCluster.class);
+        when(cluster.forLocal()).thenReturn(null);
+        IgniteMessaging messaging = mock(IgniteMessaging.class);
+        when(ignite.message(any())).thenReturn(messaging);
+        when(ignite.cluster()).thenReturn(cluster);
+        return ignite;
+    }
+
 
     @Bean(name="org.sakaiproject.db.api.SqlService")
     public SqlService sqlService() {return mock(SqlService.class);}

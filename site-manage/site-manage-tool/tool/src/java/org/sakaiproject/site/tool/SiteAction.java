@@ -3154,7 +3154,11 @@ public class SiteAction extends PagedResourceActionII {
 			//build a map of sites and tools in those sites that have content
 			Map<String,Set<String>> siteToolsWithContent = this.getSiteImportToolsWithContent(importSites, selectedTools);
 			context.put("siteToolsWithContent", siteToolsWithContent);
-			
+
+			//build a map of sites and tools in those sites that have selectable entities
+			Map<String,Set<String>> siteToolsWithSelectableContent = this.getSiteImportToolsWithSelectableContent(importSites, selectedTools);
+			context.put("siteToolsWithSelectableContent", siteToolsWithSelectableContent);
+
 			// set the flag for the UI
 			context.put("addMissingTools", addMissingTools);
 			context.put("isGradebookGroupEnabled", gradingService.isGradebookGroupEnabled(site.getId()));
@@ -3275,7 +3279,11 @@ public class SiteAction extends PagedResourceActionII {
 			//build a map of sites and tools in those sites that have content
 			Map<String,Set<String>> siteToolsWithContent = this.getSiteImportToolsWithContent(importSites, selectedTools);
 			context.put("siteToolsWithContent", siteToolsWithContent);
-						
+
+			//build a map of sites and tools in those sites that have selectable entities
+			Map<String,Set<String>> siteToolsWithSelectableContent = this.getSiteImportToolsWithSelectableContent(importSites, selectedTools);
+			context.put("siteToolsWithSelectableContent", siteToolsWithSelectableContent);
+
 			// set the flag for the UI
 			context.put("addMissingTools", addMissingTools);
 			context.put("isGradebookGroupEnabled", gradingService.isGradebookGroupEnabled(site.getId()));
@@ -3898,7 +3906,7 @@ public class SiteAction extends PagedResourceActionII {
 			//this will be all widgets available to use on overview page.
 			List<Tool> widgets;
 			if(state.getAttribute("allWidgets") == null){
-				widgets = (List<Tool>) findWidgets();
+				widgets = findWidgets();
 			}else {
 				widgets = (List<Tool>) state.getAttribute("allWidgets");
 			}
@@ -5619,7 +5627,7 @@ public class SiteAction extends PagedResourceActionII {
 
 		state.setAttribute(STATE_IMPORT_SITE_TOOL_OPTIONS, toolOptions);
 
-		return anyToolSelected;
+		return anyToolSelected || toolOptions.size() > 0;
 	} // select_import_tools
 
 	/**
@@ -11902,6 +11910,11 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 					break;
 				}
 			}
+			ResourcePropertiesEdit siteProperties = site.getPropertiesEdit();
+			if (siteProperties.getProperty(Site.PROP_CUSTOM_OVERVIEW) != null) {
+				siteProperties.removeProperty(Site.PROP_CUSTOM_OVERVIEW);
+				customOverview = false;
+			}
 		}
 
 		// declare flags used in making decisions about whether to add, remove,
@@ -16240,6 +16253,41 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 	}
 
 	/**
+	 * Helper to check if a tool in a site has selectable entities, displayed as checkboxes in the Import from Site process.
+	 */
+	private Map<String, Set<String>> getSiteImportToolsWithSelectableContent(List<Site> sites, List<String> toolIds) {
+		Map<String, Set<String>> siteToolsWithSelectableContent = new HashMap<>();
+		for(Site site: sites) {
+			Set<String> toolsWithSelectableContent = new HashSet<>();
+			for(String toolId: toolIds) {
+				if (toolHasSelectableContent(toolId, site.getId())) {
+					toolsWithSelectableContent.add(toolId);
+				}
+			}
+
+			log.debug("Site: {}, has the following tools with selectable content: {}", site.getId(), toolsWithSelectableContent);
+
+			siteToolsWithSelectableContent.put(site.getId(), toolsWithSelectableContent);
+		}
+		return siteToolsWithSelectableContent;
+	}
+
+	private boolean toolHasSelectableContent(String toolId, String siteId) {
+
+		for (EntityProducer ep : entityManager.getEntityProducers()) {
+			if (ep instanceof EntityTransferrer) {
+				EntityTransferrer et = (EntityTransferrer) ep;
+				if (ArrayUtils.contains(et.myToolIds(), toolId)) {
+					List<Map<String, String>> em = et.getEntityMap(siteId);
+					return em != null && !em.isEmpty();
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Responsible for checking validation status of the original versus stripped site title, and
 	 * adding necessary error messages to the STATE.
 	 * @param titleOrig the original site title as entered by the user
@@ -16569,11 +16617,17 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 		Site site = (Site) state.getAttribute("site");
 		if (readPageForm(data, state))
 		{
+		SitePage page = (SitePage) state.getAttribute("overview");
+		if (!validateMinWidget(page, state))
+		{
+			return;
+		}
+
+		List<ToolConfiguration> tools = page.getTools();
+
 			try
 			{
-				SitePage page = (SitePage) state.getAttribute("overview");
 				SitePage savedPage = site.getPage(page.getId()); //old page, will update tool list.
-				List<ToolConfiguration> tools = page.getTools();
 
 				savedPage.setTools(tools);
 				savedPage.setLayout(page.getLayout());
@@ -16674,18 +16728,15 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 		return true;
 	}
 
-	private List findWidgets() {
-		// get the helpers
-		Set categories = new HashSet();
+	private List<Tool> findWidgets() {
+		Set<String> categories = new HashSet<>();
 		categories.add("widget");
-		Set widgets = toolManager.findTools(categories, null);
 
-		// make a list for sorting
-		List features = new Vector();
-		features.addAll(widgets);
-		//Collections.sort(features);
-		Collections.sort(features, new ToolTitleComparator());
-		return features;
+		Set<Tool> widgets = toolManager.findTools(categories, null, false);
+
+		List<Tool> features = new ArrayList<>(widgets);
+		features.sort(new ToolTitleComparator());
+		return Collections.unmodifiableList(features);
 	}
 
 	public void doAdd_widget(RunData data){
@@ -16693,13 +16744,26 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 		ParameterParser params = data.getParameters();
 
 		String id = params.getString("id");
+		if (StringUtils.isBlank(id)) {
+			return;
+		}
 		// make the tool so we have the id
 		SitePage page = (SitePage) state.getAttribute("overview");
+		if (page == null) {
+			return;
+		}
 		ToolConfiguration tool = page.addTool(id);
 		tool.setLayoutHints("0,0"); //assume top left, it will be sorted later-- val just cant be null
 
 		List<Tool> widgets = (List<Tool>) state.getAttribute("allWidgets");
+		if (widgets == null) {
+			widgets = findWidgets();
+			state.setAttribute("allWidgets", widgets);
+		}
 		List<ToolConfiguration> tools = (List<ToolConfiguration>) state.getAttribute("tools");
+		if (tools == null) {
+			tools = new ArrayList<>(page.getTools());
+		}
 
 		for(Tool widget: widgets){
 			if(widget.getId().equals(id)){
@@ -16722,6 +16786,10 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 		List<ToolConfiguration> tools = (List<ToolConfiguration>) state.getAttribute("tools");
 		if ( tools == null ) return;
 
+		if (tools.size() <= 1 || !validateMinWidget(page, state)) {
+			return;
+		}
+
 		List<ToolConfiguration> removedTools = (List<ToolConfiguration>) state.getAttribute("removedTools");
 		if(removedTools == null){
 			removedTools = new ArrayList<>();
@@ -16738,7 +16806,16 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 
 		state.setAttribute("tools", tools);
 	}
-	
+
+	private boolean validateMinWidget(SitePage page, SessionState state) {
+		if (page == null || CollectionUtils.isEmpty(page.getTools())) {
+			addAlert(state, rb.getString("manover.minwidget"));
+			return false;
+		}
+
+		return true;
+	}
+
 	private String getDateFormat(Date date) {
 		String f = userTimeService.shortPreciseLocalizedTimestamp(date.toInstant(), userTimeService.getLocalTimeZone(), comparator_locale);
 		return f;
