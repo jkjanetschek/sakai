@@ -240,142 +240,311 @@
     /*
      *    Feature resizable nav tool bar
      */
+    (() => {
+        'use strict';
 
-    const regexPx = /(\d+\.?\d+)?px/;
+        const STORAGE_KEY                   = 'sidebarWidth';
+        const MAX_SIDEBAR_VW                = 95;
+        const HANDLE_OFFSET_PX              = 2;
+        const SCREEN_BREAKPOINT             = 768;
+        const DEFAULT_FONT_SIZE             = 16;
+        const DEBOUNCE_SIDEBAR_RESIZE_MS    = 9;
+        const DEBOUNCED_WINDOW_RESIZE_MS    = 50;
+
+        const SIDEBAR_ID                                 = 'portal-nav-sidebar';
+        const DRAG_HANDLE_ID                             = 'nav-sidebar-resize-handle';
+        const MAIN_PAGE_CONTAINER_ID                     = 'pageBody';
+        const DEFAULT_SIDEBAR_WIDTH_PROPERTY             = '--default-portal-nav-sidebar-width';
+        const OFFSET_CONTENT_TO_CONTAINER_WIDTH_PROPERTY = '--offset-content-to-container-width';
+
+        const root                          = document.documentElement;
+        const sidebar                       = document.getElementById(SIDEBAR_ID);
+        const dragHandle                    = document.getElementById(DRAG_HANDLE_ID);
+        const pageBody                      = document.getElementById(MAIN_PAGE_CONTAINER_ID);
+
+        // Guard required elements
+        if (!root || !sidebar || !dragHandle || !pageBody) {
+            console.warn('[sidebar-resize] Required elements are missing.');
+            return;
+        }
+
+        const state = {
+            initialDomLoadedEvent:              false,
+            windowWidthPx:                      null,
+            fontSizePx:                         null,
+            maxWidthPx:                         null,
+            offSetHandleVw:                     null,
+            defaultSidebarWidthPx:              null,
+            defaultSidebarWidthVw:              null,
+            offsetContentToContainerWidthPx:    null,
+
+            mainContainer:                      null,
+            portalMainContent:                  null
+        };
+
+        const debouncedlisteners = {
+            onResizeSidebar:                    null,
+            onWindowResize:                     null
+        };
+
+        debouncedlisteners.onResizeSidebar               = debounce(resizeSidebar, DEBOUNCE_SIDEBAR_RESIZE_MS);
+        debouncedlisteners.onWindowResize                = debounce(handleWindowResize, DEBOUNCED_WINDOW_RESIZE_MS);
+
+        const pxToVw            = (px) => (px / state.windowWidthPx) * 100;
+        const vwToPx            = (vw) => (vw / 100) * state.windowWidthPx;
+        const remToPx           = (rem) => rem * state.fontSizePx;
+        const getCssUnit        = (arg) => arg.match(/[a-z%]+$/);
 
 
-    //use to calc vw
-    const windowWidth = window.innerWidth;
-    const root = document.documentElement;
-    const sidebar = document.getElementById('portal-nav-sidebar');
-    const dragHandle = document.getElementById('nav-sidebar-resize-handle');
-    const pageBody = document.getElementById('pageBody');
-
-
-    const computedStyleRoot = window.getComputedStyle(root);
-    const dragHandleStyles = getComputedStyle(dragHandle);
-    const fontSize = parseFloat(computedStyleRoot.getPropertyValue('font-size'));
-    //TODO refactor using regex!
-    const defaultSidebarWidth = (dragHandleStyles.getPropertyValue('--default-portal-nav-sidebar-width').trim().substring(0, 2)) * fontSize;
-    const offsetContentToContainerWidth = (dragHandleStyles.getPropertyValue('--offset-content-to-container-width').trim().substring(0, 3)) * fontSize;
-
-    //set new min-width for sidebar: override setting from css here to avoid any unkown side effect
-    const minWidthVW = calcVW(defaultSidebarWidth);
-    sidebar.style.minWidth = `${minWidthVW}vw`;
-    //set max width
-    sidebar.style.maxWidth = '95vw';
-    let maxWidthPX = (95*windowWidth)/100
-
-            // px=(vw×viewport width in px)÷100
-
-
-    let mainContainer = null;
-    let portalMainContent = null;
-    let defaultWidthContainer = null;
-    let defaultWidthContainerVW = null;
 
 
 
-    const offSetHandle = calcVW(2)
-
-    // workaround to clear cache
-    if (localStorage.getItem("sidebarWidth") > 50) {
-        localStorage.removeItem("sidebarWidth");
-    }
-
-    // Function to apply saved width from localStorage
-    function applySavedWidth() {
-        let savedWidth = localStorage.getItem("sidebarWidth");
-        if (savedWidth) {
-            const width = parseInt(savedWidth, 10);
-            if (!isNaN(width) && width > 0) {
-                let newWidthHandle = savedWidth - offSetHandle;
+        const mediaQuery =  window.matchMedia(`(max-width: ${SCREEN_BREAKPOINT}px)`);
+        mediaQuery.addEventListener('change', handleMediaQueryChange);
+        handleMediaQueryChange(mediaQuery);
 
 
-                sidebar.style.setProperty('width', `${savedWidth}vw`);
-                pageBody.style.gridTemplateColumns = `${savedWidth}vw 1fr`;
-                dragHandle.style.setProperty('left', `${newWidthHandle}vw`);
-
-
-                const offSetContainerWidth = calcOffsetContainerWidth(savedWidth);
-                let newContentContainerWidth = (calcVW(windowWidth) - (calcVW(defaultSidebarWidth) + offSetContainerWidth))
-                mainContainer.style.setProperty('width', `${newContentContainerWidth}vw`)
-
+        function handleMediaQueryChange(event) {
+            if (event.matches) {
+                removeEventListeners();
+                removeResizeableSidebar();
+            } else {
+                init();
+                addEventListeners();
+                if (state.initialDomLoadedEvent) {
+                    fromMobileToDesktop();
+                }
             }
         }
-    }
-    document.addEventListener("DOMContentLoaded", function() {
-        portalMainContent = document.querySelector('.portal-main-content');
-        mainContainer = document.querySelector('.portal-main-container');
-        defaultWidthContainer = getComputedStyle(mainContainer).getPropertyValue('width');
-
-        const match = defaultWidthContainer.match(regexPx);
-        defaultWidthContainer = match[1];
-        defaultWidthContainerVW = calcVW(defaultWidthContainer);
-
-        const mainContentWidth = Number(defaultWidthContainer) - Number(offsetContentToContainerWidth);
-        const mainContentWidthVW = calcVW(mainContentWidth)
-
-        portalMainContent.style.setProperty('width', `${mainContentWidthVW}vw`);
-
-        mainContainer.style.setProperty('position', 'relative');
-        applySavedWidth();
-    });
-
-    function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {func(...args);}, wait);
-        };
-    }
-    const debouncedResizeSidebar = debounce(resizeSidebar, 9);
-
-    dragHandle.addEventListener('mousedown', function (e) {
-        // Disable text selection while dragging
-        document.body.classList.add("no-select");
-        document.addEventListener('mousemove', debouncedResizeSidebar);
-        document.addEventListener('mouseup', stopResizing);
-    });
-
-    function resizeSidebar(e) {
-        let newWidthSidebar = e.clientX;
-
-        if (newWidthSidebar >= defaultSidebarWidth && newWidthSidebar <= maxWidthPX) {
-            let newWidthHandle = calcVW(newWidthSidebar -2);
-            let offSetContainerWidth = (newWidthSidebar - defaultSidebarWidth);
-            offSetContainerWidth =  calcVW(offSetContainerWidth > 0 ? offSetContainerWidth : 0);
 
 
-            const newContentContainerWidth =  defaultWidthContainerVW - offSetContainerWidth;
-            newWidthSidebar = calcVW(newWidthSidebar);
-            sidebar.style.width = `${newWidthSidebar}vw`;
-            pageBody.style.gridTemplateColumns = `${newWidthSidebar}vw 1fr`;
-            dragHandle.style.left = `${newWidthHandle}vw`;
-            mainContainer.style.width = `${newContentContainerWidth}vw`;
+        function init(){
+            state.windowWidthPx            = window.innerWidth;
 
-            // Save the new width to localStorage
-            localStorage.setItem("sidebarWidth", newWidthSidebar);
+            const computedStyleRoot        = window.getComputedStyle(root);
+            state.fontSizePx               = parseFloat(computedStyleRoot.getPropertyValue('font-size')) || DEFAULT_FONT_SIZE;
+
+            state.maxWidthPx               = vwToPx(95);
+
+            /*
+             *  css values should be set in rem
+             */
+            const dragHandleStyles                  = getComputedStyle(dragHandle);
+            const defaultSidebarVar                 = dragHandleStyles.getPropertyValue(DEFAULT_SIDEBAR_WIDTH_PROPERTY);
+            const offsetContentVar                  = dragHandleStyles.getPropertyValue(OFFSET_CONTENT_TO_CONTAINER_WIDTH_PROPERTY);
+
+            state.defaultSidebarWidthPx              =  toPxFromCSSVariable(defaultSidebarVar);
+            state.defaultSidebarWidthVw              =  pxToVw(state.defaultSidebarWidthPx);
+            state.offsetContentToContainerWidthPx    = toPxFromCSSVariable(offsetContentVar);
+
+            sidebar.style.minWidth                  = `${state.defaultSidebarWidthVw}vw`;
+            sidebar.style.maxWidth                  = `${MAX_SIDEBAR_VW}vw`;
+
+            state.offSetHandleVw                    = pxToVw(HANDLE_OFFSET_PX);
+            dragHandle.offSetHandleProperty         = state.offSetHandleVw;
+            dragHandle.offSetHandlePropertyPx       = HANDLE_OFFSET_PX;
         }
 
-    }
-    // calc
-    function calcOffsetContainerWidth(newWidth) {
-        let offSetContainerWidth = (newWidth - calcVW(defaultSidebarWidth));
-        return offSetContainerWidth > 0 ? offSetContainerWidth : 0;
-    }
 
-    function stopResizing() {
-        // Re-enable text selection after dragging
-        document.body.classList.remove("no-select");
-        document.removeEventListener('mousemove', debouncedResizeSidebar);
-        document.removeEventListener('mouseup', stopResizing);
-    }
+        function addEventListeners() {
+            document.addEventListener('DOMContentLoaded', onDOMContentLoaded);
+            dragHandle.addEventListener('mousedown', onMouseDown);
+            window.addEventListener('resize', debouncedlisteners.onWindowResize);
+        }
 
-    function calcVW(px) {
-        return (px/windowWidth)*100;
-    }
+        function removeEventListeners() {
+            document.removeEventListener('DOMContentLoaded', onDOMContentLoaded);
+            dragHandle.removeEventListener('mousedown', onMouseDown);
+            window.removeEventListener('resize', debouncedlisteners.onWindowResize);
+            debouncedlisteners.onWindowResize.cancel();
 
+            document.removeEventListener('mouseup', stopResizing);
+            document.removeEventListener('mousemove', debouncedlisteners.onResizeSidebar);
+            debouncedlisteners.onResizeSidebar.cancel();
+        }
+
+
+
+        function onDOMContentLoaded() {
+            state.initialDomLoadedEvent = true;
+            state.mainContainer = document.querySelector('.portal-main-container');
+            state.portalMainContent = document.querySelector('.portal-main-content');
+            if (state.portalMainContent) {
+                state.portalMainContent.offsetContentToContainerWidthPx = state.offsetContentToContainerWidthPx;
+            }
+            dragHandle.defaultSidebarWidthPx = state.defaultSidebarWidthPx;
+
+            if (!sidebar.classList.contains('sidebar-collapsed')) {
+                afterDocumentLoadAndSidebarNotCollapsed();
+                applySavedOrDefaultLayout();
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+                dragHandle.classList.toggle('sidebar-collapsed');
+                applySavedOrDefaultLayout();
+            }
+
+        }
+
+        function afterDocumentLoadAndSidebarNotCollapsed() {
+
+            if (!sidebar.classList.contains('sidebar-collapsed')) {
+
+                if (state.mainContainer) {
+                    state.mainContainer.style.setProperty('position', 'relative');
+                }
+                const display = dragHandle.style.getPropertyValue('display');
+                if (display === 'none') {
+                    dragHandle.style.removeProperty('display');
+                }
+            }
+        }
+
+        function fromMobileToDesktop() {
+            reshapeAfterResize();
+            afterDocumentLoadAndSidebarNotCollapsed();
+        }
+
+
+        function applySavedOrDefaultLayout() {
+
+            const savedWidth = localStorage.getItem(STORAGE_KEY);
+            if (savedWidth) {
+                const saved = parseInt(savedWidth, 10);
+                if (!isNaN(saved) && saved > 0) {
+                    const handleLeftVw = savedWidth - state.offSetHandleVw;
+                    sidebar.style.setProperty('width', `${savedWidth}vw`);
+                    pageBody.style.gridTemplateColumns = `${savedWidth}vw 1fr`;
+                    dragHandle.style.setProperty('left', `${handleLeftVw}vw`);
+
+                    setContentWidthRelativeToSidebarMin();
+                    offsetMainContainer(savedWidth);
+                    return;
+                }
+            }
+            setContentWidthRelativeToSidebarMin();
+        }
+
+
+        function setContentWidthRelativeToSidebarMin() {
+            if (!sidebar.classList.contains('sidebar-collapsed')) {
+                const contentWidthVw = (100 - Number.parseFloat(state.defaultSidebarWidthVw)) - pxToVw(state.offsetContentToContainerWidthPx);
+                state.portalMainContent.style.setProperty('width', `${contentWidthVw}vw`);
+            }
+        }
+
+        function offsetMainContainer(sidebarWidthVw) {
+            const viewportVw = pxToVw(state.windowWidthPx);
+            const newContentContainerVw = viewportVw - sidebarWidthVw;
+            state.mainContainer.style.setProperty('width', `${newContentContainerVw}vw`);
+        }
+
+
+        function resizeSidebar(e) {
+            const newWidthSidebarPx = e.clientX;
+
+            const minPx = state.defaultSidebarWidthPx;
+            const maxPx = state.maxWidthPx;
+            if (newWidthSidebarPx < minPx || newWidthSidebarPx > maxPx) return;
+
+            const handleLeftVw = pxToVw((newWidthSidebarPx - HANDLE_OFFSET_PX));
+            const newWidthSidebarVw = pxToVw(newWidthSidebarPx);
+
+            offsetMainContainer(newWidthSidebarVw);
+            sidebar.style.width = `${newWidthSidebarVw}vw`;
+            pageBody.style.gridTemplateColumns = `${newWidthSidebarVw}vw 1fr`;
+            dragHandle.style.left = `${handleLeftVw}vw`;
+            localStorage.setItem(STORAGE_KEY, newWidthSidebarVw);
+
+        }
+
+
+        function handleWindowResize() {
+            localStorage.removeItem(STORAGE_KEY);
+            init();
+            afterDocumentLoadAndSidebarNotCollapsed();
+            reshapeAfterResize();
+        }
+
+        function reshapeAfterResize() {
+            if (sidebar.classList.contains('sidebar-collapsed')) return;
+            setContentWidthRelativeToSidebarMin();
+
+            const sidebarMinWidth = sidebar.style.getPropertyValue("min-width");
+            const sidebarWidth    = sidebar.style.getPropertyValue("width");
+
+            if  (Number.parseFloat(sidebarMinWidth) > Number.parseFloat(sidebarWidth)) {
+                dragHandle.style.setProperty('left', `${sidebarMinWidth}`);
+                sidebar.style.setProperty('width', `${sidebarMinWidth}`);
+
+                offsetMainContainer(sidebarMinWidth);
+                pageBody.style.gridTemplateColumns = `${sidebarMinWidth} 1fr`;
+            }
+        }
+
+
+        function removeResizeableSidebar() {
+            pageBody.style = "";
+            sidebar.style = "";
+            sidebar.style.setProperty("visibility", "hidden");
+            dragHandle.style = "";
+            dragHandle.style.setProperty("display", "none");
+            if (state.portalMainContent) {
+                state.portalMainContent.style = "";
+            }
+            if (state.mainContainer) {
+                state.mainContainer.style = "";
+            }
+        }
+
+
+        function onMouseDown() {
+            document.body.classList.add("no-select");
+            document.addEventListener('mousemove', debouncedlisteners.onResizeSidebar);
+            document.addEventListener('mouseup', stopResizing);
+        }
+
+
+        function stopResizing() {
+            document.body.classList.remove("no-select");
+            document.removeEventListener('mousemove', debouncedlisteners.onResizeSidebar);
+            document.removeEventListener('mouseup', stopResizing);
+        }
+
+        function toPxFromCSSVariable(variable) {
+
+            const raw = variable.trim()
+            const num = parseFloat(raw);
+
+            let unit;
+            const unitMatch = getCssUnit(raw);
+            if (unitMatch) {
+                unit = unitMatch[0];
+            } else {
+                console.warn('Could not determine unit of CSS variable - fallback to px');
+                unit = 'px';
+            }
+
+            switch (unit) {
+                case 'px': return num;
+                case 'vw': return pxToVw(num);
+                case 'rem': return remToPx(num);
+                default:
+                    console.warn(`Unknown CSS unit: ${unitMatch}`);
+                    return num;
+            }
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            function debounced(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {func(...args);}, wait);
+            }
+            debounced.cancel = () => clearTimeout(timeout);
+            return debounced;
+        }
+
+    })()
 
 </script>
 <!-- END VM includeSiteNav.vm -->

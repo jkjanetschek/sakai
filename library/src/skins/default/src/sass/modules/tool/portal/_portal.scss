@@ -653,7 +653,12 @@
   --default-portal-nav-sidebar-width: var(--portal-nav-sidebar-width);
   --offset-content-to-container-width: 1.5rem;
   }
+  &.sidebar-collapsed {
+    display: none;
+  }
 }
+
+
 .no-select {
   user-select: none;
 }

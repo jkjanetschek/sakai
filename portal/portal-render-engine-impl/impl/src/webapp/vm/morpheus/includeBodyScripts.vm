@@ -1,13 +1,17 @@
 <script>
   //Set portal dom references
-  portal.container = document.querySelector("div.portal-container");
+  portal.container = document.querySelector("div.portal-container");        // --> pageBody
   portal.head = portal.container.querySelector("header.portal-header");
   portal.footer = portal.container.querySelector("footer.portal-footer");
   portal.sidebars = {
-    sites: portal.container.querySelector("#portal-nav-sidebar")
+    sites: portal.container.querySelector("#portal-nav-sidebar"),        // = sideBar
+    resizeHandle: portal.container.querySelector("#nav-sidebar-resize-handle")  // resize handle
   };
+  portal.mainContainer = portal.container.querySelector("div.portal-main-container");
+  portal.mainContent =   document.querySelector('.portal-main-content');
 
-  //Setup sidebar collapse buttons
+
+          //Setup sidebar collapse buttons
   new SidebarCollapseButton(document.getElementById("sidebar-collapse-button"), {
     i18n: {
       titleExpanded: "${rloader.mainnav_btn_sidebar_collapse}",
@@ -16,6 +20,9 @@
     toggleClass: "sidebar-collapsed",
     portalContainer: portal.container,
     sitesSidebar: portal.sidebars.sites,
+    resizeHandle: portal.sidebars.resizeHandle,
+    mainContainer: portal.mainContainer,
+    mainContent: portal.mainContent
   });
 
   //Setup sidebar
