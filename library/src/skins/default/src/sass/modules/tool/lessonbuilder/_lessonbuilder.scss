@@ -1062,41 +1062,41 @@
 
   /* only up to 4 cols has been tuned */
   .cols9 {
-    width: calc(100% / 9  - 8px) !important;
+    width: calc(100% / 9  - 16px) !important;
     margin-right: 2px !important;
   }
   [class~="cols9"][class~="double"] {
-    width: calc(200% / 9 - 8px) !important;
+    width: calc(200% / 9 - 16px) !important;
   }
   .cols8 {
-    width: calc(100% / 8 - 8px) !important;
+    width: calc(100% / 8 - 16px) !important;
   }
   [class~="cols8"][class~="double"] {
-    width: calc(200% / 8 - 8px) !important;
+    width: calc(200% / 8 - 16px) !important;
   }
   .cols7 {
-    width: calc(100% / 7 - 8px) !important;
+    width: calc(100% / 7 - 16px) !important;
   }
   [class~="cols7"][class~="double"] {
-    width: calc(200% / 7 - 8px) !important;
+    width: calc(200% / 7 - 16px) !important;
   }
   .cols6 {
-    width: calc(100% / 6 - 8px) !important;
+    width: calc(100% / 6 - 16px) !important;
   }
   [class~="cols6"][class~="double"] {
-    width: calc(200% / 6 - 8px) !important;
+    width: calc(200% / 6 - 16px) !important;
   }
   .cols5 {
-    width: calc(100% / 5 - 8px) !important;
+    width: calc(100% / 5 - 16px) !important;
   }
   [class~="cols5"][class~="double"] {
-    width: calc(200% / 5 - 8px) !important;
+    width: calc(200% / 5 - 16px) !important;
   }
   .cols4 {
-    width: calc(100% / 4 - 8px) !important;
+    width: calc(100% / 4 - 16px) !important;
   }
   [class~="cols4"][class~="double"] {
-    width: calc(200% / 4 - 8px) !important;
+    width: calc(200% / 4 - 16px) !important;
   }
   .cols3 {
     width: calc(100% / 3 - 16px) !important;

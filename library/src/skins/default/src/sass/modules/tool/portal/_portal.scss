@@ -545,7 +545,7 @@
       &:hover,
       &:focus {
         & .site-list-item {
-          margin-right: 0.14rem !important;
+          margin-right: 0.5rem !important; //  0.14rem !important;
         }
       }
     }

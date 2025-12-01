@@ -142,7 +142,7 @@
 
     // Primary border color used across sakai. 
     // Suggested: light gray
-    --sakai-border-color: var(--sakai-color-gray--darker-4);
+    --sakai-border-color: var(--sakai-color-gray--darker-2); // var(--sakai-color-gray--darker-4);
 
     // Primary border color used across sakai for things like modals that pop up
     // and need to be distinct from the background color.
