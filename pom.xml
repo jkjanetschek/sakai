@@ -130,6 +130,7 @@
                 <module>git-sakai-mcirss2</module>
                 <module>git-sakai-bbb-tool</module>
                 <module>git-sakai-designer-gateway</module>
+                <module>git-sakai-jupyterhub-api</module>
             </modules>
         </profile>
         <profile>

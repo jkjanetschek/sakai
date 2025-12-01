@@ -39,3 +39,7 @@ scormplayer/scorm-tool/contentPackages
 
 **/.claude/settings.local.json
 .mcp.json
+/git-sakai-bbb-tool
+/git-sakai-designer-gateway
+/git-sakai-mcirss2
+/git-sakai-jupyterhub-api
