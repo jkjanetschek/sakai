@@ -70,7 +70,7 @@
             <!--SAKAIME-620 SAKAIME-700 SAKAIME-727 inserted by thl SAKAIME-839 changed by csw -->
 
             <p align="center">
-                <a href="https://my.mci4me.at/?request=resetpassword" target="legal">Reset Password</a><br />
+                <a href="https://my.mci4me.at/password/reset" target="legal">Reset Password</a><br />
                 <br />Bitte verwenden Sie ab sofort Ihre E-Mailadresse als Benutzerkennung (user id)!<br />
                 Please use your mci4me e-mail address   as user id!<br />
                 <a href="https://www.mci.edu/agb" target="legal">Allg. Geschäftsbedingungen</a> |
