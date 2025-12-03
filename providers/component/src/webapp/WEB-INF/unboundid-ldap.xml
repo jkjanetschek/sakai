@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
-
+    <!-- Specify placeholders in sakai.properties -->
 	<bean id="org.sakaiproject.user.api.UserDirectoryProvider"
 		class="org.sakaiproject.unboundid.UnboundidDirectoryProvider" init-method="init"
 		destroy-method="destroy">
@@ -11,47 +11,43 @@
 		<property name="memoryService" ref="org.sakaiproject.memory.api.MemoryService"/>
 		
 		<!-- Required. Uses Unboundid SingleServerSet by default. Easy to modify code to use FailoverServerSet or RoundRobinServerSet. -->
-		<property name="ldapHost">
-			<list>
-				<value>10.1.1.1</value>
-			</list>
-		</property>
+        <property name="ldapHost" value="${mci.ldap.hosts}" />
 
 		<!-- Required. LDAP connection port. Typically defaults to 
 			UnboundidDirectoryProvider.DEFAULT_LDAP_PORT (389). Secure
 			connection is usually on 636 -->
 		<property name="ldapPort">
 			<list>
-				<value>389</value>
+                <value>${mci.ldap.port}</value> <!-- 389 no StartTLS on 389 -->
 			</list>
 		</property>
 
 		<!-- Optional. DN to which to bind for directory searches. 
 			Typically only necessary if autoBind is true -->
-		<!-- property name="ldapUser">
-			<value>attr=value,attr=value,attr=value</value>
-		</property -->
+		<property name="ldapUser">
+            <value>${mci.ldap.user}</value>
+		</property>
 
 		<!-- Optional. Password for ldapUser defined above -->
-		<!--  property name="ldapPassword">
-			<value>usually-set-this-value-in-security-dot-properties</value>
-		</property -->
+		<property name="ldapPassword">
+            <value>${mci.ldap.password}</value>
+		</property>
 
 		<!-- Optional. Enables/disables secure LDAP connections.
 			defaults to UnboundidDirectoryProvider.DEFAULT_IS_SECURE_CONNECTION (false) -->
-		<!-- property name="secureConnection">
-			<value>false</value>
-		</property -->
+		<property name="secureConnection">
+            <value>true</value>
+		</property>
 
 		<!-- Optional. Indicate if connection allocation should
 			implicitly bind as ${ldapUser}. Defaults to false -->
-		<!-- property name="autoBind">
-			<value>false</value>
-		</property -->
+		<property name="autoBind">
+			<value>true</value>
+		</property>
 
 		<!-- Optional, but usually specified. Base DN for directory searches. -->
 		<property name="basePath">
-			<value>dc=sakaiproject,dc=org</value>
+            <value>${mci.ldap.basePath}</value>
 		</property>
 
 		<!-- Optional. Indicate if connections should follow
@@ -63,9 +59,9 @@
 
 		<!-- Optional. LDAP operation timeout in millis. Defaults 
 			to UnboundidDirectoryProvider.DEFAULT_OPERATION_TIMEOUT_MILLIS (9000) -->
-		<!-- property name="operationTimeout">
+		<property name="operationTimeout">
 			<value>9000</value>
-		</property -->
+		</property>
 		
 		<!-- Optional. Control depth of all searches. Possible values:
 			0 - LDAPConnection.SCOPE_BASE - base object only
@@ -132,9 +128,9 @@
 
 		<!-- Maxmimum number of connections in the pool
 			Defaults to UnboundidDirectoryProvider.DEFAULT_POOL_MAX_CONNS (10) -->
-		<!--  property name="poolMaxConns">
-			<value>10</value>
-		</property -->
+		<property name="poolMaxConns">
+			<value>64</value>
+		</property>
 
 		<!-- Specifies whether attempts to process operations should be retried on a
 		     newly-created connection if the initial attempt fails in a manner that
@@ -261,10 +257,10 @@
 -->
 				<entry key="login"><value>uid</value></entry>         
 				<entry key="firstName"><value>givenName</value></entry> 
-				<entry key="preferredFirstName"><value>preferredName</value></entry>
+				<!--entry key="preferredFirstName"><value>preferredName</value></entry -->
 				<entry key="lastName"><value>sn</value></entry> 
 				<entry key="email"><value>mail</value></entry>  
-				<entry key="groupMembership"><value>groupMembership</value></entry>   
+				<!--entry key="groupMembership"><value>groupMembership</value></entry-->
 				<entry key="jpegPhoto"><value>jpegPhoto</value></entry>   
 			</map>
 		</property>
