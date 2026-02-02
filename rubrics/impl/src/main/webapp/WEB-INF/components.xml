@@ -63,6 +63,7 @@
         <property name="toolManager" ref="org.sakaiproject.tool.api.ToolManager" />
         <property name="userDirectoryService" ref="org.sakaiproject.user.api.UserDirectoryService" />
         <property name="userTimeService" ref="org.sakaiproject.time.api.UserTimeService" />
+        <property name="sqlService" ref="org.sakaiproject.db.api.SqlService" />
     </bean>
 
     <bean id="org.sakaiproject.springframework.orm.hibernate.impl.AdditionalHibernateMappings.rubrics"

@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.FormatStyle;
@@ -62,6 +63,7 @@ import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.api.FunctionManager;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.api.ServerConfigurationService;
+import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityTransferrer;
@@ -97,6 +99,9 @@ import org.sakaiproject.rubrics.api.repository.ReturnedEvaluationRepository;
 import org.sakaiproject.rubrics.api.repository.RubricRepository;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.time.api.UserTimeService;
+import org.sakaiproject.tool.assessment.data.dao.grading.AssessmentGradingData;
+import org.sakaiproject.tool.assessment.data.dao.grading.ItemGradingData;
+import org.sakaiproject.tool.assessment.data.ifc.assessment.PublishedAssessmentIfc;
 import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacadeQueriesAPI;
 import org.sakaiproject.tool.api.SessionManager;
 import org.sakaiproject.tool.api.ToolManager;
@@ -164,6 +169,7 @@ public class RubricsServiceImpl implements RubricsService, EntityTransferrer, Ha
     private ToolManager toolManager;
     private UserDirectoryService userDirectoryService;
     private UserTimeService userTimeService;
+    private SqlService      sqlService;
 
     public void init() {
 
@@ -1390,10 +1396,72 @@ public class RubricsServiceImpl implements RubricsService, EntityTransferrer, Ha
             paragraph.add(Chunk.NEWLINE);
         }
 
+        if (sqlService.isMCISafetySwitchEnabled("mci.safetySwitch.rubrics.pdf.add-tests-and-quizzes")) {
+            log.info("Begin of MCI custom PDF enhancement ...");
         // ## BEGIN MCI#2025081910000288 — Sakai Rubrics PDF
         if (showEvaluated) {
+                try {
             Evaluation evaluation = optEvaluation.get();
             evaluation.getEvaluatedItemId();
+                    switch (toolId) {
+                    /* Assignments */
+                    case "sakai.assignment.grades":
+                        log.info("Begin of MCI custom PDF enhancement ... found tool=Assignments");
+                        /* Tests & Quizzes */
+                        AssignmentSubmission submission = assignmentService.getSubmission(evaluation.getEvaluatedItemId());
+                        String gradeDisplay = assignmentService.getGradeDisplay(submission.getGrade(), submission.getAssignment().getTypeOfGrade(),
+                                submission.getFactor());
+                        String feedbackComment = submission.getFeedbackComment();
+                        paragraph.add(resourceLoader.getFormattedMessage("final_grade", gradeDisplay));
+                        paragraph.add(Chunk.NEWLINE);
+                        String feedbackCommentWithoutHtmlTags = formattedText.stripHtmlFromText(feedbackComment, true);
+                        paragraph.add(resourceLoader.getFormattedMessage("feedback_comment", feedbackCommentWithoutHtmlTags));
+                        paragraph.add(Chunk.NEWLINE);
+                        break;
+                    case "sakai.samigo":
+                        log.info("Begin of MCI custom PDF enhancement ... found tool=Tests & Quizzes");
+                        String[] parts = evaluation.getEvaluatedItemId().split("\\.");
+                        String assessmentGradingId = parts[0]; // "3"
+                        String publishedAssessmentId = parts[1]; // "5"
+                        org.sakaiproject.tool.assessment.services.GradingService samigo = new org.sakaiproject.tool.assessment.services.GradingService();
+                        AssessmentGradingData grading =
+                                samigo.load(assessmentGradingId);
+                        String grade =
+                                grading.getFinalScore() == null
+                                        ? "-"
+                                        : new DecimalFormat("0.##").format(grading.getFinalScore());
+                        String feedback = "";
+                        Set<ItemGradingData> items = samigo.getItemGradingSet(assessmentGradingId);
+                        for (ItemGradingData item : items) {
+                            if (item.getPublishedItemId() != null
+                                    && item.getPublishedItemId().toString().equals(publishedAssessmentId)) {
+                                feedback = item.getComments();
+                                break;
+                            }
+                        }
+                        paragraph.add(resourceLoader.getFormattedMessage("final_grade", grade));
+                        paragraph.add(Chunk.NEWLINE);
+                        paragraph.add(resourceLoader.getFormattedMessage("feedback_comment", feedback));
+                        paragraph.add(Chunk.NEWLINE);
+                        break;
+                    default:
+                        log.info("Begin of MCI custom PDF enhancement ... found other tool=" + toolId + " which is not yet supported.");
+                        /* do nothing */
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to retrieve additional mci-specific infos while generating pdf! params: ({},{},{},{},{}), Exception: {}",
+                            siteId, rubricId, toolId, itemId, evaluatedItemId,
+                            e.getMessage());
+                }
+                log.info("Begin of MCI custom PDF enhancement ... done.");
+            } else {
+                log.info("Begin of MCI custom PDF enhancement ... showEvaluated=false thus no MCI-custom enhancement");
+            }
+        } else {
+            // ## BEGIN MCI#2025081910000288 — Sakai Rubrics PDF (old version)
+            if (showEvaluated) {
+                Evaluation evaluation = optEvaluation.get();
+                evaluation.getEvaluatedItemId();
             try {
                 AssignmentSubmission submission = assignmentService.getSubmission(evaluation.getEvaluatedItemId());
                 String gradeDisplay = assignmentService.getGradeDisplay(submission.getGrade(), submission.getAssignment().getTypeOfGrade(),
@@ -1413,6 +1481,8 @@ public class RubricsServiceImpl implements RubricsService, EntityTransferrer, Ha
             }
         }
         // ## END MCI#2025081910000288 — Sakai Rubrics PDF
+        }
+		// ## END MCI#2025081910000288 — Sakai Rubrics PDF
 
 
         paragraph.add(Chunk.NEWLINE);
