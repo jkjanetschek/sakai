@@ -961,15 +961,25 @@ public class DBLTIService extends BaseLTIService implements LTIService {
 		fieldsLtiContent[0] = siteId;
 		m_sql.dbWrite(statementLtiContent, fieldsLtiContent);
 
+		/* table does not exist with with auto.ddl=true --> legacy?
 		String statementLtiBinding = "DELETE FROM lti_binding WHERE SITE_ID = ?";
 		Object fieldsLtiBinding[] = new Object[1];
 		fieldsLtiBinding[0] = siteId;
 		m_sql.dbWrite(statementLtiBinding, fieldsLtiBinding);
+		 */
+
 
 		String statementLtiMembershipJobs = "DELETE FROM lti_memberships_jobs WHERE SITE_ID = ?";
 		Object fieldsLtiMembershipJobs[] = new Object[1];
 		fieldsLtiMembershipJobs[0] = siteId;
 		m_sql.dbWrite(statementLtiMembershipJobs, fieldsLtiMembershipJobs);
+
+		// new table in sakai 25
+		String statementLti_tool_site = "DELETE FROM lti_tool_site WHERE SITE_ID = ?";
+		Object fieldsLti_tool_site [] = new Object[1];
+		fieldsLtiMembershipJobs[0] = siteId;
+		m_sql.dbWrite(statementLti_tool_site, fieldsLti_tool_site);
+
 
 		// TODO table lti_deploy still in use?
 	}

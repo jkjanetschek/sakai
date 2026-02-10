@@ -18,10 +18,12 @@ package org.sakaiproject.condition.impl;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.transaction.Transactional;
 
@@ -37,10 +39,13 @@ import org.sakaiproject.condition.api.exception.UnsupportedToolIdException;
 import org.sakaiproject.condition.api.model.Condition;
 import org.sakaiproject.condition.api.model.ConditionType;
 import org.sakaiproject.condition.api.persistence.ConditionRepository;
+import org.sakaiproject.site.api.Site;
+import org.sakaiproject.site.api.SiteRemovalAdvisor;
+import org.sakaiproject.site.api.SiteService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
-public class ConditionServiceImpl implements ConditionService {
+public class ConditionServiceImpl implements ConditionService, SiteRemovalAdvisor {
 
 
     @Autowired
@@ -51,6 +56,9 @@ public class ConditionServiceImpl implements ConditionService {
 
     @Autowired
     private FunctionManager functionManager;
+
+    @Autowired
+    private SiteService siteService;
 
     @Setter
     private Map<String, ConditionEvaluator> conditionEvaluators;
@@ -72,6 +80,8 @@ public class ConditionServiceImpl implements ConditionService {
 
         // Register permissions
         functionManager.registerFunction(PERMISSION_UPDATE_CONDITION);
+
+        siteService.addSiteRemovalAdvisor(this);
     }
 
     @Override
@@ -285,4 +295,16 @@ public class ConditionServiceImpl implements ConditionService {
                 return true;
         }
     }
+
+
+    public void removed(Site site) {
+        String siteId = site.getId();
+        log.info("Condition Service: SiteRemoval Advisor called for context: " + siteId);
+
+        List<Condition> conditionsForSite = getConditionsForSite(siteId);
+        conditionsForSite.forEach(condition -> deleteCondition(condition.getId()));
+    }
+
+
+
 }

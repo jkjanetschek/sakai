@@ -967,6 +967,7 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
 			log.info("assessment-Title: " + data.getAgentIdString() + " id: " + data.getQualifierId());
 			//	AssessmentIfc assessment = assessmentService.getAssessment(data.getQualifierId());
 			assessmentService.hardDeleteAssessment(data.getQualifierId());
+			assessmentService.getAuthzQueriesFacade().hardDeleteAuthorizationByQualifierID(data.getQualifierId());
 		}
 		List<AuthorizationData> authData2 = assessmentService.getAuthzQueriesFacade().getAuthorizationByAgentAndFunction(siteId, "OWN_PUBLISHED_ASSESSMENT");
 		for(AuthorizationData data: authData2){

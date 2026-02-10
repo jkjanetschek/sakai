@@ -2522,11 +2522,15 @@ public abstract class BaseAnnouncementService extends BaseMessage implements Ann
 				AnnouncementChannel announcementChannel = getAnnouncementChannel(ref);
 				List<Message> messages = announcementChannel.getMessages(null, true, null);
 				for(Message message : messages){
+					if (message.getHeader().getInstant().isAfter(Instant.now())) {
+						eventTrackingService.cancelDelays(message.getReference(), org.sakaiproject.announcement.api.AnnouncementService.EVENT_AVAILABLE_ANNC);
+					}
 					try{
 						announcementChannel.removeAnnouncementMessage(message.getId());
 					}catch (PermissionException e) {
 						log.error("The current user does not have permission to remove message  for context: {}", siteId, e);
 					}
+
 				}
 				MessageChannelEdit edit = editChannel(ref);
 				removeChannel(edit);
