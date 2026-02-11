@@ -79,4 +79,7 @@ public interface AcademicSession {
 	 */
 	public Date getEndDate();
 	public void setEndDate(Date endDate);
+
+
+	public boolean isCurrent();
 }

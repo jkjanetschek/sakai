@@ -130,4 +130,6 @@ public interface ConversationsService extends EntityProducer {
      * @param gradingItemId The grading item id to lookup topics against.
      */
     void clearCacheForGradedTopic(Long gradingItemId);
+
+    void hardDelete(String siteId);
 }

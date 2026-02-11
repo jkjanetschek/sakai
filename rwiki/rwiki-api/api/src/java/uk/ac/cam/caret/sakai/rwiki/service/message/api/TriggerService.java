@@ -112,5 +112,6 @@ public interface TriggerService
 	 * @return
 	 */
 	List getSpaceTriggers(String space);
+	void hardDeleteTriggersInSpace(String context);
 
 }

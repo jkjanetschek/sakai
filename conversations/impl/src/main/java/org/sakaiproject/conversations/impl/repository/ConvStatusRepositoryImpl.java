@@ -15,6 +15,7 @@
  */
 package org.sakaiproject.conversations.impl.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.hibernate.Session;
@@ -43,5 +44,18 @@ public class ConvStatusRepositoryImpl extends SpringCrudRepositoryImpl<ConvStatu
                             cb.equal(status.get("userId"), userId)));
 
         return session.createQuery(query).uniqueResultOptional();
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<ConvStatus> findBySiteId(String siteId) {
+        Session session = sessionFactory.getCurrentSession();
+
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<ConvStatus> query = cb.createQuery(ConvStatus.class);
+        Root<ConvStatus> root = query.from(ConvStatus.class);
+        query.where(cb.equal(root.get("siteId"),siteId));
+
+        return session.createQuery(query).list();
     }
 }

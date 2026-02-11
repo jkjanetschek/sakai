@@ -151,8 +151,6 @@ public abstract class BaseCitationService implements CitationService, Observer
 	 */
 	@Setter @Getter protected ResourceTypeRegistry m_resourceTypeRegistry;
 
-	@Setter
-	private EventTrackingService m_eventTrackingService;
 
 	protected static final List<String> AUTHOR_AS_KEY = new Vector<String>();
 	static
@@ -4204,6 +4202,10 @@ public abstract class BaseCitationService implements CitationService, Observer
 
 	public static final String PROP_TEMPORARY_CITATION_LIST = "citations.temporary_citation_list";
 
+	private EventTrackingService eventTrackingService;
+
+	public void setEventTrackingService(EventTrackingService eventTrackingService){this.eventTrackingService = eventTrackingService;}
+
 	/**
 	 * Checks permissions to add a CitationList.  Returns true if the user
 	 * has permission to add a resource in the collection identified by the
@@ -4333,7 +4335,7 @@ public abstract class BaseCitationService implements CitationService, Observer
 			m_storage.close();
 			m_storage = null;
 		}
-		m_eventTrackingService.deleteObserver(this);
+		eventTrackingService.deleteObserver(this);
 	}
 
 	/**
@@ -4739,7 +4741,7 @@ public abstract class BaseCitationService implements CitationService, Observer
 		{
 			registerResourceType();
 		}
-		m_eventTrackingService.addLocalObserver(this);
+		eventTrackingService.addLocalObserver(this);
 	}
 
 	/**
@@ -5726,7 +5728,7 @@ public abstract class BaseCitationService implements CitationService, Observer
 
 
 
-	private void hardDeleteCitation(String id) {
+	public void hardDeleteCitation(String id) {
 		try {
 			CitationCollection collection = getCollection(id);
 			List<Citation> citations = collection.getCitations();

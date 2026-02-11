@@ -39,5 +39,6 @@ public interface TriggerDao
 	List findByPage(String space, String page);
 
 	void update(Object o);
+	void hardDeleteTriggersInSpace(String context);
 
 }

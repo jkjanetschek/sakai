@@ -63,7 +63,8 @@ public interface AssessmentGradingFacadeQueriesAPI
    * @return an list of all the items or an empty list if none
    */
   public List<ItemGradingData> getAllItemGradingDataForItemInGrading(final Long assesmentGradingId, final Long publishedItemId);
-  
+  public List<AssessmentGradingData> getAllAssessmentGradingDataForHardDelete(final Long publishedId);
+
   public Map<Long, List<ItemGradingData>> getItemScores(Long publishedId, Long itemId, String which);
   
   public Map<Long, List<ItemGradingData>> getItemScores(Long publishedId, Long itemId, String which, boolean loadItemGradingAttachment);
@@ -244,7 +245,7 @@ public interface AssessmentGradingFacadeQueriesAPI
   public int getLateSubmissionsNumberByAgentId(Long publishedAssessmentId, String agentIdString, Date dueDate);
   
   public List getExportResponsesData(String publishedAssessmentId, boolean anonymous, String audioMessage, String fileUploadMessage, String noSubmissionMessage, boolean showPartAndTotalScoreSpreadsheetColumns, String poolString, String partString, String questionString, String textString, String responseString, String pointsString, String rationaleString, String itemGradingCommentsString, Map useridMap, String responseCommentString);
-  
+
   public List getExportResponsesData(String publishedAssessmentId, boolean anonymous, String audioMessage, String fileUploadMessage, String noSubmissionMessage, boolean showPartAndTotalScoreSpreadsheetColumns, String poolString, String partString, String questionString, String textString, String responseString, String pointsString, String rationaleString, String itemGradingCommentsString, Map useridMap, String responseCommentString, boolean isOneSelectionType);
   
   public boolean getHasGradingData(Long publishedAssessmentId);
@@ -294,4 +295,6 @@ public interface AssessmentGradingFacadeQueriesAPI
 
   public SectionGradingData getSectionGradingData(Long assessmentGradingId, Long sectionId, String agentId);
   public void saveSectionGrading(SectionGradingData item);
+  public void hardDeleteGradingData(String publishedAssessmentId);
+
 }

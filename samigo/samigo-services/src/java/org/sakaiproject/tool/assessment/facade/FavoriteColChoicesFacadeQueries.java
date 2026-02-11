@@ -68,4 +68,10 @@ public class FavoriteColChoicesFacadeQueries extends HibernateDaoSupport impleme
         };
         return getHibernateTemplate().execute(hcb);
     }
+
+    public void hardDeleteFavoriteColChoices(String siteId){
+        List<FavoriteColChoices> data = getFavoriteColChoicesByAgent(siteId);
+        data.forEach(a -> getHibernateTemplate().delete(a));
+    }
+
 }

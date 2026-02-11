@@ -83,6 +83,7 @@
                 <value>org/sakaiproject/tool/assessment/data/dao/grading/MediaData.hbm.xml</value>
                 <value>org/sakaiproject/tool/assessment/data/dao/authz/AuthorizationData.hbm.xml</value>
                 <value>org/sakaiproject/tool/assessment/data/dao/assessment/FavoriteColChoices.hbm.xml</value>
+                <value>org/sakaiproject/tool/assessment/data/dao/assessment/ExtendedTime.hbm.xml</value>
             </list>
         </property>
     </bean>

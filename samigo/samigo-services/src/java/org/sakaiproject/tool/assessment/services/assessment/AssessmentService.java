@@ -70,15 +70,7 @@ import org.sakaiproject.tool.assessment.data.ifc.assessment.SectionDataIfc;
 import org.sakaiproject.tool.assessment.data.ifc.shared.TypeIfc;
 import org.sakaiproject.tool.assessment.entity.api.CoreAssessmentEntityProvider;
 import org.sakaiproject.tool.assessment.entity.api.PublishedAssessmentEntityProvider;
-import org.sakaiproject.tool.assessment.facade.AgentFacade;
-import org.sakaiproject.tool.assessment.facade.AssessmentFacade;
-import org.sakaiproject.tool.assessment.facade.AssessmentFacadeQueriesAPI;
-import org.sakaiproject.tool.assessment.facade.AssessmentTemplateFacade;
-import org.sakaiproject.tool.assessment.facade.ItemFacade;
-import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
-import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacadeQueries;
-import org.sakaiproject.tool.assessment.facade.SectionFacade;
-import org.sakaiproject.tool.assessment.facade.TypeFacade;
+import org.sakaiproject.tool.assessment.facade.*;
 import org.sakaiproject.tool.assessment.services.ItemService;
 import org.sakaiproject.tool.assessment.services.PersistenceService;
 import org.sakaiproject.tool.assessment.services.QuestionPoolService;
@@ -464,7 +456,7 @@ public class AssessmentService {
 				&& (SectionDataIfc.RANDOM_DRAW_FROM_QUESTIONPOOL.toString().equals(section.getSectionMetaDataByLabel(SectionDataIfc.AUTHOR_TYPE)) ||
 						SectionDataIfc.FIXED_AND_RANDOM_DRAW_FROM_QUESTIONPOOL.toString().equals(section.getSectionMetaDataByLabel(SectionDataIfc.AUTHOR_TYPE)) ||
 						SectionDataIfc.RANDOM_DRAW_FROM_QUESTIONPOOLS.toString().equals(section.getSectionMetaDataByLabel(SectionDataIfc.AUTHOR_TYPE)))) {
-			
+
 			QuestionPoolService qpService = new QuestionPoolService();
 			ItemService itemService = new ItemService();
 			boolean isFixed = StringUtils.equals(section.getSectionMetaDataByLabel(SectionDataIfc.AUTHOR_TYPE), SectionDataIfc.FIXED_AND_RANDOM_DRAW_FROM_QUESTIONPOOL.toString());
@@ -472,16 +464,16 @@ public class AssessmentService {
 
 			boolean hasRandomPartScore = false;
 			Double score = null;
-			String requestedScore = (section.getSectionMetaDataByLabel(SectionDataIfc.POINT_VALUE_FOR_QUESTION) != null) ? 
+			String requestedScore = (section.getSectionMetaDataByLabel(SectionDataIfc.POINT_VALUE_FOR_QUESTION) != null) ?
 					                 section.getSectionMetaDataByLabel(SectionDataIfc.POINT_VALUE_FOR_QUESTION) : "";
-					                 
+
 			if (StringUtils.isNotBlank(requestedScore)) {
 				hasRandomPartScore = true;
 				score = new Double(requestedScore);
 			}
 			boolean hasRandomPartDiscount = false;
 			Double discount = null;
-			String requestedDiscount = (section.getSectionMetaDataByLabel(SectionDataIfc.DISCOUNT_VALUE_FOR_QUESTION) != null) ? 
+			String requestedDiscount = (section.getSectionMetaDataByLabel(SectionDataIfc.DISCOUNT_VALUE_FOR_QUESTION) != null) ?
 										section.getSectionMetaDataByLabel(SectionDataIfc.DISCOUNT_VALUE_FOR_QUESTION) : "";
 
 			if (StringUtils.isNotBlank(requestedDiscount)) {
@@ -493,7 +485,7 @@ public class AssessmentService {
 			removeAllItems(section.getSectionId().toString());
 
 			String agentId = AgentFacade.getAgentString();
-	
+
 			Iterator itemIter = section.getItemSet().iterator();
 			while (itemIter.hasNext()) {
 				ItemDataIfc item = (ItemDataIfc) itemIter.next();
@@ -525,8 +517,8 @@ public class AssessmentService {
 					long itemTypeId = item.getTypeId().longValue();
 					String mcmsPartialCredit = item.getItemMetaDataByLabel(ItemMetaDataIfc.MCMS_PARTIAL_CREDIT);
 					if (hasRandomPartDiscount &&
-							(itemTypeId == TypeFacade.MULTIPLE_CHOICE.longValue() || 
-							itemTypeId == TypeFacade.TRUE_FALSE.longValue() || 
+							(itemTypeId == TypeFacade.MULTIPLE_CHOICE.longValue() ||
+							itemTypeId == TypeFacade.TRUE_FALSE.longValue() ||
 							itemTypeId == TypeFacade.MULTIPLE_CORRECT_SINGLE_SELECTION.longValue() ||
 							(itemTypeId == TypeFacade.MULTIPLE_CORRECT.longValue() && "false".equals(mcmsPartialCredit))))
 						item.setDiscount(discount);
@@ -551,9 +543,9 @@ public class AssessmentService {
 									if (hasRandomPartScore) {
 										answer.setScore(score);
 									}
-									if (hasRandomPartDiscount && 
-										(itemTypeId == TypeFacade.MULTIPLE_CHOICE.longValue() || 
-										itemTypeId == TypeFacade.TRUE_FALSE.longValue() || 
+									if (hasRandomPartDiscount &&
+										(itemTypeId == TypeFacade.MULTIPLE_CHOICE.longValue() ||
+										itemTypeId == TypeFacade.TRUE_FALSE.longValue() ||
 										itemTypeId == TypeFacade.MULTIPLE_CORRECT_SINGLE_SELECTION.longValue() ||
 										(itemTypeId == TypeFacade.MULTIPLE_CORRECT.longValue() && "false".equals(mcmsPartialCredit))))
 										answer.setDiscount(discount);
@@ -572,7 +564,7 @@ public class AssessmentService {
 				DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
 				section.addSectionMetaData(SectionDataIfc.QUESTIONS_FIXED_DRAW_DATE, df.format(new Date()));
 			}
-			
+
 			List<ItemDataIfc> itemlist = getItemListFromPools(section);
 
 			if(verifyItemsDrawSize(itemlist.size(), section.getSectionMetaDataByLabel(SectionDataIfc.NUM_QUESTIONS_DRAWN))){
@@ -1485,7 +1477,7 @@ public class AssessmentService {
 				{
 					items = section.getItemArray();
 				}
-				else if (SectionDataIfc.RANDOM_DRAW_FROM_QUESTIONPOOL.toString().equals(section.getSectionMetaDataByLabel(SectionDataIfc.AUTHOR_TYPE)) 
+				else if (SectionDataIfc.RANDOM_DRAW_FROM_QUESTIONPOOL.toString().equals(section.getSectionMetaDataByLabel(SectionDataIfc.AUTHOR_TYPE))
 					|| SectionDataIfc.RANDOM_DRAW_FROM_QUESTIONPOOLS.toString().equals(section.getSectionMetaDataByLabel(SectionDataIfc.AUTHOR_TYPE)))
 				{
 					items = getItemListFromPools(section);
@@ -1594,7 +1586,7 @@ public class AssessmentService {
 	public Set<String> getDuplicateItemHashesByAssessmentId(@NonNull Long assessmentId) {
 		return getDuplicateItemHashesForAssessmentIds(Collections.singleton(assessmentId));
 	}
-	
+
 	public Set<String> getDuplicateItemHashesForAssessmentIds(@NonNull Collection<Long> assessmentIds) {
 		// Eliminate duplicates
 		Set<Long> assessmentIdSet = Set.copyOf(assessmentIds);
@@ -1602,4 +1594,33 @@ public class AssessmentService {
 		return PersistenceService.getInstance().getAssessmentFacadeQueries()
 				.getDuplicateItemHashesForAssessmentIds(assessmentIdSet);
 	}
+
+
+	public AuthzQueriesFacadeAPI getAuthzQueriesFacade() {
+		try {
+			return PersistenceService.getInstance().getAuthzQueriesFacade();
+		} catch(
+		Exception e) {
+			log.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	/*
+	 *   hard delete methods
+	 */
+
+	public void hardDeleteAssessment(String assessmentId){
+		 PersistenceService.getInstance().getAssessmentFacadeQueries().hardDeleteAssessment(assessmentId);
+	}
+	public void hardDeletePublishedAssessment(String assessmentId){
+		PersistenceService.getInstance().getPublishedAssessmentFacadeQueries().hardDeletePublishedAssessment(assessmentId);
+	}
+
+	public void hardDeleteFavoriteColChoices(String siteId){
+		PersistenceService.getInstance().getFavoriteColChoicesFacadeQueries().hardDeleteFavoriteColChoices(siteId);
+	}
+
+
+
 }

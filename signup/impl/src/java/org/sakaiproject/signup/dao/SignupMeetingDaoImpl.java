@@ -41,6 +41,7 @@ import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
 import org.hibernate.criterion.DetachedCriteria;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
@@ -50,6 +51,8 @@ import org.springframework.dao.DataAccessException;
 import org.sakaiproject.genericdao.hibernate.HibernateGeneralGenericDao;
 import org.sakaiproject.signup.model.SignupMeeting;
 import org.sakaiproject.signup.model.SignupTimeslot;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <p>
@@ -350,5 +353,14 @@ public class SignupMeetingDaoImpl extends HibernateGeneralGenericDao  implements
 		
 		return null;
 	}
-
+    public void hardDeleteSignupMeetingsForContext(String siteId){
+        //List<SignupMeeting> meetings = getAllSignupMeetings(siteId);
+        DetachedCriteria criteria = DetachedCriteria.forClass(
+                        SignupMeeting.class).addOrder(Order.asc("startTime"))
+                .setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY)
+                .createCriteria("signupSites").add(
+                        Restrictions.eq("siteId", siteId));
+        List<SignupMeeting> meetings = (List<SignupMeeting>) getHibernateTemplate().findByCriteria(criteria);
+        removeMeetings(meetings);
+    }
 }

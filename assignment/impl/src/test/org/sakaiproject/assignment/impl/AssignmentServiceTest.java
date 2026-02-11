@@ -360,6 +360,7 @@ public class AssignmentServiceTest extends AbstractTransactionalJUnit4SpringCont
         String stringRef = AssignmentReferenceReckoner.reckoner().context(assignment.getContext()).subtype("a").id(assignment.getId()).reckon().getReference();
         Assignment deleted = null;
         when(securityService.unlock(AssignmentServiceConstants.SECURE_REMOVE_ASSIGNMENT, stringRef)).thenReturn(true);
+        assignment.setOpenDate(Instant.now().minus(1, ChronoUnit.DAYS));
         try {
             assignmentService.deleteAssignment(assignment);
             deleted = assignmentService.getAssignment(assignment.getId());

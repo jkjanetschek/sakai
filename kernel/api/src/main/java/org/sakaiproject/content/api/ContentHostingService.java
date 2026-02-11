@@ -114,7 +114,7 @@ public interface ContentHostingService extends EntityProducer
 
 	/** Name of the event when reading a resource. */
 	public static final String EVENT_RESOURCE_READ = "content.read";
-	
+
 	public static final String EVENT_RESOURCE_ZIP_DOWNLOAD = "content.zipdownload";
 
 	/** Name of the event when writing a resource. */
@@ -1143,15 +1143,15 @@ public interface ContentHostingService extends EntityProducer
 	 * @param toContext
 	 *      The site of the new attachment - required
 	 * @param toolTitle
-	 *      The title of the tool that the attachment is being added to (i.d. Discussions or Assignments) - this will be 
+	 *      The title of the tool that the attachment is being added to (i.d. Discussions or Assignments) - this will be
 	 *      used to generate the new attachment id / path - required
 	 * @param mcx
 	 *      The MergeConfig for this import
-     *      attachment.  If the oAttachmentId points to a non-existant or inaccessible resource, the attachmentNames map will 
+     *      attachment.  If the oAttachmentId points to a non-existant or inaccessible resource, the attachmentNames map will
 	 *      consulted to see id the oAttachmentId has been pre-imported.
 	 * @return The id of the new attachment.
 	 */
-	public ContentResource copyAttachment(String oAttachmentId, String toContext, String toolTitle, MergeConfig mcx) 
+	public ContentResource copyAttachment(String oAttachmentId, String toContext, String toolTitle, MergeConfig mcx)
 		throws IdUnusedException, TypeException, PermissionException;
 
 	/**
@@ -1951,7 +1951,7 @@ public interface ContentHostingService extends EntityProducer
 	 * @return true if the custom sort by priority is enabled, false otherwise.
 	 */ 
 	public boolean isSortByPriorityEnabled();
-	
+
 	/**
 	 * Determine whether the entityId parameter identifies a collection (as opposed to a resource).  
 	 * This method does not necessarily verify that a ContentEntity with this id exists.  
@@ -2182,4 +2182,7 @@ public interface ContentHostingService extends EntityProducer
 	 * @return String - The name of the folder.
 	 */
 	public String getStudentUploadFolderName();
+
+    public void removeCollectionRecursive(String collectionId);
+    public void hardDeleteResources(String collectionId);
 }

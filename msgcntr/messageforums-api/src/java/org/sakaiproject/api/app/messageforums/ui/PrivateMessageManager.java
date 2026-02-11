@@ -88,6 +88,8 @@ public interface PrivateMessageManager {
     	      final String order);
 
 
+    public List getPrivateForumsByContextId(String contextId);
+
     /**
      * check if private message area is enabled for the current user
      * @return boolean
@@ -267,4 +269,5 @@ public interface PrivateMessageManager {
 
     public PrivateMessage getPrivateMessageByDecryptedId(String id) throws MessagingException;
     
+    public void deletePrivateForum(PrivateForum forum, String stiteId);
 }

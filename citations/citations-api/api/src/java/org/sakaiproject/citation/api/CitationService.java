@@ -274,5 +274,7 @@ public interface CitationService extends EntityProducer
 	 */
 	public CitationCollectionOrder getCitationCollectionOrder(String id, int locationId);
 
+	public void hardDeleteCitation(String collectionId);
+
 }	// interface CitationService
 

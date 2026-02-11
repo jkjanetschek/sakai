@@ -41,21 +41,9 @@ import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.sakaiproject.api.app.messageforums.Area;
-import org.sakaiproject.api.app.messageforums.AreaManager;
-import org.sakaiproject.api.app.messageforums.Attachment;
-import org.sakaiproject.api.app.messageforums.DBMembershipItem;
-import org.sakaiproject.api.app.messageforums.DiscussionForum;
-import org.sakaiproject.api.app.messageforums.DiscussionForumService;
-import org.sakaiproject.api.app.messageforums.DiscussionTopic;
-import org.sakaiproject.api.app.messageforums.Message;
-import org.sakaiproject.api.app.messageforums.MessageForumsForumManager;
-import org.sakaiproject.api.app.messageforums.MessageForumsMessageManager;
-import org.sakaiproject.api.app.messageforums.MessageForumsTypeManager;
-import org.sakaiproject.api.app.messageforums.PermissionLevel;
-import org.sakaiproject.api.app.messageforums.PermissionLevelManager;
-import org.sakaiproject.api.app.messageforums.PermissionsMask;
+import org.sakaiproject.api.app.messageforums.*;
 import org.sakaiproject.api.app.messageforums.ui.DiscussionForumManager;
+import org.sakaiproject.api.app.messageforums.ui.PrivateMessageManager;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.api.GroupNotDefinedException;
@@ -86,13 +74,15 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.sakaiproject.entity.api.HardDeleteAware;
+import  org.sakaiproject.api.app.messageforums.Area;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class DiscussionForumServiceImpl implements DiscussionForumService, EntityTransferrer
+public class DiscussionForumServiceImpl implements DiscussionForumService, EntityTransferrer, HardDeleteAware
 {
 	private static final String CONTENT_GROUP = "/content/group/";
 	private static final String ARCHIVING = "archiving ";
@@ -198,6 +188,16 @@ public class DiscussionForumServiceImpl implements DiscussionForumService, Entit
 	private ServerConfigurationService serverConfigurationService;
 	@Setter
 	private LTIService ltiService;
+    @Setter
+    private PrivateMessageManager privateManager;
+    @Setter
+    private RankManager rankManager;
+    @Setter
+    private SynopticMsgcntrManager synopticMsgcntrManager;
+    @Setter
+    private EmailNotificationManager emailNotificationManager;
+    @Setter
+    private AnonymousManager anonymousManager;
 
 	private final Base64 base64Encoder = new Base64();
 
@@ -553,11 +553,11 @@ public class DiscussionForumServiceImpl implements DiscussionForumService, Entit
 			// Copy area-level permissions first
 			Area fromArea = areaManager.getAreaByContextIdAndTypeId(fromContext, typeManager.getDiscussionForumType());
 			Area toArea = areaManager.getDiscussionArea(toContext, false);
-			
+
 			if (fromArea != null && toArea != null) {
 				Set membershipItemSet = fromArea.getMembershipItemSet();
 				List allowedPermNames = getSiteRolesAndGroups(toContext);
-				
+
 				if (membershipItemSet != null && !membershipItemSet.isEmpty() && allowedPermNames != null && !allowedPermNames.isEmpty()) {
 					Iterator membershipIter = membershipItemSet.iterator();
 					while (membershipIter.hasNext()) {
@@ -573,7 +573,7 @@ public class DiscussionForumServiceImpl implements DiscussionForumService, Entit
 					areaManager.saveArea(toArea);
 				}
 			}
-			
+
 			List<DiscussionForum> fromDfList = dfManager.getDiscussionForumsWithTopicsMembershipNoAttachments(fromContext);
 			if (CollectionUtils.isNotEmpty(ids)) {
 				fromDfList = fromDfList.stream().filter(df -> ids.contains(df.getId().toString())).collect(Collectors.toList());
@@ -1505,7 +1505,7 @@ public class DiscussionForumServiceImpl implements DiscussionForumService, Entit
 					List<DiscussionForum> destForums = dfManager.getDiscussionForumsByContextId(toContext);
 					if (destForums != null && !destForums.isEmpty())
 					{
-						for (int currForum = 0; currForum < destForums.size(); currForum++) 
+						for (int currForum = 0; currForum < destForums.size(); currForum++)
 						{
 							DiscussionForum dForum = (DiscussionForum) destForums.get(currForum);
 							// clean up all messages
@@ -1524,7 +1524,7 @@ public class DiscussionForumServiceImpl implements DiscussionForumService, Entit
 							forumManager.deleteDiscussionForum(dForum);
 						}
 					}
-					
+
 					// Clean up the area-level permissions before copying
 					Area toArea = areaManager.getDiscussionArea(toContext, false);
 					if (toArea != null) {
@@ -1546,7 +1546,7 @@ public class DiscussionForumServiceImpl implements DiscussionForumService, Entit
 					log.warn("could not remove existing forums during copy: {}", e.toString());
 				}
 			}
-			
+
 			// Call the regular transferCopyEntities method to do the copying
 			transversalMap.putAll(transferCopyEntities(fromContext, toContext, ids, options));
 		}
@@ -1639,6 +1639,54 @@ public class DiscussionForumServiceImpl implements DiscussionForumService, Entit
 	private Boolean getImportAsDraft() {
 		boolean importAsDraft = serverConfigurationService.getBoolean("import.importAsDraft", true);
 		return serverConfigurationService.getBoolean("msgcntr.forums.import.importAsDraft", importAsDraft);
+	}
+
+	/**
+	 *   implementation of hardDeleteAware; DiscussionForumService is default only service which can implement as it is a registerd EntityProducer
+	 */
+	public void hardDelete(String siteId) {
+		if (siteId == null) return;
+		log.info("Hard Delete MessageForum Tool of site: " + siteId);
+		List dfForums = dfManager.getDiscussionForumsByContextId(siteId);  // BaseForum
+
+
+		for(Object forum: dfForums){
+			dfManager.deleteForum((DiscussionForum)forum);
+		}
+
+		//private Forums
+		List privateForums = privateManager.getPrivateForumsByContextId(siteId);
+		for (Object privateForum : privateForums){
+			privateManager.deletePrivateForum((PrivateForum) privateForum, siteId);
+		}
+
+		// areas
+		List<Area> areas = areaManager.getAreasByContextId(siteId);
+		for (Area area:areas){
+			areaManager.deleteArea(area);
+		}
+
+
+		//rank
+		List<Rank> ranks = rankManager.getRanksForContext(siteId);
+		for (Rank rank:ranks){
+			rankManager.hardDeleteRank(rank);
+		}
+
+
+		//table: mfr_date_restrictions_t --> not relevant? --> ignored for now!
+
+		//synoptics
+		synopticMsgcntrManager.hardDeleteSynopticItemsForContxt(siteId);
+
+
+		//email notifications
+		emailNotificationManager.hardDeleteEmailNotificationsForContext(siteId);
+
+		//anon mapping
+		anonymousManager.hardDeleteMappingForContext(siteId);
+
+
 	}
 
 }

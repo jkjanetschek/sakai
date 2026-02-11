@@ -53,6 +53,8 @@ import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityNotDefinedException;
 import org.sakaiproject.entity.api.EntityPermissionException;
 import org.sakaiproject.entity.api.EntityProducer;
+import org.sakaiproject.entity.api.HardDeleteAware;
+
 import org.sakaiproject.entity.api.HttpAccess;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
@@ -88,7 +90,7 @@ import org.tsugi.util.Base64DoubleUrlEncodeSafe;
 
 @SuppressWarnings("deprecation")
 @Slf4j
-public class LTISecurityServiceImpl implements EntityProducer {
+public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 	public static final String SERVICE_NAME = LTISecurityServiceImpl.class.getName();
 
 	private static ResourceLoader rb = new ResourceLoader("basicltisvc");
@@ -762,4 +764,10 @@ public class LTISecurityServiceImpl implements EntityProducer {
 
 			return results.toString();
 		}
+
+		public void hardDelete(String siteId){
+			log.info("Hard Delete  of Tool LTI for context: " + siteId);
+			ltiService.hardDelete(siteId);
+		}
+
 }

@@ -655,4 +655,6 @@ public interface LTIService extends LTISubstitutionsFilter {
      * @return The text with updated LTI launch URLs
      */
     String fixLtiLaunchUrls(String text, String toContext, MergeConfig mcx);
+
+    void hardDelete(String siteId);
 }

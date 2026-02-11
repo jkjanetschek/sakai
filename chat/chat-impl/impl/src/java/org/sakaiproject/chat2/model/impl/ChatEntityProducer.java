@@ -63,6 +63,7 @@ import org.sakaiproject.entity.api.EntityNotDefinedException;
 import org.sakaiproject.entity.api.EntityPermissionException;
 import org.sakaiproject.entity.api.EntityProducer;
 import org.sakaiproject.entity.api.EntityTransferrer;
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.sakaiproject.entity.api.HttpAccess;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
@@ -81,13 +82,13 @@ import org.sakaiproject.util.api.FormattedText;
  *
  */
 @Slf4j
-public class ChatEntityProducer implements EntityProducer, EntityTransferrer {
+public class ChatEntityProducer implements EntityProducer, EntityTransferrer, HardDeleteAware {
    
    @Setter @Getter private EntityManager entityManager;
    @Setter @Getter private ChatManager chatManager;
    @Setter private SiteService siteService;
    @Setter private UserDirectoryService userDirectoryService;
-   
+
    private static final String ARCHIVE_VERSION = "2.4"; // in case new features are added in future exports
    private static final String VERSION_ATTR = "version";
    private static final String CHANNEL_PROP = "channel";
@@ -97,7 +98,7 @@ public class ChatEntityProducer implements EntityProducer, EntityTransferrer {
    
    private static final String PROPERTIES = "properties";
    private static final String PROPERTY = "property";
-   
+
    protected void init() throws Exception {
       log.info("init()");
       
@@ -696,7 +697,7 @@ public class ChatEntityProducer implements EntityProducer, EntityTransferrer {
 
         return transferCopyEntities(fromContext, toContext, ids, transferOptions);
     }
-   
+
    /**
     * Import the synoptic tool options from another site
     * 
@@ -748,4 +749,10 @@ public class ChatEntityProducer implements EntityProducer, EntityTransferrer {
          log.warn("transferSynopticOptions(): exception in handling " + serviceName() + " : ", e);
       }
    }
+    public void hardDelete(String siteId){
+        log.info("Hard Delete  of Tool Chat2 for context: " + siteId);
+        chatManager.hardDeleteChannelsForContext(siteId);
+
+
+    }
 }

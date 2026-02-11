@@ -197,6 +197,8 @@ import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.InputSource;
 import org.sakaiproject.util.MergeConfig;
+import org.sakaiproject.entity.api.HardDeleteAware;
+
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -205,7 +207,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Transactional(readOnly = true)
-public class AssignmentServiceImpl implements AssignmentService, EntityTransferrer, ContentExistsAware, ApplicationContextAware {
+public class AssignmentServiceImpl implements AssignmentService, EntityTransferrer, ContentExistsAware, ApplicationContextAware, HardDeleteAware  {
+
 
 	@Setter private AnnouncementService announcementService;
     @Setter private ApplicationContext applicationContext;
@@ -1191,7 +1194,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                 existingAssignment.getProperties().entrySet().stream()
                         .filter(e -> !PROPERTIES_EXCLUDED_FROM_DUPLICATE_ASSIGNMENTS.contains(e.getKey()))
                         .forEach(e -> properties.put(e.getKey(), e.getValue()));
-                
+
                 // Always set duplicated assignments to use "Create new Gradebook item" option
                 properties.put(NEW_ASSIGNMENT_ADD_TO_GRADEBOOK, GRADEBOOK_INTEGRATION_ADD);
 
@@ -1318,7 +1321,9 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                 log.warn("Exception while removing lock for assignment {}, {}", assignment.getId(), e.toString());
             }
         }
-
+        if (assignment.getOpenDate().isAfter(Instant.now())) {
+            eventTrackingService.cancelDelays(reference, AssignmentConstants.EVENT_AVAILABLE_ASSIGNMENT);
+        }
         eventTrackingService.post(eventTrackingService.newEvent(AssignmentConstants.EVENT_REMOVE_ASSIGNMENT, reference, true));
 
         // remove any realm defined for this resource
@@ -4645,13 +4650,13 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                             }
                         }
                         nAllPurposeItem.setAttachmentSet(nAllPurposeItemAttachments);
-                        
+
                         // First save the AllPurposeItem to persist it before creating access entries
                         assignmentSupplementItemService.saveAllPurposeItem(nAllPurposeItem);
-                        
+
                         // Now clean up existing access entries
                         assignmentSupplementItemService.cleanAllPurposeItemAccess(nAllPurposeItem);
-                        
+
                         // Create and save new access entries
                         Set<AssignmentAllPurposeItemAccess> accessSet = new HashSet<>();
                         AssignmentAllPurposeItemAccess access = assignmentSupplementItemService.newAllPurposeItemAccess();
@@ -4659,7 +4664,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
                         access.setAssignmentAllPurposeItem(nAllPurposeItem);
                         accessSet.add(access);
                         nAllPurposeItem.setAccessSet(accessSet);
-                        
+
                         // Save both the access entry and the updated AllPurposeItem
                         assignmentSupplementItemService.saveAllPurposeItemAccess(access);
                         assignmentSupplementItemService.saveAllPurposeItem(nAllPurposeItem);
@@ -5276,44 +5281,114 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
     		return resourceLoader.getString("user.modify.unknown", "");
     	}
     }
+    @Override
+    public boolean allowAddTags(String context) {
+        String resourceString = AssignmentReferenceReckoner.reckoner().context(context).reckon().getReference();
+        return permissionCheck(TagService.TAGSERVICE_MANAGE_PERMISSION, resourceString, null);
+    }
+
+    public FormattedText getFormattedText() {
+        return formattedText;
+    }
+
 
     /**
      * Implementation of HardDeleteAware to allow content to be fully purged
      */
     public void hardDelete(String siteId) {
-        log.info("Hard Delete  of Tool Assignments for context: {}", siteId);
+        log.info("Hard Delete  of Tool Assignments for context: " + siteId);
+
+        if (siteService.isSpecialSite(siteId)) {
+            log.error("hardDelete rejected special site: {}", siteId);
+            return;
+        }
 
         Collection<Assignment> assignments = getDeletedAssignmentsForContext(siteId);
         assignments.addAll(getAssignmentsForContext(siteId));
 
-        //remove associated tags and delete assignment
+        Set<String> submissionAttachmentReferences = new HashSet<>();
+        //remove associated tags and rubics and delete assignment
         Iterator<Assignment> it =  assignments.iterator();
         while (it.hasNext()) {
             Assignment a = (org.sakaiproject.assignment.api.model.Assignment) it.next();
             removeAssociatedTaggingItem(a);
 
+            // remove rubric association if there is one
+            //noch notwendig??????  hard delete durch tool rubric selber
+            //        rubricsService.deleteRubricAssociation(RubricsConstants.RBCS_TOOL_ASSIGNMENT, a.getId());
+
+
+            //release locks
+            Collection<String> groups = a.getGroups();
+            Site site = null;
+            try{
+                site = siteService.getSite(siteId);
+                for (String reference : groups) {
+                    Group group = site.getGroup(reference);
+                    if (group != null) {
+                        group.setLockForReference("/assignment/a/"+siteId+"/"+a.getId(), AuthzGroup.RealmLockMode.NONE);
+                        authzGroupService.save(authzGroupService.getAuthzGroup(group.getReference()));
+                    }
+                }
+                // siteService.save(siteService.getSite(a.getContext()));
+            } catch (IdUnusedException e){
+                log.error("IdUnusedException: " + String.valueOf(e));
+            } catch (AuthzPermissionException e){
+                log.error("AuthzPermissionException: " + String.valueOf(e));
+            } catch (GroupNotDefinedException e){
+                log.error("GroupNotDefinedException: " + String.valueOf(e));
+            }
+
+
+            submissionAttachmentReferences.addAll(a.getSubmissions().stream()
+                    .flatMap(sub -> sub.getAttachments().stream())
+                    .map(attachment -> {
+                        String s = attachment.replaceAll("^/content","");
+                        int lastSlash = s.lastIndexOf("/");
+                        return (lastSlash >= 0 && lastSlash + 1 <= s.length())
+                                ? s.substring(0, lastSlash + 1)
+                                : s;
+                    })
+                    .collect(Collectors.toList()));
+
+
             try {
                 deleteAssignment(a);
             } catch (PermissionException e) {
-                log.error("insufficient permissions to delete assignment ", e);
+                log.error("cant delete assignment " + e);
             }
         }
 
+        List<String> subAttachmentsNotlinkedToSiteId =  submissionAttachmentReferences.stream().filter(ref -> !ref.contains("/attachment/" + siteId + "/Assignments/")).collect(Collectors.toList());
+        //  deleteAssignmentAndAllReferences()
         //remove attachements
-        List<ContentResource> resources = contentHostingService.getAllResources("/attachment/" + siteId + "/Assignments/");
-        for (ContentResource resource : resources) {
-            log.debug("Removing resource: {}", resource.getId());
+        List<ContentResource> resources = contentHostingService.getAllResources("/attachment/" + siteId + "/Assignments/");  // /attachment/Course-ID-SLVA-32936/Assignments/7e00e547-4357-4d81-86ec-3b77100f12dd/Peer Review_Assignment 2_Feedback rubric.xlsx
+        List<String> combinedResourcesIds =  Stream.concat(
+                resources.stream().map(ContentResource::getId),
+                subAttachmentsNotlinkedToSiteId.stream()
+                ).collect(Collectors.toList());
+
+        for (String id : combinedResourcesIds) {
+            log.info("Removing resource: {}", id);
             try {
-                contentHostingService.removeResource(resource.getId());
+                contentHostingService.removeResource(id);
             } catch (Exception e) {
                 log.warn("Failed to remove content.", e);
             }
         }
 
+
+        cleanupCollection("/attachment/" + siteId + "/Assignments/");
+        subAttachmentsNotlinkedToSiteId.forEach(this::cleanupCollection);
+
+    } //harddelete
+
+
+    private void cleanupCollection(String id) {
         // Cleanup the collections
         ContentCollection contentCollection = null;
         try {
-            contentCollection = contentHostingService.getCollection("/attachment/" + siteId + "/Assignments/");
+            contentCollection = contentHostingService.getCollection(id);
         } catch (IdUnusedException e) {
             log.warn("id for collection does not exist " + e);
         } catch (TypeException e1) {
@@ -5321,12 +5396,11 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
         } catch (PermissionException e2) {
             log.warn("insufficient permissions " + e2);
         }
-
         try{
             if(contentCollection !=  null){
                 List<String> members = contentCollection.getMembers();
                 for(String member : members){
-                    log.debug("remove contenCollection: " + member);
+                    log.info("remove contenCollection: " + member);
                     contentHostingService.removeCollection(member);
                 }
                 contentHostingService.removeCollection(contentCollection.getId());
@@ -5342,15 +5416,7 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
         }catch (ServerOverloadException e4){
             log.warn("ServerOverloadException " + e4);
         }
-    }
 
-    @Override
-    public boolean allowAddTags(String context) {
-        String resourceString = AssignmentReferenceReckoner.reckoner().context(context).reckon().getReference();
-        return permissionCheck(TagService.TAGSERVICE_MANAGE_PERMISSION, resourceString, null);
-    }
+    } //harddelete
 
-    public FormattedText getFormattedText() {
-        return formattedText;
-    }
 }

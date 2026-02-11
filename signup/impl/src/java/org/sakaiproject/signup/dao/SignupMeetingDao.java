@@ -249,4 +249,6 @@ public interface SignupMeetingDao extends GeneralGenericDao {
 	 */
 	List<String> getAllLocations(String siteId) throws DataAccessException;
 
+	void hardDeleteSignupMeetingsForContext(String siteId);
+
 }

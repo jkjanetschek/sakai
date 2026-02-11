@@ -39,6 +39,11 @@
             <groupId>org.sakaiproject</groupId>
             <artifactId>sakai-postem-hbm</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.sakaiproject.kernel</groupId>
+            <artifactId>sakai-kernel-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     <build>
         <resources>

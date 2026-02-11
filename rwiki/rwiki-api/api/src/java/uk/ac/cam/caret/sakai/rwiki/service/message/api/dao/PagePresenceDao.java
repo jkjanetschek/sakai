@@ -52,4 +52,5 @@ public interface PagePresenceDao
 	 * @return
 	 */
 	List findBySpaceOnly(String pageSpace, String pageName);
+	void hardDeletePresencesInSpace(String context);
 }

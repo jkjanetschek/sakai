@@ -55,6 +55,7 @@ public class ItemGradingData implements java.io.Serializable {
   private Set<ItemGradingAttachment> itemGradingAttachmentSet = new HashSet<>();
   private Long itemGradingId;
   private String lastDuration;
+  @EqualsAndHashCode.Exclude
   private List<MediaData> mediaArray;
   private Double overrideScore;
   private Long publishedAnswerId;

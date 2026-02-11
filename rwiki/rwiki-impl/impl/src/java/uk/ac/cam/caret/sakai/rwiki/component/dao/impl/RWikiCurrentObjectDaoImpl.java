@@ -35,12 +35,14 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Expression;
 import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.type.DateType;
 import org.hibernate.type.StringType;
 import org.hibernate.type.Type;
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
+import org.springframework.transaction.annotation.Transactional;
 import uk.ac.cam.caret.sakai.rwiki.component.Messages;
 import uk.ac.cam.caret.sakai.rwiki.model.RWikiCurrentObjectImpl;
 import uk.ac.cam.caret.sakai.rwiki.service.api.dao.ObjectProxy;
@@ -418,6 +420,27 @@ public class RWikiCurrentObjectDaoImpl extends HibernateDaoSupport implements RW
 				.createQuery("select r.name " + "from RWikiCurrentObjectImpl  r ")
                 .list();
 		return getHibernateTemplate().execute(callback);
+	}
+
+	private List getRWikiObjectsForContext(String context){
+		HibernateCallback<List> callback = session -> {
+			return session.createCriteria(RWikiCurrentObject.class)
+					.add(Restrictions.like("realm","%"+context+"%"))
+					.list();
+		};
+		return  getHibernateTemplate().execute(callback);
+	}
+	@Transactional(readOnly = false)
+	public void hardDeleteRWikiObjectsForContext(String context){
+		try{
+			List<RWikiCurrentObject> objects = getRWikiObjectsForContext(context);
+			for (RWikiCurrentObject object: objects){
+				getHibernateTemplate().delete(contentDAO.getContentObject(object));
+				getHibernateTemplate().delete(object);
+			}
+		}catch (HibernateException e){
+			log.error(String.valueOf(e));
+		}
 	}
 
 }

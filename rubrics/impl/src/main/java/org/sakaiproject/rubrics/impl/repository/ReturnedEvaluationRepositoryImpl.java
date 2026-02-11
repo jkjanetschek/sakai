@@ -27,12 +27,15 @@ import java.util.Optional;
 import org.hibernate.Session;
 
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 import org.sakaiproject.rubrics.api.model.ReturnedEvaluation;
 import org.sakaiproject.rubrics.api.repository.ReturnedEvaluationRepository;
 import org.sakaiproject.springframework.data.SpringCrudRepositoryImpl;
+
+import org.springframework.transaction.annotation.Transactional;
 
 public class ReturnedEvaluationRepositoryImpl extends SpringCrudRepositoryImpl<ReturnedEvaluation, Long> implements ReturnedEvaluationRepository {
 
@@ -48,8 +51,9 @@ public class ReturnedEvaluationRepositoryImpl extends SpringCrudRepositoryImpl<R
         return session.createQuery(query).uniqueResultOptional();
     }
 
-
+    @Transactional
     public void deleteByOriginalEvaluationId(Long originalEvaluationId) {
+
         Session session = sessionFactory.getCurrentSession();
         Optional<ReturnedEvaluation> returnedEvaluationOptional = findByOriginalEvaluationId(originalEvaluationId);
         if (returnedEvaluationOptional.isPresent()) {

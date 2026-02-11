@@ -26,10 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Expression;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.criterion.Order;
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
+import org.springframework.transaction.annotation.Transactional;
 import uk.ac.cam.caret.sakai.rwiki.model.RWikiHistoryObjectImpl;
 import uk.ac.cam.caret.sakai.rwiki.service.api.dao.ObjectProxy;
 import uk.ac.cam.caret.sakai.rwiki.service.api.dao.RWikiHistoryObjectDao;
@@ -253,6 +255,33 @@ public class RWikiHistoryObjectDaoImpl extends HibernateDaoSupport implements
 	public void updateObject(RWikiObject rwo)
 	{
 		getHibernateTemplate().saveOrUpdate(rwo);
+	}
+
+
+	private List getRWikiHistoryObjectsForContext(String context){
+		HibernateCallback callback = new HibernateCallback()
+		{
+			public Object doInHibernate(Session session)
+					throws HibernateException
+			{
+				return session.createCriteria(RWikiHistoryObject.class)
+						.add(Restrictions.like("realm","%"+context+"%")).list();
+			}
+		};
+		return  (List) getHibernateTemplate().execute(callback);
+	}
+	@Transactional(readOnly = false)
+	public void hardDeleteRWikiHistoryObjectsForContext(String context){
+		try{
+			List<RWikiHistoryObject> objects =getRWikiHistoryObjectsForContext(context);
+			for(RWikiHistoryObject object:objects){
+				getHibernateTemplate().delete(contentDAO.getContentObject(object));
+				getHibernateTemplate().delete(object);
+			}
+		}catch (HibernateException e){
+			log.error(String.valueOf(e));
+		}
+
 	}
 
 }

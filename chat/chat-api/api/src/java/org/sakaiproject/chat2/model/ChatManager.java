@@ -301,5 +301,7 @@ public interface ChatManager extends EntitySummary {
     */
    public String getUserTimeZone();
    
-   
+   public void hardDeleteChannelsForContext(String siteId);
+
+
 }

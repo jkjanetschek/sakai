@@ -57,6 +57,7 @@ import org.sakaiproject.entity.api.Entity;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.entity.api.EntityProducer;
 import org.sakaiproject.entity.api.EntityTransferrer;
+import org.sakaiproject.entity.api.HardDeleteAware;
 import org.sakaiproject.entity.api.HttpAccess;
 import org.sakaiproject.entity.api.Reference;
 import org.sakaiproject.entity.api.ResourceProperties;
@@ -77,7 +78,7 @@ import org.sakaiproject.site.api.SiteService;
 
 @Slf4j
 public class SignupEntityProducer implements MeetingTypes, EntityProducer, EntityTransferrer,
-		ApplicationContextAware {
+		ApplicationContextAware, HardDeleteAware {
 
 	public static final String SIGNUP = "signup";
 	public static final String REFERENCE_ROOT = Entity.SEPARATOR + SIGNUP;
@@ -445,4 +446,12 @@ public class SignupEntityProducer implements MeetingTypes, EntityProducer, Entit
         stack.pop();
         return results.toString();
     } //archive end
+
+
+
+	@Override
+	public void hardDelete(String siteId) {
+		log.info("Hard Delete  of Tool Signup for context: " + siteId);
+		signupMeetingService.hardDeleteSignupMeetingForContext(siteId);
+	}
 }

@@ -64,6 +64,10 @@
     <many-to-one name="inReplyTo" column="IN_REPLY_TO"
       class="org.sakaiproject.component.app.messageforums.dao.hibernate.MessageImpl"
       not-null="false" cascade="none" index="MFR_MESSAGE_T_IN_REPLY_TO_I"/>
+      <set name="inReplyFrom" lazy="true"  cascade="delete-orphan">
+          <key column="IN_REPLY_TO"/>
+          <one-to-many class="org.sakaiproject.component.app.messageforums.dao.hibernate.MessageImpl"/>
+      </set>
     <property name="threadId" column="THREADID" type="long" />
   	<property name="dateThreadlastUpdated" column="LASTTHREADATE" type="timestamp" />
   	<property name="threadLastPost" column="LASTTHREAPOST" type="long" />
@@ -924,6 +928,13 @@
  
   </query>
     
+    <query name="findPrvtMsgsByContext">
+        <![CDATA[from org.sakaiproject.component.app.messageforums.dao.hibernate.PrivateMessageImpl as message
+             left join fetch message.recipients recipient
+             where recipient.contextId = :contextId
+    ]]>
+    </query>
+
 </hibernate-mapping>
 
 

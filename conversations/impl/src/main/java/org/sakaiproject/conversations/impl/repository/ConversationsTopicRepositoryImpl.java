@@ -20,6 +20,7 @@ import java.util.List;
 import org.hibernate.Session;
 
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.criteria.Join;
@@ -27,6 +28,7 @@ import javax.persistence.criteria.Root;
 
 import org.sakaiproject.conversations.api.model.Metadata;
 import org.sakaiproject.conversations.api.model.ConversationsTopic;
+import org.sakaiproject.conversations.api.model.UserStatistics;
 import org.sakaiproject.conversations.api.repository.ConversationsTopicRepository;
 import org.sakaiproject.springframework.data.SpringCrudRepositoryImpl;
 
@@ -99,4 +101,15 @@ public class ConversationsTopicRepositoryImpl extends SpringCrudRepositoryImpl<C
 
         return session.createQuery(query).list();
     }
+
+    @Transactional
+    public Integer deleteUserStatisticsByTopicId(String topicId) {
+        Session session = sessionFactory.getCurrentSession();
+
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaDelete<UserStatistics> criteriaDelete = cb.createCriteriaDelete(UserStatistics.class);
+        criteriaDelete.where(cb.equal(criteriaDelete.from(UserStatistics.class).get("topic").get("id"), topicId));
+        return session.createQuery(criteriaDelete).executeUpdate();
+    }
+
 }

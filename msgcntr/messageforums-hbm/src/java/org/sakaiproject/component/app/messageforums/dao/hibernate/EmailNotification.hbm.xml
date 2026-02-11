@@ -35,5 +35,9 @@
 		<![CDATA[select distinct us.userId from org.sakaiproject.component.app.messageforums.dao.hibernate.EmailNotificationImpl as us where us.contextId = :contextId and us.notificationLevel= :level]]>
 	</query>
 
+	<query name="findEmailNotificationByContext">
+		<![CDATA[from org.sakaiproject.component.app.messageforums.dao.hibernate.EmailNotificationImpl as us where us.contextId = :contextId]]>
+	</query>
+
 </hibernate-mapping>
 

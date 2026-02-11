@@ -88,6 +88,8 @@ import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.persistence.EntityNotFoundException;
+
 @Slf4j
 public class PublishedAssessmentFacadeQueries extends HibernateDaoSupport implements PublishedAssessmentFacadeQueriesAPI {
 
@@ -2833,4 +2835,16 @@ public class PublishedAssessmentFacadeQueries extends HibernateDaoSupport implem
     		}
     	}
     }
+
+	public void hardDeletePublishedAssessment(String assessmentId){
+		try{
+			PublishedAssessmentData a = loadPublishedAssessment(Long.parseLong(assessmentId));
+			getHibernateTemplate().delete(a);
+		}catch (EntityNotFoundException e){
+			log.info("HardDelete: published assessment(" +assessmentId +") not found" + e);
+		}catch (Exception e2){
+			log.info("error hardDelete Assessment: " + e2);
+		}
+	}
+
 }

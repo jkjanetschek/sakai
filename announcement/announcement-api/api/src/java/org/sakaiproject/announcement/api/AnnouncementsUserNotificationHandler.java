@@ -100,11 +100,13 @@ public class AnnouncementsUserNotificationHandler extends AbstractUserNotificati
         final String eventResource = event.getResource();
 
         // Ignore event that is "annc.new" and it's resource contains "motd" as these are handled by a "motd.new" event
-        if (!(AnnouncementService.SECURE_ANNC_ADD.equals(eventName) && eventResource.contains("motd"))) {
+        if (! (AnnouncementService.SECURE_ANNC_ADD.equals(eventName) && eventResource.contains("motd") ||
+                (AnnouncementService.SECURE_ANNC_REMOVE_ANY.equals(eventName) && eventResource.contains("main")))) {
 
             // Add a security advisor that allows "annc.read" and "annc.read.drafts" permissions, must be popped in finally
             SecurityAdvisor sa = unlock(new String[] {AnnouncementService.SECURE_ANNC_READ, AnnouncementService.SECURE_ANNC_READ_DRAFT});
             try {
+
                 AnnouncementMessage message = (AnnouncementMessage) announcementService.getMessage(entityManager.newReference(eventResource));
                 boolean isDraftMessage = false;
                 boolean isFutureMessage = false;

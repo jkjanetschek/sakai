@@ -41,6 +41,7 @@ import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.entity.api.EntityManager;
 import org.sakaiproject.event.api.Event;
 import org.sakaiproject.event.api.EventTrackingService;
+import org.sakaiproject.site.api.SiteRemovalAdvisor;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.tasks.api.AssignationType;
 import org.sakaiproject.tasks.api.Task;
@@ -53,6 +54,7 @@ import org.sakaiproject.tasks.api.repository.TaskAssignedRepository;
 import org.sakaiproject.tasks.api.repository.TaskRepository;
 import org.sakaiproject.tasks.api.repository.UserTaskRepository;
 import org.sakaiproject.tool.api.SessionManager;
+import org.sakaiproject.site.api.Site;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Setter
 @Transactional(readOnly = true)
-public class TaskServiceImpl implements TaskService, Observer {
+public class TaskServiceImpl implements TaskService, Observer, SiteRemovalAdvisor {
 
     @Autowired private AuthzGroupService authzGroupService;
     @Autowired private EntityManager entityManager;
@@ -86,6 +88,8 @@ public class TaskServiceImpl implements TaskService, Observer {
         functionManager.registerFunction(TaskPermissions.CREATE_TASK, true);
 
         eventTrackingService.addObserver(this);
+
+        siteService.addSiteRemovalAdvisor(this);
     }
 
     public void update(Observable o, Object arg) {
@@ -328,5 +332,15 @@ public class TaskServiceImpl implements TaskService, Observer {
         }
 
         return securityService.unlock(TaskPermissions.CREATE_TASK, siteService.siteReference(siteId));
+    }
+
+    // use of transactionTemplate because @Transactional, does not seem to work properly --> detached entity exception
+    public void removed(Site site) {
+        String siteId = site.getId();
+        log.info("Task Service: SiteRemoval Advisor called for context: " + siteId);
+        transactionTemplate.executeWithoutResult(status -> {
+            List<Task> tasks = taskRepository.findBySiteId(siteId);
+            tasks.forEach(task ->  removeTask(task));
+        });
     }
 }

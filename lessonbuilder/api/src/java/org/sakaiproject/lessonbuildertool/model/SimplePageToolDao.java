@@ -145,6 +145,8 @@ public interface SimplePageToolDao {
     // of course the String argument is just a long converted to a string.
 	public SimplePageItem findTopLevelPageItemBySakaiId(String id);
 
+    public List<SimplePageItem> findTopLevelPageItemsBySakaiIds(List<String> ids);
+
     // find all items with given page ID
 	public List<SimplePageItem> findPageItemsBySakaiId(String id);
 
@@ -347,4 +349,18 @@ public interface SimplePageToolDao {
     public void deleteQuestionResponsesForItem(SimplePageItem item);
 
     public void deleteCommentsForLessonsItem(SimplePageItem item);
+
+    /**
+     *  hard delete methods
+     */
+    public List<SimplePage> getAllPages(String siteId);
+    public List<SimplePageItem> getAllPageItems(List<SimplePage> allPages);
+    public void deleteLessonsBuilderGroups(String siteId);
+    public void deleteLessonsLogs(List<SimplePageItem> allPageItems);
+    public void deleteLessonsComments(List<SimplePage> allPages);
+    public void deleteChecklistItemsStatus(List<SimplePageItem> allPageItems);
+    public void deletePeerEvalStatus(List<SimplePage> allPages);
+    public void deleteLessonsProperties(String siteId);
+    public void deleteQuestionResponses(List<SimplePageItem> allPageItems);
+    public void deleteStudentPages(List<SimplePage> allPages);
 }

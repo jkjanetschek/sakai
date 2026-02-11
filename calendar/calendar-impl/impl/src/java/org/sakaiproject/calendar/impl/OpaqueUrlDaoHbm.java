@@ -20,7 +20,11 @@ import java.util.List;
 import java.util.UUID;
 
 import lombok.extern.slf4j.Slf4j;
-
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
 import org.sakaiproject.calendar.api.OpaqueUrl;
@@ -69,4 +73,23 @@ public class OpaqueUrlDaoHbm extends HibernateDaoSupport implements OpaqueUrlDao
 					+ ", calendarRef: " + calendarRef);
 		}
 	}
+
+
+	public void hardDeleteForContext(String siteId){
+		getHibernateTemplate().deleteAll(getOpaqueUrlsForContext(siteId));
+	}
+
+	private List<OpaqueUrl> getOpaqueUrlsForContext(String siteId){
+		final HibernateCallback hcb = new HibernateCallback() {
+			@Override
+			public Object doInHibernate(Session session) throws HibernateException {
+				Criteria c = session.createCriteria(OpaqueUrl.class);
+				c.add(Restrictions.like("calendarRef","%"+siteId+"%"));
+				return c.list();
+			}
+		};
+		return (List<OpaqueUrl>) getHibernateTemplate().execute(hcb);
+		//Criteria c = getSessionFactory().getCurrentSession().createCriteria(OpaqueUrl.class);
+	}
+
 }

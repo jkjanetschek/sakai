@@ -30,8 +30,11 @@ import java.util.TreeSet;
 
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
+import org.hibernate.FlushMode;
+import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.hibernate.criterion.Expression;
+import org.hibernate.criterion.Restrictions;
 
 import org.sakaiproject.api.app.postem.data.Gradebook;
 import org.sakaiproject.api.app.postem.data.GradebookManager;
@@ -43,6 +46,7 @@ import org.sakaiproject.component.app.postem.data.TemplateImpl;
 
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate5.HibernateTemplate;
 
 public class GradebookManagerImpl extends HibernateDaoSupport implements GradebookManager, Serializable {
 
@@ -312,5 +316,26 @@ public class GradebookManagerImpl extends HibernateDaoSupport implements Gradebo
             return q.list();
         };
         return (List) getHibernateTemplate().execute(hcb);
+    }
+
+
+
+    public void hardDeleteGradebooks(String siteId) {
+        HibernateCallback hcb = session -> {
+            session.setFlushMode(FlushMode.AUTO);
+            Criteria c = session.createCriteria(Gradebook.class);
+            c.add(Restrictions.eq("context", siteId));
+            return c.list();
+        };
+
+        Session session = getHibernateTemplate().getSessionFactory().getCurrentSession();
+        session.setFlushMode(FlushMode.AUTO);
+
+        List<Gradebook> gradebooks = (List)getHibernateTemplate().execute(hcb);
+        //Session session = getSessionFactory().getCurrentSession();
+        //session.setFlushMode(FlushMode.AUTO);
+        gradebooks.forEach(i -> {session.delete(i);});
+
+        // getHibernateTemplate().deleteAll((List)getHibernateTemplate().execute(hcb));
     }
 }

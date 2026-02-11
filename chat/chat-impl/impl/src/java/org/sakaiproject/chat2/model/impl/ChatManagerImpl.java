@@ -1431,4 +1431,10 @@ public class ChatManagerImpl extends HibernateDaoSupport implements ChatManager,
     @Override
     public void viewAccepted(View arg0) {
     }
+
+
+    public void hardDeleteChannelsForContext(String siteId){
+       List<ChatChannel> channels =  getContextChannels(siteId,true);
+       channels.forEach(a -> getHibernateTemplate().delete(a));
+    }
 }

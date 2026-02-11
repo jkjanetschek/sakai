@@ -28,10 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Expression;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.criterion.Order;
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
+import org.springframework.transaction.annotation.Transactional;
 import uk.ac.cam.caret.sakai.rwiki.message.model.PagePresenceImpl;
 import uk.ac.cam.caret.sakai.rwiki.service.message.api.dao.PagePresenceDao;
 import uk.ac.cam.caret.sakai.rwiki.service.message.api.model.PagePresence;
@@ -263,6 +265,19 @@ public class PagePresenceDaoImpl extends HibernateDaoSupport implements
 			long finish = System.currentTimeMillis();
 			TimeLogger.printTimer("PagePresenceDaoImpl.findBySpaceOnly: "
 					+ pageSpace + " :" + pageName, start, finish);
+		}
+	}
+	@Transactional(readOnly = false)
+	public void hardDeletePresencesInSpace(String context){
+		try{
+			HibernateCallback callback = new HibernateCallback() {
+				public Object doInHibernate(Session session) throws HibernateException {
+					return session.createCriteria(PagePresence.class).add(Restrictions.like("pagespace","%"+context+"%")).list();
+				}
+			};
+			getHibernateTemplate().deleteAll((List)getHibernateTemplate().execute(callback));
+		}catch (HibernateException e){
+			log.error(String.valueOf(e));
 		}
 	}
 

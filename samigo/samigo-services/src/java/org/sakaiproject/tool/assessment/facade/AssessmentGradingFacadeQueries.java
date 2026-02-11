@@ -254,6 +254,20 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
         return list;
     }
 
+    public List<AssessmentGradingData> getAllAssessmentGradingDataForHardDelete(final Long publishedId) {
+        final HibernateCallback<List<AssessmentGradingData>> hcb = session -> {
+            Query q = session.createQuery(
+                    "from AssessmentGradingData a where a.publishedAssessmentId = :id");
+            q.setLong("id", publishedId);
+            return q.list();
+        };
+        List<AssessmentGradingData> list = getHibernateTemplate().execute(hcb);
+
+        list.forEach(agd -> agd.setItemGradingSet(getItemGradingSet(agd.getAssessmentGradingId())));
+
+        return list;
+    }
+
     public Map<Long, List<ItemGradingData>> getItemScores(Long publishedId, final Long itemId, String which) {
         List scores = getTotalScores(publishedId, which, true);
         return getItemScores(itemId, scores, false);
@@ -1844,6 +1858,18 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
         return getHibernateTemplate().execute(hcb);
     }
 
+    private List<StudentGradingSummaryData> getStudentGradingSummaryDataByPublishedAssessmentId(final Long publishedAssessmentId) {
+        final HibernateCallback<List<StudentGradingSummaryData>> hcb = session -> {
+            Query q = session.createQuery(
+                    "select s " +
+                            "from StudentGradingSummaryData s " +
+                            "where s.publishedAssessmentId = :id");
+            q.setLong("id", publishedAssessmentId);
+            return q.list();
+        };
+        return getHibernateTemplate().execute(hcb);
+    }
+
     public int getNumberRetake(final Long publishedAssessmentId, final String agentIdString) {
         final HibernateCallback<List<Integer>> hcb = session -> {
             Query q = session.createQuery(
@@ -1954,16 +1980,16 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
         return getHibernateTemplate().execute(hcb);
     }
 
-    public List getExportResponsesData(String publishedAssessmentId, boolean anonymous, String audioMessage, String fileUploadMessage, String noSubmissionMessage, 
-                                       boolean showPartAndTotalScoreSpreadsheetColumns, String poolString, String partString, String questionString, String textString, 
-                                       String responseString, String pointsString, String rationaleString, String itemGradingCommentsString, Map useridMap, 
+    public List getExportResponsesData(String publishedAssessmentId, boolean anonymous, String audioMessage, String fileUploadMessage, String noSubmissionMessage,
+                                       boolean showPartAndTotalScoreSpreadsheetColumns, String poolString, String partString, String questionString, String textString,
+                                       String responseString, String pointsString, String rationaleString, String itemGradingCommentsString, Map useridMap,
                                        String responseCommentString) {
-        return this.getExportResponsesData(publishedAssessmentId, anonymous, audioMessage, fileUploadMessage, noSubmissionMessage, showPartAndTotalScoreSpreadsheetColumns, 
-                                    poolString, partString, questionString, textString, responseString, pointsString, rationaleString, itemGradingCommentsString, useridMap, 
+        return this.getExportResponsesData(publishedAssessmentId, anonymous, audioMessage, fileUploadMessage, noSubmissionMessage, showPartAndTotalScoreSpreadsheetColumns,
+                                    poolString, partString, questionString, textString, responseString, pointsString, rationaleString, itemGradingCommentsString, useridMap,
                                     responseCommentString, false);
     }
 
-    public List getExportResponsesData(String publishedAssessmentId, boolean anonymous, String audioMessage, String fileUploadMessage, String noSubmissionMessage, boolean showPartAndTotalScoreSpreadsheetColumns, String poolString, String partString, String questionString, String textString, String responseString, String pointsString, String rationaleString, String itemGradingCommentsString, Map useridMap, String responseCommentString, boolean isOneSelectionType) 
+    public List getExportResponsesData(String publishedAssessmentId, boolean anonymous, String audioMessage, String fileUploadMessage, String noSubmissionMessage, boolean showPartAndTotalScoreSpreadsheetColumns, String poolString, String partString, String questionString, String textString, String responseString, String pointsString, String rationaleString, String itemGradingCommentsString, Map useridMap, String responseCommentString, boolean isOneSelectionType)
     {
         List dataList = new ArrayList();
         List headerList = new ArrayList();
@@ -2492,7 +2518,7 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
                             PublishedSectionData psd = (PublishedSectionData) i.next();
                             if (psd.getSequence().intValue() == sectionSequenceNumber) {
                                 poolName = psd.getSectionMetaDataByLabel(SectionDataIfc.POOLNAME_FOR_RANDOM_DRAW);
-                                if (SectionDataIfc.RANDOM_DRAW_FROM_QUESTIONPOOLS.equals(Integer.valueOf(psd.getSectionMetaDataByLabel(SectionDataIfc.AUTHOR_TYPE))) 
+                                if (SectionDataIfc.RANDOM_DRAW_FROM_QUESTIONPOOLS.equals(Integer.valueOf(psd.getSectionMetaDataByLabel(SectionDataIfc.AUTHOR_TYPE)))
                                         && psd.getSectionMetaDataByLabel(SectionDataIfc.RANDOM_POOL_COUNT) != null) {
                                     for (int j = 1; j < Integer.valueOf(psd.getSectionMetaDataByLabel(SectionDataIfc.RANDOM_POOL_COUNT)); j++) {
                                         poolName += SectionDataIfc.SEPARATOR_COMMA + psd.getSectionMetaDataByLabel(SectionDataIfc.POOLNAME_FOR_RANDOM_DRAW + SectionDataIfc.SEPARATOR_MULTI + j);
@@ -2508,19 +2534,19 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
                                     questionNumber,
                                     poolString,
                                     poolName));
-                            headerList.add(makeHeader(partString, 
-                                    sectionSequenceNumber, 
-                                    questionString, 
-                                    responseString, 
-                                    questionNumber, 
-                                    poolString, 
+                            headerList.add(makeHeader(partString,
+                                    sectionSequenceNumber,
+                                    questionString,
+                                    responseString,
+                                    questionNumber,
+                                    poolString,
                                     poolName));
-                            headerList.add(makeHeader(partString, 
-                                    sectionSequenceNumber, 
-                                    questionString, 
-                                    pointsString, 
-                                    questionNumber, 
-                                    poolString, 
+                            headerList.add(makeHeader(partString,
+                                    sectionSequenceNumber,
+                                    questionString,
+                                    pointsString,
+                                    questionNumber,
+                                    poolString,
                                     poolName));
                             if (addRationale) {
                                 headerList.add(makeHeader(partString,
@@ -2552,12 +2578,12 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
                                         poolName));
                             }
                             if (addRationale) {
-                                headerList.add(makeHeader(partString, 
-                                        sectionSequenceNumber, 
-                                        questionString, 
-                                        rationaleString, 
-                                        questionNumber, 
-                                        poolString, 
+                                headerList.add(makeHeader(partString,
+                                        sectionSequenceNumber,
+                                        questionString,
+                                        rationaleString,
+                                        questionNumber,
+                                        poolString,
                                         poolName));
                             }
                             if (addResponseComment) {
@@ -3658,7 +3684,7 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
         };
         return getHibernateTemplate().execute(hcb);
     }
-    
+
     public SectionGradingData getSectionGradingData(Long assessmentGradingId, Long sectionId, String agentId) {
         final HibernateCallback<List<SectionGradingData>> hcb = session -> {
             Query q = session.createQuery(
@@ -3690,4 +3716,14 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
             }
         }
     }
+
+
+    public void hardDeleteGradingData(String publishedAssessmentId) {
+        List<AssessmentGradingData> data = getAllAssessmentGradingDataForHardDelete(Long.parseLong(publishedAssessmentId));
+        data.forEach(a -> getHibernateTemplate().delete(a));
+        List<StudentGradingSummaryData> dataStudents =  getStudentGradingSummaryDataByPublishedAssessmentId(Long.parseLong(publishedAssessmentId));
+        dataStudents.forEach(a -> getHibernateTemplate().delete(a));
+    }
+
+
 }

@@ -29,9 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Expression;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
+import org.springframework.transaction.annotation.Transactional;
 import uk.ac.cam.caret.sakai.rwiki.message.model.PreferenceImpl;
 import uk.ac.cam.caret.sakai.rwiki.service.message.api.dao.PreferenceDao;
 import uk.ac.cam.caret.sakai.rwiki.service.message.api.model.Preference;
@@ -293,6 +295,20 @@ public class PreferenceDaoImpl extends HibernateDaoSupport implements
 			long finish = System.currentTimeMillis();
 			TimeLogger.printTimer("PreferenceDaoImpl.delete: " + pref, start,
 					finish);
+		}
+	}
+	@Transactional(readOnly = false)
+	public void hardDeletePreferencesForContext(String context){
+		try{
+			HibernateCallback callback = new HibernateCallback()
+			{
+				public Object doInHibernate(Session session) throws HibernateException {
+					return session.createCriteria(Preference.class).add(Restrictions.like("prefcontext", "%"+context+"%")).list();
+				}
+			};
+			getHibernateTemplate().deleteAll((List) getHibernateTemplate().execute(callback));
+		}catch (HibernateException e){
+			log.error(String.valueOf(e));
 		}
 	}
 

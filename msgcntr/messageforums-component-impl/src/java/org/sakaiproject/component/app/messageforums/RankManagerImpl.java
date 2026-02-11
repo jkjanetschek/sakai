@@ -155,6 +155,18 @@ public class RankManagerImpl extends HibernateDaoSupport implements RankManager 
         return getHibernateTemplate().execute(hcb);
     }
 
+    public List getRanksForContext(String contextId){
+        HibernateCallback<List> hcb = session -> {
+            Query q = session.getNamedQuery(QUERY_BY_CONTEXT_ID);
+            q.setParameter("contextId", contextId, StringType.INSTANCE);
+            return q.list();
+        };
+
+        return getHibernateTemplate().execute(hcb);
+    }
+
+
+
     public List findRanksByContextIdOrderByMinPostDesc(final String contextId) {
         if (log.isDebugEnabled()) {
             log.debug("getRank(contextId: " + contextId + ")");
@@ -226,6 +238,13 @@ public class RankManagerImpl extends HibernateDaoSupport implements RankManager 
         }
         if (rank.getRankImage() != null) {
             removeImageAttachmentObject(rank.getRankImage());
+        }
+        getHibernateTemplate().delete(getHibernateTemplate().merge(rank));
+    }
+
+    public void hardDeleteRank(Rank rank){
+        if (rank.getRankImage() != null) {
+            getHibernateTemplate().delete(getHibernateTemplate().merge(rank.getRankImage()));
         }
         getHibernateTemplate().delete(getHibernateTemplate().merge(rank));
     }

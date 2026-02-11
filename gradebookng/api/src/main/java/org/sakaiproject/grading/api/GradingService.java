@@ -635,7 +635,7 @@ public interface GradingService extends EntityProducer {
      * @param categoryType the category type of the gradebook
      * @return nested map: studentUuid -> categoryId -> CategoryScoreData
      */
-    Map<String, Map<Long, CategoryScoreData>> calculateAllCategoryScoresForStudents(Long gradebookId, 
+    Map<String, Map<Long, CategoryScoreData>> calculateAllCategoryScoresForStudents(Long gradebookId,
             List<String> studentUuids, boolean includeNonReleasedItems, Integer categoryType);
 
     /**
@@ -1005,4 +1005,6 @@ public interface GradingService extends EntityProducer {
     public void initializeGradebooksForSite(String siteId);
     public Double convertStringToDouble(final String doubleAsString);
 
+    public String getUrlForAssignment(Assignment assignment);
+    public void hardDeleteGradebook(String siteId);
 }
