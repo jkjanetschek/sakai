@@ -1,0 +1,164 @@
+@import "defaults";
+
+/*  Login  */
+.mciLogoWrapper {
+  background-color: var(--mci-blue) !important;
+}
+.xloginMCI {
+  background-color: var(--mci-true)!important;
+}
+
+.xloginMCIButton {
+  background: var(--mci-blue) !important;
+  color: var(--sakai-color-white) !important;
+
+  &:hover {
+    background: var(--mci-true) !important;
+  }
+}
+
+
+
+
+.portal-header {
+  background-color: var(--mci-gray)!important;
+}
+.portal-header-hamburger-button {
+  color: white !important;
+}
+
+.portal-header-breadcrumb-item > a, .portal-header-breadcrumb-separator {
+  color: white !important
+}
+
+#sakai-system-indicators button {
+  color: white !important
+}
+
+a.manage-overview-link  {
+  color: var(--sakai-color-blue--lighter-4) !important;
+  &:hover {
+    color: var(--sakai-color-blue--lighter-3) !important;
+  }
+}
+
+
+#sakai-login-dialog {
+  --sakai-border-color: var(--sakai-color-gray--lighter-4);
+}
+
+
+
+
+
+.#{$namespace}sakai-lessonbuildertool .column span.navIntraTool #toolbar .btn.btn-link {
+  color: var(--button-text-color) !important;
+  &:not(.#{$namespace}toolTitleNav__link) {
+    background: var(--button-background) !important;
+    &:hover {
+      color: var(--button-hover-text-color) !important;
+      background: var(--button-hover-background) !important;
+    }
+    a[href] {
+      color: inherit !important;
+      background: inherit !important;;
+      &:hover {
+        color: inherit !important;;
+        background: inherit !important;;
+      }
+    }
+  }
+}
+
+.#{$namespace}sakai-lessonbuildertool {
+  .btn.btn-link.add-bottom {
+    color: var(--button-text-color) !important;
+    background: var(--button-background) !important;
+    span.fa-edit-icon {
+      color: inherit !important;
+      background: inherit !important;
+    }
+/*
+    &:hover {
+      color: var(--button-hover-text-color) !important;
+      background: var(--button-hover-background) !important;
+      span.fa-edit-icon {
+        color: inherit !important;
+        background: inherit !important;
+        &:hover {
+          color: inherit !important;;
+          background: inherit !important;;
+        }
+      }
+    }
+ */
+  }
+}
+
+
+/*
+ *   ckEditor
+ */
+.cke a.cke_toolbox_collapser {
+  &:hover {
+    background-color: var(--mci-gray--lighter-5) !important;
+  }
+}
+.cke_dialog_tabs {
+  a.cke_dialog_tab {
+    &:hover {
+      color: var(--tool-tab-hover-text-color) !important; // --tool-tab-hover-text-color
+    }
+  }
+}
+
+
+.cke_dialog_ui_vbox_child {
+  a.cke_dialog_ui_button {
+    span.cke_dialog_ui_button {
+      &:hover {
+          color: var(--button-hover-text-color) !important;
+      }
+    }
+  }
+}
+
+// SAK-49940
+/*
+.cke_1 iframe.cke_wysiwyg_frame {
+  background: var(--sakai-background-color-1);
+}
+ */
+
+
+td.cke_dialog_contents_body {
+  background: var(--sakai-white);
+}
+
+
+
+/*
+ *   Conversations
+ */
+
+.conv-settings-and-create {
+  button.btn-link {
+    &:hover {
+      color: inherit !important;
+    }
+  }
+}
+
+
+
+/*
+ *  Preferences
+ */
+
+
+div.manage-hidden-entry {
+  span.title {
+    color: rgb(51, 51, 51)
+  }
+}
+
