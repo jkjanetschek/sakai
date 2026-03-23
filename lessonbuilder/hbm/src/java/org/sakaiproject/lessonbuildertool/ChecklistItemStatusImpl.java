@@ -31,6 +31,10 @@ public class ChecklistItemStatusImpl implements ChecklistItemStatus, Serializabl
     private ChecklistItemStatusId id;
     private boolean done; // Has this item been completed?
 
+    /* MCI SAKAIME-866 */
+    private java.util.Date checkedAt;
+
+
     public ChecklistItemStatusImpl() {
         id = new ChecklistItemStatusId();
     }
@@ -41,6 +45,7 @@ public class ChecklistItemStatusImpl implements ChecklistItemStatus, Serializabl
         this.id.setChecklistItemId(checklistItemId);
         this.id.setOwner(owner);
         this.done = false;
+        this.checkedAt = null; // not checked yet
     }
 
     public ChecklistItemStatusImpl(long checklistId, long checklistItemId, String owner, boolean done) {
@@ -49,6 +54,7 @@ public class ChecklistItemStatusImpl implements ChecklistItemStatus, Serializabl
         this.id.setChecklistItemId(checklistItemId);
         this.id.setOwner(owner);
         this.done = done;
+        this.checkedAt = done ? new java.util.Date() : null;
     }
 
     public ChecklistItemStatusId getId() {
@@ -76,8 +82,15 @@ public class ChecklistItemStatusImpl implements ChecklistItemStatus, Serializabl
     }
 
     public void setDone(boolean done) {
+        if (done && !this.done && this.checkedAt == null) {
+            this.checkedAt = new java.util.Date();
+        }
         this.done = done;
+
+        if (!done) { this.checkedAt = null; }
     }
 
+	public java.util.Date getCheckedAt() { return checkedAt; }
+	public void setCheckedAt(java.util.Date checkedAt) { this.checkedAt = checkedAt; }
 
 }

@@ -13,6 +13,9 @@
         </composite-id>
 
         <property name="done" type="boolean" />
+        
+        <!-- /* MCI SAKAIME-866 */ -->
+        <property name="checkedAt" column="checked_at" type="timestamp" not-null="false"/>
 
     </class>
 </hibernate-mapping>

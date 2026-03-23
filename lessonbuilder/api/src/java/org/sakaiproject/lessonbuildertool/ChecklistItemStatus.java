@@ -33,4 +33,10 @@ public interface ChecklistItemStatus {
 
     boolean isDone();
     void setDone(boolean done);
+
+    /* MCI SAKAIME-866 BEGIN */
+    java.util.Date getCheckedAt();
+    void setCheckedAt(java.util.Date checkedAt);
+    /* MCI SAKAIME-866 END */
+
 }
