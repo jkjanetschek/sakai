@@ -32,6 +32,7 @@
 
 package org.sakaiproject.lessonbuildertool.tool.producers;
 
+import edu.mci.sakai.designergateway.AcknowledgeService;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -153,8 +154,9 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 	@Setter ContentHostingService contentHostingService;
 	private FormatAwareDateInputEvolver dateevolver;
 	@Setter private UserTimeService userTimeService;
-	@Setter private FormattedText formattedText;
-	private HttpServletRequest httpServletRequest;
+	@Setter private FormattedText      formattedText;
+	@Setter private AcknowledgeService acknowledgeService;
+	private         HttpServletRequest httpServletRequest;
 	private HttpServletResponse httpServletResponse;
 	// have to do it here because we need it in urlCache. It has to happen before Spring initialization
 	private static MemoryService memoryService = (MemoryService)ComponentManager.get(MemoryService.class);
@@ -699,7 +701,16 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
  		    .decorate(new UITooltipDecorator(messageLocator.getMessage("simplepage.print_all")));
 		UIInternalLink.make(tofill, "show-pages", showAll)
 		    .decorate(new UITooltipDecorator(messageLocator.getMessage("simplepage.showallpages")));
-		
+
+		if (canEditPage && acknowledgeService.hasAcknowledgementChecklist(currentPage.getPageId())) {
+
+			String exportUrl = "/direct/lessons/acknowledgements-for-page/" + currentPage.getPageId() + ".csv";
+
+			UIInternalLink link = UIInternalLink.makeURL(tofill, "export-csv-link", exportUrl);
+			link.decorate(new UITooltipDecorator("Export acknowledgements as CSV"));
+
+		}
+
 		if (canEditPage) {
 			// show tool bar, but not if coming from grading pane
 			if(!cameFromGradingPane) {

@@ -136,6 +136,15 @@
             </button>
           </span>
         </li>
+        <li class="contentButton">
+          <a rsf:id="export-csv-link"
+             class="btn btn-link my-1 Mrphs-toolTitleNav__link top-icon"
+             target="_blank"
+             rel="noopener noreferrer">
+             <span class="Mrphs-itemTitle me-1 d-none d-lg-inline-block">Export Acknowledgements</span>
+             <span class="bi-download" aria-hidden="true"></span>
+          </a>
+        </li>
       </ul>
     </span>
     <!-- /tool-bar -->
@@ -1778,6 +1787,12 @@
                   <input type="submit" style="display:none" rsf:id="lti-import" id="lti-import" />
                   <a rsf:id="lti-import-link" id="lti-import-link" href="#" role="button" class="lti-import"><span rsf:id="msg=simplepage.import_lti_button"></span></a>
                 </form>
+                <!-- just a message, so will display when it should not-->
+              </li>
+              <li class="list-group-item m-1">
+                <a rsf:id="export-cc" id="export-cc" href="#" role="button" data-bs-toggle="modal" data-bs-target="#export-cc-dialog" aria-controls="export-cc-dialog" aria-expanded="false">
+                  <span rsf:id="msg=simplepage.export_cc"></span>
+                </a>
                 <!-- just a message, so will display when it should not-->
               </li>
             </ul>

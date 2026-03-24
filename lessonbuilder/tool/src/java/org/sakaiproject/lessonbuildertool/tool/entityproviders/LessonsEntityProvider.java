@@ -21,13 +21,10 @@
  
 package org.sakaiproject.lessonbuildertool.tool.entityproviders;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import edu.mci.sakai.designergateway.AcknowledgeService;
+import edu.mci.sakai.designergateway.dto.UserAcknowledgeInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -54,6 +51,8 @@ import org.sakaiproject.entitybroker.entityprovider.capabilities.Describeable;
 import org.sakaiproject.entitybroker.entityprovider.capabilities.Outputable;
 import org.sakaiproject.entitybroker.entityprovider.capabilities.Resolvable;
 import org.sakaiproject.entitybroker.entityprovider.capabilities.Sampleable;
+import org.sakaiproject.entitybroker.entityprovider.extension.ActionReturn;
+import org.sakaiproject.entitybroker.entityprovider.extension.EntityData;
 import org.sakaiproject.entitybroker.entityprovider.extension.Formats;
 import org.sakaiproject.entitybroker.exception.EntityNotFoundException;
 import org.sakaiproject.entitybroker.util.AbstractEntityProvider;
@@ -1126,5 +1125,69 @@ public class LessonsEntityProvider extends AbstractEntityProvider implements Ent
         
         @Setter
         private ContentHostingService contentHostingService;
+
+	@Setter
+	private AcknowledgeService acknowledgeService;
+
+	@EntityCustomAction(action = "acknowledgements-for-site", viewKey = EntityView.VIEW_LIST)
+	public ActionReturn getAcknowledgementsForSite(EntityView view, Map<String, Object> params) {
+		try {
+			String siteId = view.getPathSegment(2);
+			checkReadPermission(siteId);
+			List<UserAcknowledgeInfo> list = acknowledgeService.getAllAcknowledgementsForSite(siteId);
+			return getActionReturnForAcknowledgements(view, list);
+
+		} catch (Exception e) {
+			log.error("Error generating acknowledgements: " + e.getMessage(), e);
+			return new ActionReturn("UTF-8", "text/plain",
+					"Error generating acknowledgements: " + e.getMessage());
+		}
+	}
+
+	@EntityCustomAction(action = "acknowledgements-for-page", viewKey = EntityView.VIEW_LIST)
+	public ActionReturn getAcknowledgementsForPage(EntityView view, Map<String, Object> params) {
+		try {
+			String pageIdStr = view.getPathSegment(2);
+			long pageId = Long.valueOf(pageIdStr);
+			SimplePage page = simplePageToolDao.getPage(pageId);
+			checkReadPermission(page.getSiteId());
+			List<UserAcknowledgeInfo> list = acknowledgeService.getAllAcknowledgementsForPage(pageId);
+			return getActionReturnForAcknowledgements(view, list);
+
+		} catch (Exception e) {
+			log.error("Error generating acknowledgements: " + e.getMessage(), e);
+			return new ActionReturn("UTF-8", "text/plain",
+					"Error generating acknowledgements: " + e.getMessage());
+		}
+	}
+
+	private ActionReturn getActionReturnForAcknowledgements(EntityView view, List<UserAcknowledgeInfo> list) {
+		String format = view.getFormat();
+		if (format == null)
+			format = "json"; // Default to JSON if no suffix
+		if ("csv".equalsIgnoreCase(format)) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("eid,firstname,lastname,emailAddress,acknowledgementGivenOnSiteId,timeOfLastAcknowledge\n");
+			for (UserAcknowledgeInfo u : list) {
+				sb.append(String.join(",", Arrays.asList(
+						safe(u.getEid()),
+						safe(u.getFirstname()),
+						safe(u.getLastname()),
+						safe(u.getEmailAddress()),
+						safe(u.getAcknowledgementGivenOnSiteId()),
+						safe(u.getTimeOfLastAcknowledge())
+				))).append("\n");
+			}
+			return new ActionReturn("UTF-8", "text/csv", sb.toString());
+		}
+		return new ActionReturn(new EntityData(list), "json");
+	}
+
+	private String safe(String s) {
+		if (s == null)
+			return "";
+		// Escape double quotes and commas if needed
+		return "\"" + s.replace("\"", "\"\"") + "\"";
+	}
 
 }

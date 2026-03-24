@@ -57,6 +57,7 @@
 		<property name="richTextEvolver" ref="richTextEvolver" />
 		<property name="imageToMimeMap" ref="org.sakaiproject.lessonbuildertool.util.ImageToMimeMap"/>
 		<property name="formattedText" ref="org.sakaiproject.util.api.FormattedText" />
+		<property name="acknowledgeService" ref="edu.mci.sakai.designergateway.AcknowledgeService" />
 	</bean>
 	
 	<bean class="org.sakaiproject.lessonbuildertool.tool.producers.ReorderProducer" >

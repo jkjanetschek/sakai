@@ -463,6 +463,7 @@ simplePageBean.addForumSummary,
 		<property name="lessonsAccess" ref="org.sakaiproject.lessonbuildertool.service.LessonsAccess" />
 		<property name="developerHelperService" ref="org.sakaiproject.entitybroker.DeveloperHelperService" />
 		<property name="contentHostingService" ref="org.sakaiproject.content.api.ContentHostingService" />
+		<property name="acknowledgeService" ref="edu.mci.sakai.designergateway.AcknowledgeService" />
 	</bean>
 	<bean id="lessonsSearchAdapter"
 	    class="org.sakaiproject.lessonbuildertool.service.LessonsEntityContentProducer"
