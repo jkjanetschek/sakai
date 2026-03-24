@@ -98,9 +98,11 @@
     <h:panelGroup rendered="#{delivery.firstTimeTaking}">
         <h:panelGroup rendered="#{(delivery.dueDate != null && delivery.dueDate ne '')}">
             <h:outputText value="#{deliveryMessages.begin_assessment_msg_due} " escape="false"/>
+            <strong>
             <h:outputText value="#{delivery.dueDate}">
                 <f:convertDateTime dateStyle="full" timeStyle="short" timeZone="#{delivery.userTimeZone}" />
             </h:outputText>
+            </strong>
             <h:outputText value="." />
         </h:panelGroup>
 
