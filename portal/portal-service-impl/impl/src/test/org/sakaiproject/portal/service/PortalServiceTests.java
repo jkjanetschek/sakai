@@ -394,10 +394,10 @@ public class PortalServiceTests extends SakaiTests {
         // simulate a login
         ((Observer) portalService).update(null, event);
 
-        // all 4 sites should be pinned, results in 4 pinned, 0 unpinned, 0 recent
-        Assert.assertEquals(4, portalService.getPinnedSites(user1).size());
-        Assert.assertEquals(0, portalService.getUnpinnedSites(user1).size());
-        Assert.assertEquals(0, portalService.getRecentSites(user1).size());
+
+        Assert.assertEquals(0, portalService.getPinnedSites(user1).size());
+        Assert.assertEquals(4, portalService.getUnpinnedSites(user1).size());
+        Assert.assertEquals(3, portalService.getRecentSites(user1).size());
 
         // unpin all 4 sites, results in 0 pinned, 4 unpinned, 3 recent
         siteIds.forEach(siteId -> portalService.addPinnedSite(user1, siteId, false));
@@ -481,9 +481,10 @@ public class PortalServiceTests extends SakaiTests {
         Event event = createMockEvent("user.login", user1, sessionId, site1.getId());
         ((Observer) portalService).update(null, event);
 
-        List<String> pinnedSites = portalService.getPinnedSites(user1);
-        Assert.assertEquals(1, pinnedSites.size());
-        Assert.assertEquals(site1Id, pinnedSites.get(0));
+
+        List<String> unpinned = portalService.getUnpinnedSites(user1);
+        Assert.assertEquals(1, unpinned.size());
+        Assert.assertEquals(site1Id, unpinned.get(0));
     }
 
     /**
@@ -595,33 +596,32 @@ public class PortalServiceTests extends SakaiTests {
         Assert.assertNull(props.getPropertyList(PortalService.FAVORITES_PROPERTY));
         Assert.assertNull(props.getPropertyList(PortalService.SEEN_SITES_PROPERTY));
 
-        // unpinned sites should be 1, "site4"
+
         List<String> unpinnedSites = portalService.getUnpinnedSites(user1);
-        Assert.assertEquals(1, unpinnedSites.size());
-        Assert.assertEquals("site4", unpinnedSites.get(0));
+        Assert.assertEquals(3, unpinnedSites.size());
+        Assert.assertEquals(List.of("site1", "site2", "site4"), unpinnedSites);
 
-        // recent sites should be 1, "site4"
+
+
         List<String> recentSites = portalService.getRecentSites(user1);
-        Assert.assertEquals(1, recentSites.size());
-        Assert.assertEquals("site4", recentSites.get(0));
+        Assert.assertEquals(3, recentSites.size());
+        Assert.assertEquals(List.of("site1", "site2", "site4"), unpinnedSites);
 
-        // sites 1, 2, 3, 5 should be pinned
+
         List<String> pinnedSites = portalService.getPinnedSites(user1);
-        Assert.assertEquals(4, pinnedSites.size());
-        Assert.assertTrue(pinnedSites.contains("site1"));
-        Assert.assertTrue(pinnedSites.contains("site2"));
+        Assert.assertEquals(2, pinnedSites.size());
         Assert.assertTrue(pinnedSites.contains("site3"));
         Assert.assertTrue(pinnedSites.contains("site5"));
         // site6 should not be pinned
         Assert.assertFalse(pinnedSites.contains("site6"));
 
         // now lets make site2 inaccessible, but not update pinned table
-        PermissionException pe = new PermissionException(user1, SiteService.SITE_VISIT, "/site/site2Id");
-        when(siteService.getSiteVisit("site2")).thenThrow(pe);
+        PermissionException pe = new PermissionException(user1, SiteService.SITE_VISIT, "/site/site3Id");
+        when(siteService.getSiteVisit("site3")).thenThrow(pe);
 
-        // check pinned sites havn't changed since making site2 inaccessible
+        // check pinned sites havn't changed since making site3 inaccessible
         pinnedSites = portalService.getPinnedSites(user1);
-        Assert.assertEquals(4, pinnedSites.size());
+        Assert.assertEquals(2, pinnedSites.size());
 
         // lets pin an excluded site
         portalService.addPinnedSite(user1, "site6", true);
@@ -632,26 +632,25 @@ public class PortalServiceTests extends SakaiTests {
         // now signal a new login which should update the users pinned sites, removing site2
         ((Observer) portalService).update(null, event);
 
-        // sites 1, 3, 4, 5 should be pinned
+
         pinnedSites = portalService.getPinnedSites(user1);
-        Assert.assertEquals(4, pinnedSites.size());
-        Assert.assertTrue(pinnedSites.contains("site1"));
-        Assert.assertTrue(pinnedSites.contains("site3"));
+        Assert.assertEquals(2, pinnedSites.size());
         Assert.assertTrue(pinnedSites.contains("site4"));
         Assert.assertTrue(pinnedSites.contains("site5"));
         // site6 should not be pinned
         Assert.assertFalse(pinnedSites.contains("site6"));
 
-        // site 4 should be in recents
+
         recentSites = portalService.getRecentSites(user1);
-        Assert.assertEquals(1, recentSites.size());
-        Assert.assertTrue(recentSites.contains("site4"));
+        Assert.assertEquals(2, recentSites.size());
+        Assert.assertTrue(recentSites.contains("site2"));
+        Assert.assertTrue(recentSites.contains("site1"));
         // site 6 should not be in recents
         Assert.assertFalse(recentSites.contains("site6"));
 
-        // site 4 not be in unpinned
+
         unpinnedSites = portalService.getUnpinnedSites(user1);
-        Assert.assertEquals(0, unpinnedSites.size());
+        Assert.assertEquals(2, unpinnedSites.size());
         Assert.assertFalse(unpinnedSites.contains("site6"));
     }
 

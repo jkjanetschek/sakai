@@ -1047,7 +1047,10 @@ public class PortalServiceImpl implements PortalService, Observer
 
 		// This should not call getUserSites(boolean, boolean) because the property is variable, while the call is cacheable otherwise
 		List<String> userSiteIds = siteService.getSiteIds(SiteService.SelectionType.MEMBER, null, null, null, SiteService.SortType.CREATED_ON_DESC, null);
-		combinedSiteIds.addAll(userSiteIds);
+		//combinedSiteIds.addAll(userSiteIds);
+		Predicate<String> notInCombined = Predicate.not(combinedSiteIds::contains);
+		Predicate<String> notSpecial = (siteId) -> !this.siteService.isSpecialSite(siteId);
+		userSiteIds.stream().filter(notInCombined.and(notSpecial)).forEach(sitesToUnpin::add);
 
 		// all the possible sites the user has access to have been collected into combinedSiteIds
 		// next test each site to see if the user can access them sorting them into 2 sets
@@ -1055,6 +1058,10 @@ public class PortalServiceImpl implements PortalService, Observer
 			if (canAccessSite(id, userId)) sitesToPin.add(id);
 			else sitesToRemove.add(id);
 		}
+
+		Predicate<String> notInPinned = Predicate.not(pinnedSites::contains);
+		Predicate<String> inToPinAfterProcessCombined = sitesToPin::contains;
+		recentSites.stream().filter(notInPinned.and(inToPinAfterProcessCombined)).forEach(sitesToUnpin::add);
 
 		// remove unpinned as they should not be pinned
 		sitesToPin.removeAll(sitesToUnpin);
