@@ -43,6 +43,7 @@ import org.junit.runner.RunWith;
 
 import org.sakaiproject.archive.api.ArchiveService;
 import org.sakaiproject.authz.api.SecurityService;
+import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.rubrics.api.RubricsConstants;
 import org.sakaiproject.rubrics.api.RubricsService;
 import org.sakaiproject.rubrics.api.beans.CriterionOutcomeTransferBean;
@@ -110,6 +111,7 @@ public class RubricsServiceTests extends AbstractTransactionalJUnit4SpringContex
     @Autowired private SiteService siteService;
     @Autowired private ToolManager toolManager;
     @Autowired private UserDirectoryService userDirectoryService;
+    @Autowired private SqlService sqlService;
 
     String siteId = "playpen";
     String siteTitle = "Playpen";

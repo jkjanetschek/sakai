@@ -18,6 +18,7 @@ package org.sakaiproject.rubrics.impl.test;
 import lombok.Getter;
 import org.hibernate.SessionFactory;
 import org.sakaiproject.assignment.api.AssignmentService;
+import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.grading.api.GradingService;
 import org.sakaiproject.rubrics.api.repository.AssociationRepository;
 import org.sakaiproject.rubrics.api.repository.CriterionRepository;
@@ -114,6 +115,12 @@ public class RubricsTestConfiguration extends SakaiTestConfiguration {
     public GradingService gradingService() {
         return mock(GradingService.class);
     }
+
+    @Bean(name = "org.sakaiproject.db.api.SqlService")
+    public SqlService sqlService() {
+        return mock(SqlService.class);
+    }
+
 
     @Bean(name = "PersistenceService")
     public PersistenceService assessmentPersistenceService() {
