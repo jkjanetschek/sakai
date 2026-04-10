@@ -1,3 +1,5 @@
+--run after sakai_25_0_mysql_conversion.sql
+
 -- SAK-50378 --
 -- These are columns dropped by SAK-50378 in 25.0 but were left out of
 -- the Sakai 25 conversion scrpts to allow two way reverting between 25 and 23
@@ -32,3 +34,6 @@ ALTER TABLE lti_content DROP COLUMN lti13;
 -- SAK-51573
 DROP TABLE PROFILE_PREFERENCES_T;
 -- END SAK-51573
+
+INSERT INTO mci_schema_migrations (name, executed_at)
+VALUES ('sakai_25_0-25_1_mysql_conversion.sql', NOW(6));

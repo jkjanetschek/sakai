@@ -1,4 +1,10 @@
--- This script is to be run after running the sakai_23_3-23_4 script
+/*
+run after
+    sakai_23_3-23_4 script
+    sakai_23_4-25_0_mci_03 script
+ */
+
+
 
 -- clear unchanged bundle properties
 DELETE FROM SAKAI_MESSAGE_BUNDLE where PROP_VALUE is NULL;
@@ -60,15 +66,29 @@ ALTER TABLE MFR_TOPIC_T
 -- S2U-34 --
 -- IMPORTANT: This index must be deleted and may have a different name, maybe UK_dn0jue890jn9p7vs6tvnsf2gf or similar
 -- Note: IF EXISTS syntax may not work in all MySQL versions, handle errors appropriately
+
 -- jkj: it was UK_dn0jue890jn9p7vs6tvnsf2gf
 DROP INDEX UK_dn0jue890jn9p7vs6tvnsf2gf ON rbc_evaluation;
+
+
 
 -- jkj: duplicated entries: WS 23 Course-ID-SLVA-43044  --> entries also in rbc_eval_criterion_outcomes
 --                          rbc_evaluation.id = 1921 & 1922
 --                          rbc_evaluation.id = 1972 & 1973
 --                          rbc_evaluation.id = 1975 & 1976
-
 --                          WS 24 Course-ID-SLVA-45307 -->  rbc_evaluation.id = 6606 & 6608
+
+-- jkj delete statement for duplicate entries:
+/*
+ DELETE e, c
+        FROM rbc_eval_criterion_outcomes AS e
+        JOIN rbc_criterion_outcome AS c
+ON c.id = e.criterionOutcomes_id
+            WHERE e.rbc_evaluation_id IN (1922, 1973, 1976, 6608);
+DELETE from rbc_evaluation
+        where id in (1922, 1973, 1976, 6608);
+ */
+
 ALTER TABLE rbc_evaluation
     ADD CONSTRAINT UKqsk75a24pi108jpybtt16hshv UNIQUE (association_id, evaluated_item_id, evaluated_item_owner_id);
 
@@ -441,7 +461,7 @@ ALTER TABLE lti_tools DROP COLUMN lti13_platform_public_old_at;
 -- END SAK-50378 --
 
 -- SAK-50536
--- jkj: fk does not exist
+-- jkj: fk FKeat6qfjdwwkkxj6aifinujajb does not exist --> it is FK32185F67BEE209
 ALTER TABLE PROFILE_WALL_ITEM_COMMENTS_T DROP FOREIGN KEY FKeat6qfjdwwkkxj6aifinujajb;
 
 DROP TABLE PROFILE_COMPANY_PROFILES_T;
@@ -999,3 +1019,7 @@ UPDATE sakai_preferences
 SET XML = REPLACE(XML,'<property enc="BASE64" name="sakaiTutorialFlag" value="MQ=="/>','')
 WHERE XML LIKE '%<property enc="BASE64" name="sakaiTutorialFlag" value="MQ=="/>%';
 -- END SAK-51583
+
+
+INSERT INTO mci_schema_migrations (name, executed_at)
+VALUES ('sakai_25_0_mysql_conversion.sql', NOW(6));
