@@ -1,10 +1,13 @@
---run after sakai_25_0_mysql_conversion.sql
+/*
+
+run after sakai_25_0_mysql_conversion.sql
 
 -- SAK-50378 --
 -- These are columns dropped by SAK-50378 in 25.0 but were left out of
 -- the Sakai 25 conversion scrpts to allow two way reverting between 25 and 23
 -- in case problems were encountered.   They can be dropped in 25.1.
-
+ */
+ 
 ALTER TABLE lti_content DROP COLUMN pagetitle;
 ALTER TABLE lti_content DROP COLUMN toolorder;
 ALTER TABLE lti_content DROP COLUMN consumerkey;

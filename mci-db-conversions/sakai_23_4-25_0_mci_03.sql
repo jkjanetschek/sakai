@@ -1,4 +1,6 @@
---run before sakai_25_0_mysql.sql
+/*
+    run before sakai_25_0_mysql.sql 
+*/
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS

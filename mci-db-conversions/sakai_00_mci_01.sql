@@ -8,7 +8,7 @@ CREATE TABLE mci_schema_migrations (
 
 
 INSERT INTO mci_schema_migrations (name, executed_at)
-VALUES ('sakai_25_1_mci_01.sql', NOW(6));
+VALUES ('sakai_00_mci_01.sql', NOW(6));
 
 
 
