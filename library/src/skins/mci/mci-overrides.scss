@@ -17,6 +17,18 @@
   }
 }
 
+#topnav_container {
+  background-color: var(--mci-gray);
+}
+
+.site-list-item.mx-3 {
+  margin-right: 0.5rem !important;
+}
+li.nav-item.ms-4 {
+  margin-left: 1.0rem !important;
+  max-width: 95% !important;
+}
+
 
 
 
@@ -78,20 +90,20 @@ a.manage-overview-link  {
       color: inherit !important;
       background: inherit !important;
     }
-/*
-    &:hover {
-      color: var(--button-hover-text-color) !important;
-      background: var(--button-hover-background) !important;
-      span.fa-edit-icon {
-        color: inherit !important;
-        background: inherit !important;
+    /*
         &:hover {
-          color: inherit !important;;
-          background: inherit !important;;
+          color: var(--button-hover-text-color) !important;
+          background: var(--button-hover-background) !important;
+          span.fa-edit-icon {
+            color: inherit !important;
+            background: inherit !important;
+            &:hover {
+              color: inherit !important;;
+              background: inherit !important;;
+            }
+          }
         }
-      }
-    }
- */
+     */
   }
 }
 
@@ -117,7 +129,7 @@ a.manage-overview-link  {
   a.cke_dialog_ui_button {
     span.cke_dialog_ui_button {
       &:hover {
-          color: var(--button-hover-text-color) !important;
+        color: var(--button-hover-text-color) !important;
       }
     }
   }
