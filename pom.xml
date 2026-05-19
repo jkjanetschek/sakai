@@ -127,10 +127,10 @@
                 <module>webservices</module>
                 <module>wicket</module>
                 <module>admin-bulk-user-membership</module>
-                <!--<module>../sakai-mcirss2</module>-->
-                <!--<module>../sakai-bbb-tool</module>-->
-                <!--<module>../sakai-designer-gateway</module>-->
-                <!--<module>../sakai-jupyterhub-api</module>-->
+                <module>../sakai-mcirss2</module>
+                <module>../sakai-bbb-tool</module>
+                <module>../sakai-designer-gateway</module>
+                <module>../sakai-jupyterhub-api</module>
             </modules>
         </profile>
         <profile>
@@ -359,6 +359,107 @@
                 <module>webcomponents/bundle</module>
             </modules>
         </profile>
+
+
+        <profile>
+            <id>sakai-aggregator</id>
+            <activation>
+                <property>
+                    <name>aggregator.context</name>
+                    <value>sakai-aggregator</value>
+                </property>
+            </activation>
+            <modules>
+                <module>master</module>
+                <module>admin-tools</module>
+                <module>admin-su</module>
+                <module>access</module>
+                <module>announcement</module>
+                <module>archive</module>
+                <module>assignment</module>
+                <module>lti</module>
+                <module>calendar</module>
+                <module>card-game</module>
+                <module>chat</module>
+                <module>citations</module>
+                <module>common</module>
+                <module>commons</module>
+                <module>conditions</module>
+                <module>config</module>
+                <module>conversations</module>
+                <module>cloud-content</module>
+                <module>cloud-storage</module>
+                <module>content</module>
+                <module>content-review</module>
+                <module>dashboard</module>
+                <module>dav</module>
+                <module>delegatedaccess</module>
+                <module>deploy</module>
+                <module>edu-services</module>
+                <module>emailtemplateservice</module>
+                <module>entitybroker</module>
+                <module>external-calendaring-service</module>
+                <!--    <module>feedback</module -->
+                <module>gradebookng</module>
+                <module>help</module>
+                <module>hierarchy</module>
+                <module>jobscheduler</module>
+                <module>jsf</module>
+                <module>jsf2</module>
+                <module>kernel</module>
+                <module>lessonbuilder</module>
+                <module>library</module>
+                <module>login</module>
+                <module>mailarchive</module>
+                <module>mailsender</module>
+                <module>meetings</module>
+                <module>message</module>
+                <module>microsoft-integration</module>
+                <module>msgcntr</module>
+                <module>oauth</module>
+                <module>pasystem</module>
+                <module>plus</module>
+                <module>podcasts</module>
+                <module>polls</module>
+                <module>portal</module>
+                <module>postem</module>
+                <module>presence</module>
+                <module>profile2</module>
+                <module>providers</module>
+                <module>reset-pass</module>
+                <module>roster2</module>
+                <module>rsf</module>
+                <module>rubrics</module>
+                <module>rwiki</module>
+                <module>tags</module>
+                <module>samigo</module>
+                <module>scormplayer</module>
+                <module>search</module>
+                <module>sections</module>
+                <module>serviceworker</module>
+                <module>shortenedurl</module>
+                <module>signup</module>
+                <module>site</module>
+                <module>site-manage</module>
+                <module>sitestats</module>
+                <module>syllabus</module>
+                <module>taggable</module>
+                <module>textarea</module>
+                <module>user</module>
+                <module>userauditservice</module>
+                <module>usermembership</module>
+                <module>velocity</module>
+                <module>vuecomponents</module>
+                <module>web</module>
+                <module>webapi</module>
+                <module>webcomponents</module>
+                <module>webjars</module>
+                <module>webservices</module>
+                <module>wicket</module>
+                <module>admin-bulk-user-membership</module>
+            </modules>
+        </profile>
+
     </profiles>
 </project>
 
