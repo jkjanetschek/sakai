@@ -24,6 +24,12 @@
       </list>
     </property>
   </bean>
+  <bean id="org.sakaiproject.lessonbuildertool.api.AcknowledgeService"
+        class="org.sakaiproject.lessonbuildertool.service.AcknowledgeServiceImpl">
+    <property name="simplePageToolDao" ref="org.sakaiproject.lessonbuildertool.model.SimplePageToolDao" />
+    <property name="userDirectoryService" ref="org.sakaiproject.user.api.UserDirectoryService"/>
+    <property name="sqlService" ref="org.sakaiproject.db.api.SqlService"/>
+  </bean>
 
   <bean id="org.sakaiproject.lessonbuildertool.model.SimplePageToolDaoTarget"
         class="org.sakaiproject.lessonbuildertool.model.SimplePageToolDaoImpl"

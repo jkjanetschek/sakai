@@ -32,12 +32,11 @@
 
 package org.sakaiproject.lessonbuildertool.tool.producers;
 
-import edu.mci.sakai.designergateway.AcknowledgeService;
+import org.sakaiproject.lessonbuildertool.api.AcknowledgeService;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.sakaiproject.authz.api.AuthzGroup;
 import org.sakaiproject.authz.api.AuthzGroupService;
 import org.sakaiproject.authz.api.Member;
@@ -71,7 +70,6 @@ import org.sakaiproject.lessonbuildertool.service.GradebookIfc;
 import org.sakaiproject.lessonbuildertool.service.LessonBuilderAccessService;
 import org.sakaiproject.lessonbuildertool.service.LessonEntity;
 import org.sakaiproject.lessonbuildertool.tool.beans.SimplePageBean;
-import org.sakaiproject.lessonbuildertool.tool.beans.SimplePageBean.BltiTool;
 import org.sakaiproject.lessonbuildertool.tool.beans.SimplePageBean.GroupEntry;
 import org.sakaiproject.lessonbuildertool.tool.beans.SimplePageBean.Status;
 import org.sakaiproject.lessonbuildertool.tool.evolvers.SakaiFCKTextEvolver;
@@ -85,7 +83,6 @@ import org.sakaiproject.lessonbuildertool.util.LessonConditionUtil;
 import org.sakaiproject.lessonbuildertool.util.SimplePageItemUtilities;
 import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.memory.api.MemoryService;
-import org.sakaiproject.portal.util.CSSUtils;
 import org.sakaiproject.portal.util.PortalUtils;
 import org.sakaiproject.site.api.SitePage;
 import org.sakaiproject.time.api.UserTimeService;

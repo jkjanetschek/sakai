@@ -23,8 +23,8 @@ package org.sakaiproject.lessonbuildertool.tool.entityproviders;
 
 import java.util.*;
 
-import edu.mci.sakai.designergateway.AcknowledgeService;
-import edu.mci.sakai.designergateway.dto.UserAcknowledgeInfo;
+import org.sakaiproject.lessonbuildertool.api.AcknowledgeService;
+import org.sakaiproject.lessonbuildertool.api.UserAcknowledgeInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
