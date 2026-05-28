@@ -36,6 +36,7 @@
 				<input type="submit" rsf:id="submitSite" />
 			</form>
 		</div>
+        <span rsf:id="reorder-mode-flag" id="reorder-mode-flag" style="display:none;" aria-hidden="true"></span>
         <h2 rsf:id="title"></h2>
 
 		<div rsf:id="hide-show-container">
@@ -74,7 +75,11 @@
 			</li>
 		</ul>
 
-	<p rsf:id="sharedpageexplanation" class="instructionPanel">
+            <div id="subpage-warning" class="sak-banner-warn" role="alert" style="display:none;">
+                <span rsf:id="msg=simplepage.reorder-addpage-subpage-warning"></span>
+            </div>
+
+            <p rsf:id="sharedpageexplanation" class="instructionPanel">
 	  <span rsf:id="msg=simplepage.sharedpage" class="page-picker-note"> </span> <span rsf:id="msg=simplepage.sharedpageexplanation"> </span> 
 	</p>
 		<input type="hidden" rsf:id="item-id" id="item-id" />

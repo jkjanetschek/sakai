@@ -23,36 +23,29 @@
 
 package org.sakaiproject.lessonbuildertool.tool.producers;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.commons.lang3.StringUtils;
+import org.sakaiproject.component.cover.ServerConfigurationService;
+import org.sakaiproject.exception.IdUnusedException;
+import org.sakaiproject.lessonbuildertool.SimplePage;
+import org.sakaiproject.lessonbuildertool.SimplePageItem;
+import org.sakaiproject.lessonbuildertool.SimplePageLogEntry;
+import org.sakaiproject.lessonbuildertool.api.LessonBuilderConstants;
+import org.sakaiproject.lessonbuildertool.model.SimplePageToolDao;
+import org.sakaiproject.lessonbuildertool.service.LessonsAccess;
+import org.sakaiproject.lessonbuildertool.tool.beans.SimplePageBean;
+import org.sakaiproject.lessonbuildertool.tool.view.GeneralViewParameters;
+import org.sakaiproject.site.api.Site;
+import org.sakaiproject.site.api.SitePage;
+import org.sakaiproject.site.api.SiteService;
+import org.sakaiproject.site.api.ToolConfiguration;
+import org.sakaiproject.tool.api.ToolManager;
+import org.sakaiproject.tool.api.ToolSession;
+import org.sakaiproject.tool.cover.SessionManager;
 import uk.org.ponder.localeutil.LocaleGetter;
-import uk.org.ponder.messageutil.MessageLocator;                                                                                    
-import uk.org.ponder.rsf.components.UIBoundBoolean;
-import uk.org.ponder.rsf.components.UIBranchContainer;
-import uk.org.ponder.rsf.components.UICommand;
-import uk.org.ponder.rsf.components.UIContainer;
-import uk.org.ponder.rsf.components.UIForm;
-import uk.org.ponder.rsf.components.UIInternalLink;
-import uk.org.ponder.rsf.components.UIOutput;
-import uk.org.ponder.rsf.components.UIInput;
-import uk.org.ponder.rsf.components.UISelect;
-import uk.org.ponder.rsf.components.UISelectChoice;
+import uk.org.ponder.messageutil.MessageLocator;
+import uk.org.ponder.rsf.components.*;
 import uk.org.ponder.rsf.components.decorators.UIFreeAttributeDecorator;
 import uk.org.ponder.rsf.components.decorators.UIStyleDecorator;
 import uk.org.ponder.rsf.flow.jsfnav.NavigationCase;
@@ -63,25 +56,9 @@ import uk.org.ponder.rsf.viewstate.SimpleViewParameters;
 import uk.org.ponder.rsf.viewstate.ViewParameters;
 import uk.org.ponder.rsf.viewstate.ViewParamsReporter;
 
-import org.sakaiproject.component.cover.ServerConfigurationService;
-import org.sakaiproject.exception.IdUnusedException;
-import org.sakaiproject.lessonbuildertool.api.LessonBuilderConstants;
-import org.sakaiproject.lessonbuildertool.SimplePage;
-import org.sakaiproject.lessonbuildertool.SimplePageItem;
-import org.sakaiproject.lessonbuildertool.SimplePageLogEntry;
-import org.sakaiproject.lessonbuildertool.model.SimplePageToolDao;
-import org.sakaiproject.lessonbuildertool.service.LessonsAccess;
-import org.sakaiproject.lessonbuildertool.tool.beans.SimplePageBean;
-import org.sakaiproject.lessonbuildertool.tool.view.GeneralViewParameters;
-import org.sakaiproject.site.api.Site;
-import org.sakaiproject.site.api.SiteService;
-import org.sakaiproject.site.api.ToolConfiguration;
-import org.sakaiproject.site.api.SitePage;
-import org.sakaiproject.tool.api.ToolManager;
-import org.sakaiproject.tool.api.ToolSession;
-import org.sakaiproject.tool.cover.SessionManager;
-
-import static org.sakaiproject.site.api.SiteService.PROP_PARENT_ID;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 /**
@@ -343,6 +320,7 @@ public class PagePickerProducer implements ViewComponentProducer, NavigationCase
             UIOutput.make(tofill, "title", messageLocator.getMessage("simplepage.page.index"));
         } else if (StringUtils.equals(returnView, "reorder")){
             UIOutput.make(tofill, "title", messageLocator.getMessage("simplepage.page.add.from.other"));
+            UIOutput.make(tofill, "reorder-mode-flag");
         } else {
             UIOutput.make(tofill, "title", messageLocator.getMessage("simplepage.page.chooser"));
         }
@@ -605,8 +583,11 @@ public class PagePickerProducer implements ViewComponentProducer, NavigationCase
                 }
                 if (!summaryPage) {
                     // i.e. pagepicker; for the moment to edit something you need to attach it to something
-                    UISelectChoice.make(row, "select", select.getFullID(), index).
-                            decorate(new UIFreeAttributeDecorator("title", entry.title + " " + messageLocator.getMessage("simplepage.select")));
+                    UISelectChoice choice = UISelectChoice.make(row, "select", select.getFullID(), index);
+                    choice.decorate(new UIFreeAttributeDecorator("title", entry.title + " " + messageLocator.getMessage("simplepage.select")));
+                    if (StringUtils.equals(returnView, "reorder") && hasSubPages(entry.pageId)) {
+                        choice.decorate(new UIFreeAttributeDecorator("data-has-subpages", "true"));
+                    }
                 } else if (summaryPage) {
                     // i.e. summary if canEdit and page doesn't have an item
                     UISelectChoice.make(row, "select-for-deletion", select.getFullID(), index).
