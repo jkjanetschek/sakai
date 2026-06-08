@@ -15,6 +15,8 @@
   <link rsf:id="scr=portal-matter" href="/library/skin/default-skin/tool.css" type="text/css" rel="stylesheet" media="all" />
   <title rsf:id="msg=simplepage.showpage"></title>
 
+  <script type="module" src="/webcomponents/bundles/lti.js"></script>
+
   <script rsf:id="iframeJavascript">
     function resizeiframe_showpage(id) {
 
@@ -64,6 +66,7 @@
   <script src="$context/js/checklistDisplay.js"></script>
   <script src="$context/js/forum-summary.js"></script>
   <script src="$context/js/lessons-calendar.js"></script>
+  <script src="$context/js/pdf-js.js"></script>
   <link rel="stylesheet" rsf:id="customCSS" type="text/css" />
 
   <a href="#" rsf:id="redirect-link" id="redirect-link"></a>
@@ -327,6 +330,11 @@
                         <li class="list-group-item m-1" rsf:id="quiz-li">
                           <a role="button" href="#" rsf:id="add-quiz" class="add-before-param">
                             <span rsf:id="msg.simplepage.quiz"></span>
+                          </a>
+                        </li>
+                        <li class="list-group-item m-1" rsf:id="scorm-li">
+                          <a role="button" href="#" rsf:id="add-scorm" class="add-before-param">
+                            <span rsf:id="msg.simplepage.scorm"></span>
                           </a>
                         </li>
                         <li class="list-group-item m-1" rsf:id="forum-li">
@@ -693,6 +701,14 @@
                         <a role="button" href="#" rsf:id="change-quiz" id="change-quiz"><span rsf:id="msg.simplepage.change_quiz"></span></a>
                       </p>
 
+                      <p class="shorttext required" id="change-scorm-p">
+                        <a role="button" href="#" rsf:id="change-scorm" id="change-scorm"><span rsf:id="msg.simplepage.change_scorm"></span></a>
+                      </p>
+
+                      <p class="shorttext required" id="configure-scorm-p">
+                        <a role="button" href="#" rsf:id="configure-scorm" id="configure-scorm" target="_blank"><span rsf:id="msg.simplepage.configure_scorm"></span> <span class="sr-only" rsf:id="msg=simplepage.opens-in-new"></span></a>
+                      </p>
+
                       <p class="shorttext required" id="change-resource-p">
                         <a role="button" href="#" rsf:id="change-resource" id="change-resource"><span rsf:id="msg.simplepage.change_resource"></span></a>
                       </p>
@@ -841,10 +857,24 @@
                             </span>
                           </div>
                         </div>
-                        <p class="checkbox pageItem">
-                          <input type="checkbox" id="hide2" rsf:id="hide2" />
-                          <label for="hide2"><span rsf:id="msg=simplepage.hide_page_from_users"></span></label>
-                        </p>
+                        <div class="pageItem mt-3">
+                          <span class="visibility-group-label">
+                            <span rsf:id="msg=simplepage.student_visibility_group"></span>
+                          </span>
+                          <span rsf:id="visibility-select-2" />
+                          <div class="form-group mb-0">
+                            <input type="radio" rsf:id="visibility-visible-2" name="visibility2" value="visible" />
+                            <label for="visibility-visible-2"><span rsf:id="msg=simplepage.visibility_visible"></span></label>
+                          </div>
+                          <div class="form-group mb-0">
+                            <input type="radio" rsf:id="visibility-hide-2" name="visibility2" value="hide" />
+                            <label for="visibility-hide-2"><span rsf:id="msg=simplepage.hide_page_from_users"></span></label>
+                          </div>
+                          <div class="form-group">
+                            <input type="radio" rsf:id="visibility-hideFromNav-2" name="visibility2" value="hideFromNav" />
+                            <label for="visibility-hideFromNav-2"><span rsf:id="msg=simplepage.hide_page_from_navigation"></span></label>
+                          </div>
+                        </div>
                         <p id="editgroups" class="edit-group">
                           <a role="button" href="javascript:void(0);"><span rsf:id="msg=simplepage.edit-group"></span></a>
                         </p>
@@ -2332,10 +2362,24 @@
                     <input rsf:id="release_date" type="text" id="release_date" />
                   </span>
                 </div>
-                <p class="checkbox">
-                  <input type="checkbox" id="hide" rsf:id="hide" />
-                  <label for="hide"><span rsf:id="msg=simplepage.hide_page_from_users"></span></label>
-                </p>
+                <div class="pageItem mt-3">
+                  <span class="visibility-group-label">
+                    <span rsf:id="msg=simplepage.student_visibility_group"></span>
+                  </span>
+                  <span rsf:id="visibility-select" />
+                  <div class="form-group mb-0">
+                    <input type="radio" rsf:id="visibility-visible" name="visibility" value="visible" />
+                    <label for="visibility-visible"><span rsf:id="msg=simplepage.visibility_visible"></span></label>
+                  </div>
+                  <div class="form-group mb-0">
+                    <input type="radio" rsf:id="visibility-hide" name="visibility" value="hide" />
+                    <label for="visibility-hide"><span rsf:id="msg=simplepage.hide_page_from_users"></span></label>
+                  </div>
+                  <div class="form-group">
+                    <input type="radio" rsf:id="visibility-hideFromNav" name="visibility" value="hideFromNav" />
+                    <label for="visibility-hideFromNav"><span rsf:id="msg=simplepage.hide_page_from_navigation"></span></label>
+                  </div>
+                </div>
 
               </div>
 
@@ -2496,8 +2540,7 @@
                     </div>
                     <!-- /link-div -->
                     <div rsf:id="item-group-titles-div"></div>
-                    <iframe name="BltiIFrame" class="portletMainIframe multimedia" frameborder="0" marginwidth="0" width="100%" height="300" marginheight="0" scrolling="auto" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" rsf:id="blti-iframe" id="blti-iframe">
-                    </iframe>
+                    <sakai-lti-iframe rsf:id="blti-iframe" allow-resize="yes"></sakai-lti-iframe>
 
                     <div class="rowdescription itemdescription" rsf:id="description"></div>
                   </div> <!-- /contentCol -->
@@ -2845,7 +2888,7 @@
                     </audio>
                     
                     <!-- PDF.js viewer -->
-                    <iframe rsf:id="pdfEmbed"></iframe>
+                    <iframe rsf:id="pdfEmbed" class="sakai-iframe-force-light"></iframe>
                     
                     <!-- Object fallback (used for PowerPoint and other files) -->
                     <object rsf:id="movieObject" class="playerwidth">
@@ -3331,6 +3374,8 @@
         <p rsf:id="msg=simplepage.require_points_assessment" id="simplepage.require_points_assessment"></p>
         <p rsf:id="msg=simplepage.require_points_assignment" id="simplepage.require_points_assignment"></p>
         <p rsf:id="msg=simplepage.require_pass_assignment" id="simplepage.require_pass_assignment"></p>
+        <p rsf:id="msg=simplepage.require_completed_scorm" id="simplepage.require_completed_scorm"></p>
+        <p rsf:id="msg=simplepage.require_pass_scorm" id="simplepage.require_pass_scorm"></p>
         <p rsf:id="msg=simplepage.require_atleast" id="simplepage.require_atleast"></p>
         <p rsf:id="msg=simplepage.require_checkmark" id="simplepage.require_checkmark"></p>
         <p rsf:id="msg=simplepage.title_notblank" id="simplepage.title_notblank"></p>

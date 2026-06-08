@@ -11,10 +11,10 @@
   <name>Sakai Master</name>
   <url>https://www.sakailms.org/</url>
   <description>Corporate POM for the Sakai Open Source Collaborative Learning Environment/Learning Management System</description>
-  <version>25-SNAPSHOT</version>
+  <version>25.2</version>
 
   <properties>
-    <sakai.version>25-SNAPSHOT</sakai.version>
+    <sakai.version>25.2</sakai.version>
     <!-- Standard dependency versions -->
     <sakai.commons-httpclient.version>3.1</sakai.commons-httpclient.version>
     <sakai.commons-io.version>2.19.0</sakai.commons-io.version>
@@ -67,7 +67,7 @@
     <sakai.spring.plugin.version>2.0.0.RELEASE</sakai.spring.plugin.version>
     <sakai.tika.version>3.0.0-BETA</sakai.tika.version>
     <sakai.tomcat.version>9.0.105</sakai.tomcat.version>
-    <sakai.thymeleaf.version>3.0.15.RELEASE</sakai.thymeleaf.version>
+    <sakai.thymeleaf.version>3.1.5.RELEASE</sakai.thymeleaf.version>
     <sakai.velocity.version>1.6.4</sakai.velocity.version>
     <sakai.log4j.version>2.24.3</sakai.log4j.version>
     <sakai.slf4j.version>1.7.36</sakai.slf4j.version>
@@ -95,7 +95,7 @@
     <maven.test.redirectTestOutputToFile>false</maven.test.redirectTestOutputToFile>
 
     <!-- Reproducible builds: UTC ISO-8601 timestamp or use SOURCE_DATE_EPOCH -->
-    <project.build.outputTimestamp>${maven.build.timestamp}</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-06-02T17:33:05Z</project.build.outputTimestamp>
     <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
 
     <!-- Default empty unless profile activation -->
@@ -176,7 +176,7 @@
               <version>1.7.2</version>
               <inherited>true</inherited>
               <configuration>
-                <updatePomFile>false</updatePomFile>
+                <updatePomFile>true</updatePomFile>
                 <flattenMode>ossrh</flattenMode>
                 <pomElements>
                   <parent>expand</parent>
@@ -555,12 +555,6 @@
         <groupId>org.thymeleaf</groupId>
         <artifactId>thymeleaf-spring5</artifactId>
         <version>${sakai.thymeleaf.version}</version>
-        <scope>compile</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.thymeleaf.extras</groupId>
-        <artifactId>thymeleaf-extras-java8time</artifactId>
-        <version>3.0.4.RELEASE</version>
         <scope>compile</scope>
       </dependency>
       <dependency>
@@ -1687,6 +1681,7 @@
         <groupId>org.sakaiproject.portal</groupId>
         <artifactId>sakai-portal-util</artifactId>
         <version>${sakai.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.sakaiproject.edu-services.sections</groupId>
@@ -1794,6 +1789,7 @@
         <groupId>org.sakaiproject.lti</groupId>
         <artifactId>lti-util</artifactId>
         <version>${sakai.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.sakaiproject.lti</groupId>
@@ -2536,7 +2532,7 @@
           <configuration>
             <source>${sakai.jdk.version}</source>
             <links>
-              <link>https://docs.oracle.com/en/java/javase/17/</link>
+              <link>https://docs.oracle.com/en/java/javase/17/docs/api/</link>
               <link>https://commons.apache.org/proper/commons-lang/javadocs/api-release/</link>
               <link>https://commons.apache.org/proper/commons-collections/apidocs/</link>
               <link>https://commons.apache.org/proper/commons-io/javadocs/api-release/</link>
@@ -2553,24 +2549,6 @@
               <additionalOption>--add-modules</additionalOption>
               <additionalOption>java.xml</additionalOption>
             </additionalOptions>
-            <additionalDependencies>
-              <!-- these wicket dependencies can be removed once this version of wicket is no longer needed (delegatedaccess) -->
-              <additionalDependency>
-                <groupId>org.apache.wicket</groupId>
-                <artifactId>wicket-core</artifactId>
-                <version>6.30.0</version>
-              </additionalDependency>
-              <additionalDependency>
-                <groupId>org.apache.wicket</groupId>
-                <artifactId>wicket-extensions</artifactId>
-                <version>6.30.0</version>
-              </additionalDependency>
-              <additionalDependency>
-                <groupId>org.apache.wicket</groupId>
-                <artifactId>wicket-util</artifactId>
-                <version>6.30.0</version>
-              </additionalDependency>
-            </additionalDependencies>
           </configuration>
         </plugin>
         <plugin>

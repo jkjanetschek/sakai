@@ -43,6 +43,7 @@ import org.sakaiproject.authz.api.Member;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.component.cover.ServerConfigurationService;
+import org.sakaiproject.util.IframeUrlUtil;
 import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.content.api.ContentCollection;
 import org.sakaiproject.content.api.ContentResource;
@@ -185,6 +186,7 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 	private static LessonEntity quizEntity;
 	private static LessonEntity assignmentEntity;
 	private static LessonEntity bltiEntity;
+	private static LessonEntity scormEntity;
 	public MessageLocator messageLocator;
 	private static LocaleGetter localegetter;
 	public static final String VIEW_ID = "ShowPage";
@@ -1121,9 +1123,7 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 				UIOutput.make(tofill, "startupHelp")
 				    .decorate(new UIFreeAttributeDecorator("src", helpUrl))
 				    .decorate(new UIFreeAttributeDecorator("id", "iframe"))
-					.decorate(new UIFreeAttributeDecorator("allow", String.join(";",
-							Optional.ofNullable(ServerConfigurationService.getStrings("browser.feature.allow"))
-									.orElseGet(() -> new String[]{}))));
+					.decorate(new UIFreeAttributeDecorator("allow", ServerConfigurationService.getBrowserFeatureAllowString()));
 				if (!iframeJavascriptDone) {
 				    UIOutput.make(tofill, "iframeJavascript");
 				    iframeJavascriptDone = true;
@@ -1176,58 +1176,57 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 			boolean includeTwitterLibrary = false;
 
 			boolean forceButtonColor = false;
-			String color = null;
+			String headerColor = null;
+			String colColor = null;
 			for (SimplePageItem i : itemList) {
 
 				// break is not a normal item. handle it first
-			        // this will work whether first item is break or not. Might be a section
-			        // break or a normal item
+				// this will work whether first item is break or not. Might be a section
+				// break or a normal item
 				if (first || i.getType() == SimplePageItem.BREAK) {
 				    boolean sectionbreak = false;
 				    forceButtonColor = BooleanUtils.toBoolean(i.getAttribute("forceBtn"));
-				    color = i.getAttribute("colcolor");
 				    if (first || "section".equals(i.getFormat())) {
-					sectionWrapper = UIBranchContainer.make(container, "sectionWrapper:");
-					boolean collapsible = i.getAttribute("collapsible") != null && (!"0".equals(i.getAttribute("collapsible")));
-					boolean defaultClosed = i.getAttribute("defaultClosed") != null && (!"0".equals(i.getAttribute("defaultClosed")));
-					UIOutput sectionHeader = UIOutput.make(sectionWrapper, "sectionHeader");
+						headerColor = i.getAttribute("colcolor");
+						colColor = headerColor;
+						sectionWrapper = UIBranchContainer.make(container, "sectionWrapper:");
+						boolean collapsible = i.getAttribute("collapsible") != null && (!"0".equals(i.getAttribute("collapsible")));
+						boolean defaultClosed = i.getAttribute("defaultClosed") != null && (!"0".equals(i.getAttribute("defaultClosed")));
+						UIOutput sectionHeader = UIOutput.make(sectionWrapper, "sectionHeader");
 
-					// only do this is there's an actual section break. Implicit ones don't have an item to hold the title
-					String headerText = "";
-					if ("section".equals(i.getFormat()) && i.getName() != null) {
-					    headerText = i.getName();
-					}
-					UIOutput.make(sectionWrapper, "sectionHeaderText", headerText);
-					UIOutput collapsedIcon = UIOutput.make(sectionWrapper, "sectionCollapsedIcon");
-					sectionHeader.decorate(new UIStyleDecorator(headerText.equals("")? "skip" : ""));
-					sectionContainer = UIBranchContainer.make(sectionWrapper, "section:");
-						if(forceButtonColor){
+						// only do this is there's an actual section break. Implicit ones don't have an item to hold the title
+						String headerText = "";
+						if ("section".equals(i.getFormat()) && i.getName() != null) headerText = i.getName();
+						UIOutput.make(sectionWrapper, "sectionHeaderText", headerText);
+						UIOutput collapsedIcon = UIOutput.make(sectionWrapper, "sectionCollapsedIcon");
+						sectionHeader.decorate(new UIStyleDecorator(headerText.equals("") ? "skip" : ""));
+						sectionContainer = UIBranchContainer.make(sectionWrapper, "section:");
+						if (forceButtonColor) {
 							sectionContainer.decorate(new UIStyleDecorator("hasColor"));
 						}
-					boolean needIcon = false;
-					if (collapsible) {
-						sectionHeader.decorate(new UIStyleDecorator("collapsibleSectionHeader"));
-						sectionHeader.decorate(new UIFreeAttributeDecorator("aria-controls", sectionContainer.getFullID()));
-						sectionHeader.decorate(new UIFreeAttributeDecorator("aria-expanded", (defaultClosed?"false":"true")));
-						sectionContainer.decorate(new UIStyleDecorator("collapsible"));
-						if (defaultClosed ) {
-							sectionHeader.decorate(new UIStyleDecorator("closedSectionHeader"));
-							sectionContainer.decorate(new UIStyleDecorator("defaultClosed"));
-							needIcon = true;
-						} else {
-							sectionHeader.decorate(new UIStyleDecorator("openSectionHeader"));
+						boolean needIcon = false;
+						if (collapsible) {
+							sectionHeader.decorate(new UIStyleDecorator("collapsibleSectionHeader"));
+							sectionHeader.decorate(new UIFreeAttributeDecorator("aria-controls", sectionContainer.getFullID()));
+							sectionHeader.decorate(new UIFreeAttributeDecorator("aria-expanded", (defaultClosed ? "false" : "true")));
+							sectionContainer.decorate(new UIStyleDecorator("collapsible"));
+							if (defaultClosed) {
+								sectionHeader.decorate(new UIStyleDecorator("closedSectionHeader"));
+								sectionContainer.decorate(new UIStyleDecorator("defaultClosed"));
+								needIcon = true;
+							} else {
+								sectionHeader.decorate(new UIStyleDecorator("openSectionHeader"));
+							}
 						}
-					}
-					if (!needIcon)
-					    collapsedIcon.decorate(new UIFreeAttributeDecorator("style", "display:none"));
+						if (!needIcon) collapsedIcon.decorate(new UIFreeAttributeDecorator("style", "display:none"));
 
-					sectionHeader.decorate(new UIStyleDecorator((color == null?"":"col"+color+"-header")));
-					cols = colCount(itemList, i.getId());
-					sectionbreak = true;
-					colnum = 0;
-				    } else if ("column".equals(i.getFormat()))
-					colnum++;
-				    String colForceBtnColor = i.getAttribute("forceBtn");
+						sectionHeader.decorate(new UIStyleDecorator((headerColor == null ? "" : "col" + headerColor + "-header")));
+						cols = colCount(itemList, i.getId());
+						sectionbreak = true;
+						colnum = 0;
+					} else if ("column".equals(i.getFormat())) colnum++;
+
+					String colForceBtnColor = i.getAttribute("forceBtn");
 				    columnContainer = UIBranchContainer.make(sectionContainer, "column:");
 				    if(StringUtils.isEmpty(colForceBtnColor) || StringUtils.equalsIgnoreCase(colForceBtnColor, "false")){
 				    	columnContainer.decorate(new UIStyleDecorator("noColor"));
@@ -1237,46 +1236,48 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 				    Integer split = new Integer(i.getAttribute("colsplit") == null ? "1" : i.getAttribute("colsplit"));
 				    colnum += width; // number after this column
 
-				    columnContainer.decorate(new UIStyleDecorator("cols" + cols + (width > 1?" double":"") + (split > 1?" split":"") + (color == null?"":" col"+color)));
+				    if (!first && !"section".equals(i.getFormat())) colColor = i.getAttribute("colcolor");
+					columnContainer.decorate(new UIStyleDecorator("cols" + cols + (width > 1 ? " double" : "") + (split > 1 ? " split" : "") + (colColor == null ? "" : " col" + colColor)));
 				    UIOutput.make(columnContainer, "break-msg", messageLocator.getMessage(sectionbreak?"simplepage.break-here":"simplepage.break-column-here"));
 
 				    if (canEditPage) {
-				    UIComponent delIcon = UIOutput.make(columnContainer, "section-td");
-				    if (first)
-					delIcon.decorate(new UIFreeAttributeDecorator("style", "display:none"));
+						UIComponent delIcon = UIOutput.make(columnContainer, "section-td");
+						if (first) delIcon.decorate(new UIFreeAttributeDecorator("style", "display:none"));
 
-				    UIOutput.make(columnContainer, "section2");
-				    UIOutput.make(columnContainer, "section3").decorate(new UIFreeAttributeDecorator("title", messageLocator.getMessage("simplepage.columnopen")));
-				    UIOutput.make(columnContainer, "addbottom");
-				    UIOutput.make(columnContainer, "addbottom2").decorate(new UIFreeAttributeDecorator("title", messageLocator.getMessage("simplepage.add-item-column")));
-				    UIOutput mergeLink = UIOutput.make(columnContainer, "section-del-link");
-				    mergeLink.decorate(new UIFreeAttributeDecorator("data-merge-id", String.valueOf(i.getId())));
-				    mergeLink.decorate(new UIFreeAttributeDecorator("title", messageLocator.getMessage("simplepage.join-items")));
-				    mergeLink.decorate(new UIFreeAttributeDecorator("aria-label", messageLocator.getMessage("simplepage.join-items")));
-				    mergeLink.decorate(new UIStyleDecorator(sectionbreak?"section-merge-link":"column-merge-link"));
-				    }
+						UIOutput.make(columnContainer, "section2");
+						UIOutput.make(columnContainer, "section3").decorate(new UIFreeAttributeDecorator("title", messageLocator.getMessage("simplepage.columnopen")));
+						UIOutput.make(columnContainer, "addbottom");
+						UIOutput.make(columnContainer, "addbottom2").decorate(new UIFreeAttributeDecorator("title", messageLocator.getMessage("simplepage.add-item-column")));
+						UIOutput mergeLink = UIOutput.make(columnContainer, "section-del-link");
+						mergeLink.decorate(new UIFreeAttributeDecorator("data-merge-id", String.valueOf(i.getId())));
+						mergeLink.decorate(new UIFreeAttributeDecorator("title", messageLocator.getMessage("simplepage.join-items")));
+						mergeLink.decorate(new UIFreeAttributeDecorator("aria-label", messageLocator.getMessage("simplepage.join-items")));
+						mergeLink.decorate(new UIStyleDecorator(sectionbreak ? "section-merge-link" : "column-merge-link"));
+					}
 
-				    UIBranchContainer tableRow = UIBranchContainer.make(tableContainer, "item:");
+					UIBranchContainer tableRow = UIBranchContainer.make(tableContainer, "item:");
 				    tableRow.decorate(new UIFreeAttributeDecorator("class", "breakitem break" + i.getFormat()));
 				    if (canEditPage) {
-					// usual case is this is a break
-					if (i.getType() == SimplePageItem.BREAK)
-					    UIOutput.make(tableRow, "itemid", String.valueOf(i.getId()));
-					else {
-					    // page doesn't start with a break. have to use pageid
-					    UIOutput.make(tableRow, "itemid", "p" + currentPage.getPageId());
+						// usual case is this is a break
+						if (i.getType() == SimplePageItem.BREAK)
+							UIOutput.make(tableRow, "itemid", String.valueOf(i.getId()));
+						else {
+							// page doesn't start with a break. have to use pageid
+							UIOutput.make(tableRow, "itemid", "p" + currentPage.getPageId());
+						}
 					}
-				    }
 
-				    first = false;
-				    if (i.getType() == SimplePageItem.BREAK)
-				    continue;
+					first = false;
+				    if (i.getType() == SimplePageItem.BREAK) continue;
 				    // for first item, if wasn't break, process it
 				}
 				
-				if (!simplePageBean.isItemVisible(i, currentPage)) {
-					continue;
-				}
+				if (!simplePageBean.isItemVisible(i, currentPage)) continue;
+
+				// Resolve once per item to avoid repeated getEntity calls within the metadata and group blocks below.
+				// Note: makeLink() is a separate method and resolves its own entity independently.
+				LessonEntity resolvedScormEntity = (i.getType() == SimplePageItem.SCORM && !SimplePageItem.DUMMY.equals(i.getSakaiId()))
+				    ? scormEntity.getEntity(i.getSakaiId(), simplePageBean) : null;
 
 				if(httpServletRequest.getParameter("printall") != null && i.getSakaiId() != null && !"".equals(i.getSakaiId()) && StringUtils.isNumeric(i.getSakaiId())
 						&& !printedSubpages.contains(Long.valueOf(i.getSakaiId())))			
@@ -1341,6 +1342,7 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 				case SimplePageItem.ANNOUNCEMENTS: itemClassName += "announcementsType"; break;
 				case SimplePageItem.CALENDAR: itemClassName += "calendar"; break;
 				case SimplePageItem.CHECKLIST: itemClassName += "checklistType"; break;
+				case SimplePageItem.SCORM: itemClassName += "scormType"; break;
 				}
 
 				Map<String,Object> ltiContent = null;
@@ -1456,6 +1458,9 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 					    case SimplePageItem.ASSESSMENT:
 						itemicon.decorate(new UIStyleDecorator("si si-sakai-samigo"));
 						break;
+					    case SimplePageItem.SCORM:
+						itemicon.decorate(new UIStyleDecorator("si si-sakai-scorm-tool"));
+						break;
 						case SimplePageItem.BLTI:
 							String bltiIcon = "fa-globe";
 							if (bltiEntity != null && ((BltiInterface)bltiEntity).servicePresent()) {
@@ -1494,7 +1499,7 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 					// way things are
 					// done so the user never has to request a refresh.
 					//   FYI: this actually puts in an IFRAME for inline BLTI items
-					showRefresh = !makeLink(tableRow, "link", i, canSeeAll, currentPage, notDone, status, forceButtonColor, color) || showRefresh;
+					showRefresh = !makeLink(tableRow, "link", i, canSeeAll, currentPage, notDone, status, forceButtonColor, colColor) || showRefresh;
 					UILink.make(tableRow, "copylink", i.getName(), "http://lessonbuilder.sakaiproject.org/" + i.getId() + "/").
 					    decorate(new UIFreeAttributeDecorator("title", messageLocator.getMessage("simplepage.copylink2").replace("{}", i.getName())));
 
@@ -1516,6 +1521,9 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 							break;
 						case SimplePageItem.ASSESSMENT:
 							code = "simplepage.copied.assessment";
+							break;
+						case SimplePageItem.SCORM:
+							code = "simplepage.copied.scorm";
 							break;
 						case SimplePageItem.FORUM:
 							code = "simplepage.copied.forum";
@@ -1597,6 +1605,26 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 								requirement = i.getRequirementText();
 							}
 							UIOutput.make(tableRow, "requirement-text", requirement);
+						} else if (i.getType() == SimplePageItem.SCORM) {
+							UIOutput.make(tableRow, "type", "s");
+							UIOutput.make(tableRow, "requirement-text", (i.getSubrequirement() ? i.getRequirementText() : "false"));
+							if (resolvedScormEntity != null) {
+								String editUrl = resolvedScormEntity.editItemUrl(simplePageBean);
+								if (editUrl != null) {
+									UIOutput.make(tableRow, "edit-url", editUrl);
+								}
+								editUrl = resolvedScormEntity.editItemSettingsUrl(simplePageBean);
+								if (editUrl != null) {
+									UIOutput.make(tableRow, "edit-settings-url", editUrl);
+								}
+								itemGroupString = simplePageBean.getItemGroupString(i, resolvedScormEntity, true);
+								UIOutput.make(tableRow, "item-groups", itemGroupString);
+								if (i.getHeight() != null) UIOutput.make(tableRow, "item-height", i.getHeight());
+								// SCORM only supports "window" and "page"; normalize anything else (e.g. stale "inline" from DB) to "page"
+							UIOutput.make(tableRow, "item-format", "window".equals(i.getFormat()) ? "window" : "page");
+								if (!resolvedScormEntity.objectExists())
+								    entityDeleted = true;
+							}
 						} else if (i.getType() == SimplePageItem.ASSESSMENT) {
 							UIOutput.make(tableRow, "type", "6"); // Not used by
 							// assignments,
@@ -1714,6 +1742,11 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 							    else 
 								notPublished = quizEntity.notPublished(i.getSakaiId());
 							    if (!lessonEntity.objectExists())
+								entityDeleted = true;
+							    break;
+							case SimplePageItem.SCORM:
+							    lessonEntity = resolvedScormEntity;
+							    if (lessonEntity != null && !lessonEntity.objectExists())
 								entityDeleted = true;
 							    break;
 							case SimplePageItem.FORUM:
@@ -2016,9 +2049,7 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 						    // width="640" height="390"></object>
 
 						    item = UIOutput.make(tableRow, "youtubeIFrame")
-									.decorate(new UIFreeAttributeDecorator("allow", String.join(";",
-											Optional.ofNullable(ServerConfigurationService.getStrings("browser.feature.allow"))
-													.orElseGet(() -> new String[]{}))));
+									.decorate(new UIFreeAttributeDecorator("allow", ServerConfigurationService.getBrowserFeatureAllowString()));
 						    // youtube seems ok with length and width
 						    if(lengthOk(height)) {
 							    item.decorate(new UIFreeAttributeDecorator("height", height.getOld()));
@@ -2292,9 +2323,10 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 						    UILink.make(tableRow, "iframe-link-link", messageLocator.getMessage("simplepage.open_new_window"), itemUrl);
 						    item = UIOutput.make(tableRow, "iframe")
 									.decorate(new UIFreeAttributeDecorator("src", itemUrl))
-									.decorate(new UIFreeAttributeDecorator("allow", String.join(";",
-											Optional.ofNullable(ServerConfigurationService.getStrings("browser.feature.allow"))
-													.orElseGet(() -> new String[]{}))));
+									.decorate(new UIFreeAttributeDecorator("allow", ServerConfigurationService.getBrowserFeatureAllowString()));
+						    if (!IframeUrlUtil.isLocalToSakai(itemUrl, ServerConfigurationService.getServerUrl())) {
+								item.decorate(new UIFreeAttributeDecorator("class", "sakai-iframe-force-light"));
+						    }
 						    // if user specifies auto, use Javascript to resize the
 						    // iframe when the
 						    // content changes. This only works for URLs with the
@@ -3795,6 +3827,44 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 				}
 				fake = true; // need to set this in case it's available for missing entity
 			}
+		} else if (i.getType() == SimplePageItem.SCORM) {
+			if (usable && i.isPrerequisite()) {
+				simplePageBean.checkItemPermissions(i, true);
+			}
+			LessonEntity lessonEntity = SimplePageItem.DUMMY.equals(i.getSakaiId()) ? null : scormEntity.getEntity(i.getSakaiId(), simplePageBean);
+			if (usable && lessonEntity != null && (canEditPage || !lessonEntity.notPublished())) {
+				if ("window".equals(i.getFormat())) {
+					String scormUrl = lessonEntity.getUrl();
+					if (scormUrl != null) {
+						UILink link = UILink.make(container, "link", scormUrl);
+						link.decorate(new UIFreeAttributeDecorator("target", "_blank"));
+						if (notDone)
+							link.decorate(new UIFreeAttributeDecorator("onclick",
+									"afterLink($(this)," + i.getId() + ") ; return true"));
+						link.decorate(new UIFreeAttributeDecorator("lessonbuilderitem", itemString));
+						if (!available)
+							fakeDisableLink(link, messageLocator);
+					} else {
+						fake = true;
+					}
+				} else {
+					// "page" (default) — render inside ShowItemProducer iframe.
+					// "inline" is not supported for SCORM (the player requires its own page context)
+					// and is normalised to "page" at both save time (editItem) and metadata output time.
+					GeneralViewParameters view = new GeneralViewParameters(ShowItemProducer.VIEW_ID);
+					view.setSendingPage(currentPage.getPageId());
+					view.setItemId(i.getId());
+					UILink link = UIInternalLink.make(container, "link", view);
+					link.decorate(new UIFreeAttributeDecorator("lessonbuilderitem", itemString));
+					if (!available)
+						fakeDisableLink(link, messageLocator);
+				}
+			} else {
+				if (i.isPrerequisite()) {
+					simplePageBean.checkItemPermissions(i, false);
+				}
+				fake = true;
+			}
 		} else if (i.getType() == SimplePageItem.ASSESSMENT) {
 		    // assignments won't let us get the entity if we're not in the group, so set up permissions before other tests
 			if (usable && i.isPrerequisite()) {
@@ -3876,23 +3946,20 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 		    LessonEntity lessonEntity = (bltiEntity == null ? null : bltiEntity.getEntity(i.getSakaiId()));
 		    if ("inline".equals(i.getFormat())) {
                 // no availability
-                String height=null;
+                String height = null;
                 if (i.getHeight() != null && !i.getHeight().equals(""))
-                    height = i.getHeight().replace("px","");  // just in case
-
-                UIComponent iframe = UIOutput.make(container, "blti-iframe")
-                        .decorate(new UIFreeAttributeDecorator("allow", String.join(";",
-                                Optional.ofNullable(ServerConfigurationService.getStrings("browser.feature.allow"))
-                                        .orElseGet(() -> new String[]{}))));
-                if (lessonEntity != null)
-                    iframe.decorate(new UIFreeAttributeDecorator("src", lessonEntity.getUrl()));
+                    height = i.getHeight().replace("px", "");  // just in case
 
                 String h = "300";
                 if (height != null && !height.trim().equals(""))
                     h = height;
 
-                iframe.decorate(new UIFreeAttributeDecorator("height", h));
-                iframe.decorate(new UIFreeAttributeDecorator("title", i.getName()));
+                String launchUrl = (lessonEntity != null) ? lessonEntity.getUrl() : "about:blank";
+                UIComponent ltiIframe = UIOutput.make(container, "blti-iframe")
+                    .decorate(new UIFreeAttributeDecorator("launch-url", launchUrl))
+                    .decorate(new UIFreeAttributeDecorator("allow", ServerConfigurationService.getBrowserFeatureAllowString()))
+                    .decorate(new UIFreeAttributeDecorator("height", h));
+
                 // normally we get the name from the link text, but there's no link text here
                 UIOutput.make(container, "item-name", i.getName());
             } else if (!"window".equals(i.getFormat()) && (i.getFormat() != null)) {
@@ -3985,18 +4052,21 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 			switch (i.getType()) {
 				case SimplePageItem.ASSIGNMENT:
 					linkText = getLinkText(linkText, i.getSakaiId());
+					lessonEntity = assignmentEntity.getEntity(i.getSakaiId(), simplePageBean);
+					linkAdditionalText = messageLocator.getMessage("simplepage.assignment.review_submissions");
+					break;
 				case SimplePageItem.ASSESSMENT:
 					lessonEntity = quizEntity.getEntity(i.getSakaiId(), simplePageBean);
 					linkAdditionalText = messageLocator.getMessage("simplepage.assignment.review_submissions");
-				default:
-					UIOutput.make(container, ID + "-text", linkText)
-						.decorate(new UIFreeAttributeDecorator("data-original-name", i.getName()));
-
-					if (lessonEntity != null && lessonEntity.showAdditionalLink()) {
-						UIOutput.make(container, ID + "-additional-text", linkAdditionalText)
-							.decorate(new UIFreeAttributeDecorator("data-original-name", linkAdditionalText));
-					}
 					break;
+				default:
+					break;
+			}
+			UIOutput.make(container, ID + "-text", linkText)
+				.decorate(new UIFreeAttributeDecorator("data-original-name", i.getName()));
+			if (lessonEntity != null && lessonEntity.showAdditionalLink()) {
+				UIOutput.make(container, ID + "-additional-text", linkAdditionalText)
+					.decorate(new UIFreeAttributeDecorator("data-original-name", linkAdditionalText));
 			}
 
 		}
@@ -4155,6 +4225,11 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 			bltiEntity = e;
 	}
 
+	public void setScormEntity(LessonEntity e) {
+		if (scormEntity == null)
+			scormEntity = e;
+	}
+
 	//Create a latest forum conversations dialog where user can enter other settings for the forum summary div
 	private void createForumSummaryDialog(UIContainer tofill, SimplePage currentPage) {
 		UIOutput.make(tofill, "add-forum-summary-dialog").decorate(new UIFreeAttributeDecorator("title", messageLocator.getMessage("simplepage.forumSummaryLinkText")));
@@ -4259,6 +4334,11 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 		    }		    
 		    UIOutput.make(tofill, "quiz-li");
 		    createToolBarLink(QuizPickerProducer.VIEW_ID, tofill, "add-quiz", "simplepage.quiz-descrip", currentPage, "simplepage.quiz");
+
+		    if (scormEntity != null && scormEntity.isServiceDeployed()) {
+			UIOutput.make(tofill, "scorm-li");
+			createToolBarLink(ScormPickerProducer.VIEW_ID, tofill, "add-scorm", "simplepage.scorm-descrip", currentPage, "simplepage.scorm");
+		    }
 
 		    //Adding 'Embed forum conversations' component
 		    UIOutput.make(tofill, "forum-summary-li");
@@ -4417,6 +4497,17 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 
 		params = new GeneralViewParameters();
 		params.setSendingPage(currentPage.getPageId());
+		params.viewID = ScormPickerProducer.VIEW_ID;
+		UIInternalLink.make(form, "change-scorm", messageLocator.getMessage("simplepage.change_scorm"), params);
+
+		String scormTool = simplePageBean.getCurrentTool("sakai.scorm.tool");
+		if (scormTool != null) {
+		    String scormToolUrl = ServerConfigurationService.getToolUrl() + "/" + scormTool;
+		    UILink.make(form, "configure-scorm", messageLocator.getMessage("simplepage.configure_scorm"), scormToolUrl);
+		}
+
+		params = new GeneralViewParameters();
+		params.setSendingPage(currentPage.getPageId());
 		params.viewID = ForumPickerProducer.VIEW_ID;
 		UIInternalLink.make(form, "change-forum", messageLocator.getMessage("simplepage.change_forum"), params);
 
@@ -4500,7 +4591,15 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 
 		UISelect buttonColors = UISelect.make(form, "btncolor", SimplePageBean.NewColors, simplePageBean.getNewColorLabelsI18n(), "#{simplePageBean.buttonColor}", SimplePageBean.NewColors[0]);
 
-		UIBoundBoolean.make(form, "hide2", "#{simplePageBean.hidePage}", (currentPage.isHidden()));
+		// Determine current visibility state
+		String currentVisibility2 = computeVisibilityChoice(currentPage);
+
+		UISelect visibilityRadios2 = UISelect.make(form, "visibility-select-2",
+			new String[] {"visible", "hide", "hideFromNav"}, 
+			"#{simplePageBean.visibilityChoice2}", currentVisibility2);
+		UISelectChoice.make(form, "visibility-visible-2", visibilityRadios2.getFullID(), 0);
+		UISelectChoice.make(form, "visibility-hide-2", visibilityRadios2.getFullID(), 1);
+		UISelectChoice.make(form, "visibility-hideFromNav-2", visibilityRadios2.getFullID(), 2);
 		UIBoundBoolean.make(form, "page-releasedate2", "#{simplePageBean.hasReleaseDate}", Boolean.FALSE);
 
 		String releaseDateString = "";
@@ -4913,7 +5012,16 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 
 		if (!simplePageBean.isStudentPage(page)) {
 			UIOutput.make(tofill, "hideContainer");
-			UIBoundBoolean.make(form, "hide", "#{simplePageBean.hidePage}", (page.isHidden()));
+
+			// Determine current visibility state
+			String currentVisibility = computeVisibilityChoice(page);
+
+			UISelect visibilityRadios = UISelect.make(form, "visibility-select",
+				new String[] {"visible", "hide", "hideFromNav"}, 
+				"#{simplePageBean.visibilityChoice}", currentVisibility);
+			UISelectChoice.make(form, "visibility-visible", visibilityRadios.getFullID(), 0);
+			UISelectChoice.make(form, "visibility-hide", visibilityRadios.getFullID(), 1);
+			UISelectChoice.make(form, "visibility-hideFromNav", visibilityRadios.getFullID(), 2);
 
 			Date releaseDate = page.getReleaseDate();
 
@@ -5044,6 +5152,13 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 
 		UICommand.make(form, "create-title", messageLocator.getMessage("simplepage.save"), "#{simplePageBean.editTitle}");
 		UICommand.make(form, "cancel-title", messageLocator.getMessage("simplepage.cancel"), "#{simplePageBean.cancel}");
+	}
+
+	private static String computeVisibilityChoice(SimplePage page) {
+		if (page == null) return "visible";
+		if (page.isHidden()) return "hide";
+		if (page.isHiddenFromNavigation()) return "hideFromNav";
+		return "visible";
 	}
 
 	private void createNewPageDialog(UIContainer tofill, SimplePage page, SimplePageItem pageItem) {

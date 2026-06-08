@@ -30,20 +30,20 @@ sakai.getSiteInfo = function(trigger, dialogTarget, nosd, nold) {
     jQuery.getJSON(siteURL, function (data) {
       var desc = '', shortdesc = '', title = '', owner = '', email = '';
       if (data.description) {
-        desc = unescape(data.description);
+        desc = $('<div>').text(data.description).html();
       }
       else {
         desc = nold;
       }
       if (data.shortDescription) {
-        shortdesc = data.shortDescription;
+        shortdesc = data.shortDescription.escapeHTML();
       }
       else {
         shortdesc = nosd;
       }
 
       if (data.contactName) {
-        owner = data.contactName;
+        owner = data.contactName.escapeHTML();
       }
 
       if (data.contactEmail) {
@@ -52,7 +52,7 @@ sakai.getSiteInfo = function(trigger, dialogTarget, nosd, nold) {
 
       if (data.props) {
         if (data.props['contact-name']) {
-          owner = data.props['contact-name'];
+          owner = data.props['contact-name'].escapeHTML();
         }
 
         if (data.props['contact-email']) {
@@ -1544,9 +1544,10 @@ document.addEventListener('DOMContentLoaded', () => {
               const items = sites[siteId];
 
               const toolCheckbox = document.getElementById(`toolSite-${toolId}-${siteId}`);
-              const escapedTitle = $('<div>').text(items[i].title).html();
-              if (items[i]) {
-                const itemId = items[i].id;
+              const item = items[i];
+              if (item) {
+                const escapedTitle = $('<div>').text(item.title ?? "").html();
+                const itemId = item.id;
                 tr += `
                   <td>
                     <input type="checkbox"

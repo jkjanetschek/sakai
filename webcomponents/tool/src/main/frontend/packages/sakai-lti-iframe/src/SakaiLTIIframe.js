@@ -5,9 +5,12 @@ export class SakaiLTIIframe extends SakaiElement {
 
   static properties = {
 
+    allow: { attribute: "allow", type: String },
     allowResize: { attribute: "allow-resize", type: String },
+    height: { attribute: "height", type: String },
     newWindowText: { attribute: "new-window-text", type: String },
     launchUrl: { attribute: "launch-url", type: String },
+    iframeName: { attribute: "iframe-name", type: String },
   };
 
   constructor() {
@@ -79,7 +82,7 @@ export class SakaiLTIIframe extends SakaiElement {
         let frameId = false;
         let allowResize = false;
         Array.from(document.getElementsByTagName("iframe")).forEach(element => {
-          if ( element.contentWindow === event.source ) {
+          if ( element.contentWindow === e.source ) {
             frameId = element.id;
             allowResize = element.dataset.allowResize;
           }
@@ -91,7 +94,11 @@ export class SakaiLTIIframe extends SakaiElement {
         if ( typeof message == "string" ) message = JSON.parse(e.data);
         if ( message.subject == "lti.frameResize" ) {
           const height = message.height;
-          document.getElementById(idval).height = height;
+          const frame = document.getElementById(idval);
+          if (frame) {
+            const heightStyle = this._normalizeHeightForCss(height);
+            if (heightStyle) frame.style.height = heightStyle;
+          }
           console.debug(`Received lti.frameResize height=${height} frame=${idval}`);
         }
       } catch (error) {
@@ -104,13 +111,30 @@ export class SakaiLTIIframe extends SakaiElement {
     return this._i18n && this.newWindowText && this.launchUrl;
   }
 
-  launchPopup() {
+  /**
+   * Normalizes a height value for use in CSS. If value is a bare number
+   * (e.g., "500" or 500), appends "px"; otherwise uses the value as-is (e.g.,
+   * "80vh", "100%", "500px"). Returns empty string when value is not set.
+   */
+  _normalizeHeightForCss(value) {
+    if (value === undefined || value === null || value === "") return "";
+    const str = String(value);
+    return /^\d+$/.test(str) ? `${str}px` : str;
+  }
 
+  get _heightStyle() {
+    const normalized = this._normalizeHeightForCss(this.height);
+    return normalized || "1200px";
+  }
+
+  launchPopup() {
     window.open(this.launchUrl, "_blank");
     return false;
   }
 
   render() {
+
+    const iframeId = `sakai-lti-iframe-${this.randomId}`;
 
     return html`
       <div class="sakai-iframe-launch-button" id="sakai-lti-button-${this.randomId}" style="display:none;">
@@ -119,9 +143,11 @@ export class SakaiLTIIframe extends SakaiElement {
         </p>
       </div>
       <div class="sakai-iframe-launch">
-        <iframe src="${this.launchUrl}"
-            id="sakai-lti-iframe-${this.randomId}"
-            style="width: 100%; height: 100%; min-height: 80vh;"
+        <iframe class="sakai-iframe-force-light"
+            src="${this.launchUrl}"
+            id="${iframeId}"
+            name="${this.iframeName || iframeId}"
+            style="width: 100%; height: ${this._heightStyle}; overflow: auto;"
             width="100%"
             aria-label="${this.newWindowText}"
             frameborder="0"
@@ -129,7 +155,7 @@ export class SakaiLTIIframe extends SakaiElement {
             data-allow-resize="${this.allowResize}"
             marginheight="0"
             scrolling="auto"
-            allow="camera; fullscreen; microphone">
+            allow="${this.allow || "camera; fullscreen; microphone; local-network-access *"}">
         </iframe>
       </div>
     `;

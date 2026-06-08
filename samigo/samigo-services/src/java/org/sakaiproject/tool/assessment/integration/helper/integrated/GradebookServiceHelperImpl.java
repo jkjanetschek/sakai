@@ -17,7 +17,6 @@
 
 package org.sakaiproject.tool.assessment.integration.helper.integrated;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.Locale;
 
 
 import lombok.extern.slf4j.Slf4j;
@@ -36,16 +34,11 @@ import org.apache.commons.math3.util.Precision;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.cover.ComponentManager;
-import org.sakaiproject.entity.api.ResourceProperties;
-import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.grading.api.AssessmentNotFoundException;
 import org.sakaiproject.grading.api.GradingService;
 import org.sakaiproject.grading.api.model.Gradebook;
-import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SitePage;
 import org.sakaiproject.site.api.ToolConfiguration;
-import org.sakaiproject.site.api.SiteService;
-import org.sakaiproject.tool.api.SessionManager;
 import org.sakaiproject.tool.api.Tool;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedEvaluationModel;
@@ -59,7 +52,7 @@ import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
 import org.sakaiproject.tool.assessment.integration.helper.ifc.GradebookServiceHelper;
 import org.sakaiproject.tool.assessment.services.PersistenceService;
 import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
-import org.sakaiproject.user.api.PreferencesService;
+import org.sakaiproject.util.api.LocaleService;
 import org.springframework.context.annotation.DeferredImportSelector.Group.Entry;
 /**
  *
@@ -83,19 +76,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 {
 
 	private SecurityService securityService = (SecurityService) ComponentManager.get(SecurityService.class);
-	private SessionManager sessionManager = (SessionManager) ComponentManager.get(SessionManager.class);
-	private SiteService siteService = (SiteService) ComponentManager.get(SiteService.class);
-	private PreferencesService preferencesService = (PreferencesService) ComponentManager.get(PreferencesService.class);
-
-	private Site getCurrentSite(String id) {
-		Site site = null;
-		try {
-			site = siteService.getSite(id);
-		} catch (IdUnusedException e) {
-			log.error(e.getMessage());
-		}
-		return site;
-	}
+	private LocaleService localeService = (LocaleService) ComponentManager.get(LocaleService.class);
 	
    /**
     * Remove a published assessment from the gradebook.
@@ -106,7 +87,36 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     */
     public void removeExternalAssessment(String gradebookUId, String publishedAssessmentId, GradingService g)
         throws Exception {
-        g.removeExternalAssignment(null, publishedAssessmentId, getAppName());
+        if (gradebookUId == null) {
+            throw new AssessmentNotFoundException("Cannot remove external assessment without a gradebook uid");
+        }
+
+        List<String> gradebookUids = new ArrayList<>(List.of(gradebookUId));
+
+        if (g.isGradebookGroupEnabled(gradebookUId)) {
+            for (String groupGradebookUid : g.getGradebookGroupInstancesIds(gradebookUId)) {
+                if (!gradebookUids.contains(groupGradebookUid)) {
+                    gradebookUids.add(groupGradebookUid);
+                }
+            }
+        }
+
+        AssessmentNotFoundException lastNotFound = null;
+        boolean removed = false;
+
+        for (String uid : gradebookUids) {
+            try {
+                g.removeExternalAssignment(uid, publishedAssessmentId, getAppName());
+                removed = true;
+            } catch (AssessmentNotFoundException e) {
+                lastNotFound = e;
+                log.debug("No external assessment id={} in gradebook uid={}", publishedAssessmentId, uid);
+            }
+        }
+
+        if (!removed && lastNotFound != null) {
+            throw lastNotFound;
+        }
     }
 
   public boolean isAssignmentDefined(String assessmentTitle,
@@ -236,7 +246,14 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     PublishedAssessmentService pubService = new PublishedAssessmentService();
 
     String siteId = GradebookFacade.getGradebookUId();
-    boolean isGradebookGroupEnabled = g.isGradebookGroupEnabled(AgentFacade.getCurrentSiteId());
+
+    if (siteId == null) {
+        PublishedAssessmentFacade pub = pubService.getPublishedAssessment(ag.getPublishedAssessmentId().toString());
+        // Get the siteId from the assessment, as it also works in an no-site context
+        siteId = pub.getOwnerSiteId();
+    }
+
+    boolean isGradebookGroupEnabled = g.isGradebookGroupEnabled(siteId);
 
     String gradebookUId = siteId;
 
@@ -251,7 +268,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 
       if (pAF != null) {
         if (assignmentId == null) {
-          List<String> userGradebookList = g.getGradebookInstancesForUser(AgentFacade.getCurrentSiteId(), ag.getAgentId());
+          List<String> userGradebookList = g.getGradebookInstancesForUser(siteId, ag.getAgentId());
           Map<String, String> releaseToGroupsMap = pAF.getReleaseToGroups();
 
           for (String userGradebook : userGradebookList) {
@@ -261,7 +278,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
             }
           }
         } else {
-          String foundGradebookUid = g.getGradebookUidByAssignmentById(AgentFacade.getCurrentSiteId(), assignmentId);
+          String foundGradebookUid = g.getGradebookUidByAssignmentById(siteId, assignmentId);
 
           if (foundGradebookUid != null && !StringUtils.isBlank(foundGradebookUid)) {
             gradebookUId = foundGradebookUid;
@@ -276,7 +293,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
         //SAM-1562 We need to round the double score and covert to a double -DH
         double fScore = Precision.round(ag.getFinalScore(), 2);
         Double score = Double.valueOf(fScore).doubleValue();
-        points = getFormattedScore(score, gradebookUId);
+        points = getFormattedScore(score, siteId);
         log.debug("rounded:  " + ag.getFinalScore() + " to: " + score.toString() );
     }
 
@@ -292,7 +309,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 
         try {
             securityService.pushAdvisor(securityAdvisor);
-            g.setAssignmentScoreString(gradebookUId, gradebookUId, assignmentId, ag.getAgentId(), points, null, null);
+            g.setAssignmentScoreString(gradebookUId, siteId, assignmentId, ag.getAgentId(), points, null, null);
         } catch (Exception e) {
             log.error("Error while grading submission {} for agent {}", assignmentId, ag.getAgentId());
         } finally {
@@ -305,16 +322,39 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
     }
   }
   
-  public void updateExternalAssessmentComment(Long publishedAssessmentId, String studentUid, String comment,
+  public void updateExternalAssessmentComment(AssessmentGradingData ag, String studentUid, String comment,
           GradingService g) throws Exception {
 	  boolean testErrorHandling=false;
 	  PublishedAssessmentService pubService = new PublishedAssessmentService();
-
+	  Long publishedAssessmentId = ag.getPublishedAssessmentId();
 	  String gradebookUId = pubService.getPublishedAssessmentOwner(publishedAssessmentId);
-	  String siteId = gradebookUId;
+
 	  if (gradebookUId == null) {
 		  return;
-	  }	
+	  }
+
+	  String siteId = GradebookFacade.getGradebookUId();
+
+	  if (siteId == null) {
+		  PublishedAssessmentFacade pub = pubService.getPublishedAssessment(ag.getPublishedAssessmentId().toString());
+		  // Get the siteId from the assessment, as it also works in an no-site context
+		  siteId = pub.getOwnerSiteId();
+	  }
+
+	  if (g.isGradebookGroupEnabled(siteId)) {
+		  PublishedAssessmentFacade pAF = pubService.getPublishedAssessment(publishedAssessmentId.toString());
+		  if (pAF != null) {
+			  List<String> userGradebookList = g.getGradebookInstancesForUser(siteId, ag.getAgentId());
+			  Map<String, String> releaseToGroupsMap = pAF.getReleaseToGroups();
+			  for (String userGradebook : userGradebookList) {
+				  if (releaseToGroupsMap.containsKey(userGradebook)) {
+					  gradebookUId = userGradebook;
+					  break;
+				  }
+			  }
+		  }
+	  }
+
 	  g.updateExternalAssessmentComment(gradebookUId, siteId, publishedAssessmentId.toString(), studentUid, comment);
 
 	  if (testErrorHandling){
@@ -334,35 +374,8 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 		return null;
 	}
 
-  private String getFormattedScore(Double score, String gradebookUId) {
-    String currentLocaleStr = null;
-    String userId = AgentFacade.getEid();
-
-    try {
-      Site site = siteService.getSite(gradebookUId);
-      ResourceProperties siteProperties = site.getProperties();
-      currentLocaleStr = (String) siteProperties.get("locale_string");
-
-    } catch (IdUnusedException ex) {
-      log.error("Not posible to get siteProperties");
-    }
-
-    if (currentLocaleStr == null && userId != null) {
-      currentLocaleStr = preferencesService.getLocale(userId).toString();
-    }
-
-    if (currentLocaleStr == null) {
-      currentLocaleStr = Locale.ENGLISH.toString();
-    }
-
-    String[] localeParts = new String[]{"", ""};
-    List localePartsList = Arrays.asList(currentLocaleStr.split("_"));
-    for (int i = 0; i < localePartsList.size(); i++) {
-      localeParts[i] = localePartsList.get(i).toString();
-    }
-
-    NumberFormat nf = NumberFormat.getInstance(new Locale(localeParts[0], localeParts[1]));
-    return nf.format(score);
+  private String getFormattedScore(Double score, String siteId) {
+    return localeService.formatDouble(score, siteId, AgentFacade.getAgentString());
   }
 
   public List<String> getGradebookList(boolean isGradebookGroupEnabled, String[] groupsAuthorized) {
@@ -414,7 +427,7 @@ public class GradebookServiceHelperImpl implements GradebookServiceHelper
 
           if (EvaluationModelIfc.TO_DEFAULT_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {
             updateExternalAssessmentScore(ag, gradingService);
-            updateExternalAssessmentComment(ag.getPublishedAssessmentId(), ag.getAgentId() , ag.getComments(), gradingService);
+            updateExternalAssessmentComment(ag, ag.getAgentId() , ag.getComments(), gradingService);
           }
 
           if (EvaluationModelIfc.TO_SELECTED_GRADEBOOK.toString().equals(evaluation.getToGradeBook())) {

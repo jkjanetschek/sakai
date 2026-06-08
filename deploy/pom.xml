@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.sakaiproject</groupId>
         <artifactId>master</artifactId>
-        <version>25-SNAPSHOT</version>
+        <version>25.2</version>
         <relativePath>../master/pom.xml</relativePath>
     </parent>
 
@@ -631,10 +631,6 @@
             <groupId>org.apache.pluto</groupId>
             <artifactId>pluto-taglib</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.sakaiproject.portal</groupId>
-            <artifactId>sakai-portal-util</artifactId>
         </dependency>
 
         <!-- spring -->

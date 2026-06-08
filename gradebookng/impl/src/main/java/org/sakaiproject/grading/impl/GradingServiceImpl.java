@@ -122,8 +122,8 @@ import org.sakaiproject.site.api.ToolConfiguration;
 import org.sakaiproject.tool.api.SessionManager;
 import org.sakaiproject.plus.api.PlusService;
 import org.sakaiproject.grading.api.GradingAuthz;
-import org.sakaiproject.util.NumberUtil;
 import org.sakaiproject.util.ResourceLoader;
+import org.sakaiproject.util.api.LocaleService;
 import org.springframework.lang.Nullable;
 import org.springframework.orm.hibernate5.HibernateOptimisticLockingFailureException;
 
@@ -161,6 +161,7 @@ public class GradingServiceImpl implements GradingService {
     @Autowired private GradingPersistenceManager gradingPersistenceManager;
     @Autowired private MemoryService memoryService;
     @Autowired private PlusService plusService;
+    @Autowired private LocaleService localeService;
     @Autowired private ResourceLoader resourceLoader;
     @Autowired private SiteService siteService;
     @Autowired private SectionAwareness sectionAwareness;
@@ -333,6 +334,7 @@ public class GradingServiceImpl implements GradingService {
         assignmentDefinition.setExternalAppName(internalAssignment.getExternalAppName());
         assignmentDefinition.setExternalId(internalAssignment.getExternalId());
         assignmentDefinition.setExternalData(internalAssignment.getExternalData());
+        assignmentDefinition.setLineItemMetadata(internalAssignment.getLineItemMetadata());
         assignmentDefinition.setReleased(internalAssignment.getReleased());
         assignmentDefinition.setId(internalAssignment.getId());
         assignmentDefinition.setExtraCredit(internalAssignment.getExtraCredit());
@@ -411,6 +413,7 @@ public class GradingServiceImpl implements GradingService {
             asn.setExternallyMaintained(assignmentDefinition.getExternallyMaintained());
             asn.setExternalId(assignmentDefinition.getExternalId());
             asn.setExternalAppName(assignmentDefinition.getExternalAppName());
+            asn.setLineItemMetadata(assignmentDefinition.getLineItemMetadata());
         }
 
         return asn;
@@ -704,8 +707,9 @@ public class GradingServiceImpl implements GradingService {
 			if (!copyOnlySettings) {
 				// create the assignment for the current category
 				try {
+					Assignment transferAssignment = buildTransferAssignmentDefinition(a);
 					Long newId = createAssignmentForCategory(gradebook.getId(), categoriesCreated.get(c.getName()), taskName, a.getPoints(),
-										 a.getDueDate(), !a.getCounted(), a.getReleased(), a.getExtraCredit(), a.getCategorizedSortOrder(), null);
+										 a.getDueDate(), !a.getCounted(), a.getReleased(), a.getExtraCredit(), a.getCategorizedSortOrder(), transferAssignment);
 					transversalMap.put("gb/"+a.getId(),"gb/"+newId);
 				} catch (final ConflictingAssignmentNameException e) {
 					// assignment already exists. Could be from a merge.
@@ -759,7 +763,8 @@ public class GradingServiceImpl implements GradingService {
 					: a.getName();
 
 				try {
-					Long newId = createAssignment(gradebook.getId(), taskName, a.getPoints(), a.getDueDate(), !a.getCounted(), a.getReleased(), a.getExtraCredit(), a.getSortOrder(), null);
+					Assignment transferAssignment = buildTransferAssignmentDefinition(a);
+					Long newId = createAssignment(gradebook.getId(), taskName, a.getPoints(), a.getDueDate(), !a.getCounted(), a.getReleased(), a.getExtraCredit(), a.getSortOrder(), transferAssignment);
 					transversalMap.put("gb/"+a.getId(),"gb/"+newId);
 				} catch (final ConflictingAssignmentNameException e) {
 					// assignment already exists. Could be from a merge.
@@ -804,6 +809,12 @@ public class GradingServiceImpl implements GradingService {
         }
 
         return transversalMap;
+    }
+
+    private Assignment buildTransferAssignmentDefinition(final Assignment sourceAssignment) {
+        Assignment transferAssignment = new Assignment();
+        transferAssignment.setLineItemMetadata(sourceAssignment.getLineItemMetadata());
+        return transferAssignment;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -920,6 +931,10 @@ public class GradingServiceImpl implements GradingService {
         assignment.setExternallyMaintained(assignmentDefinition.getExternallyMaintained());
         assignment.setExternalId(assignmentDefinition.getExternalId());
         assignment.setExternalData(assignmentDefinition.getExternalData());
+        // Only overwrite when the definition carries a value; null means omitted so we keep persisted LTI line-item metadata.
+        if (assignmentDefinition.getLineItemMetadata() != null) {
+            assignment.setLineItemMetadata(assignmentDefinition.getLineItemMetadata());
+        }
 
         assignment.setLineItem(assignmentDefinition.getLineItem());
 
@@ -2753,18 +2768,17 @@ public class GradingServiceImpl implements GradingService {
      */
     public Double convertStringToDouble(final String doubleAsString) {
 
-        if (StringUtils.isBlank(doubleAsString)) {
+        final Double scoreAsDouble = StringUtils.isBlank(doubleAsString)
+                ? null
+                : localeService.parseDouble(doubleAsString);
+
+        if (scoreAsDouble == null || !Double.isFinite(scoreAsDouble)) {
+            log.warn("Failed to convert score {}", doubleAsString);
             return null;
         }
 
-        final Double scoreAsDouble = NumberUtil.parseLocaleDouble(doubleAsString, resourceLoader.getLocale());
-        if (scoreAsDouble == null || !Double.isFinite(scoreAsDouble)) {
-            log.warn("Failed to convert score for locale {}: '{}'", resourceLoader.getLocale(), doubleAsString);
-            return null;
-        }
         return scoreAsDouble;
     }
-
     /**
      * Get a list of assignments in the gradebook attached to the given category. Note that each assignment only knows the category by name.
      *
@@ -5403,11 +5417,20 @@ public class GradingServiceImpl implements GradingService {
             Collection<ToolConfiguration> gbs = site.getTools("sakai.gradebookng");
             for (ToolConfiguration tc : gbs) {
                 Properties props = tc.getPlacementConfig();
-                if (props.getProperty(GB_GROUP_TOOL_PROPERTY) != null) {
-                    log.debug("Detected gradebook for group {}", props.getProperty(GB_GROUP_TOOL_PROPERTY));
-                    Optional<Gradebook> gb = gradingPersistenceManager.getGradebook(props.getProperty(GB_GROUP_TOOL_PROPERTY));
+                String groupId = props.getProperty(GB_GROUP_TOOL_PROPERTY);
+                if (groupId != null) {
+                    log.debug("Detected gradebook for group {}", groupId);
+                    Optional<Gradebook> gb = gradingPersistenceManager.getGradebook(groupId);
                     if (gb.isPresent()) {
                         gbList.add(gb.get());
+                    } else {
+                        Gradebook createdGb = getGradebook(groupId, siteId);
+                        if (createdGb != null) {
+                            log.debug("Gradebook added for groupId={}", groupId);
+                            gbList.add(createdGb);
+                        } else {
+                            log.warn("Gradebook not found in DB for groupId '{}'", groupId);
+                        }
                     }
                 }
             }
@@ -5808,7 +5831,7 @@ public class GradingServiceImpl implements GradingService {
                     boolean isCategoryInGradebook = false;
 
                     for (String groupId : groupList) {
-                        List<CategoryDefinition> categoryDefinitionList = getCategoryDefinitions(groupId, groupId);
+                        List<CategoryDefinition> categoryDefinitionList = getCategoryDefinitions(groupId, siteId);
 
                         boolean foundCategory = categoryDefinitionList.stream()
                             .anyMatch(category -> category.getId().equals(Long.parseLong(categoryId)));

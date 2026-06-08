@@ -5,7 +5,7 @@
     <parent>
         <artifactId>lti</artifactId>
         <groupId>org.sakaiproject.lti</groupId>
-        <version>25-SNAPSHOT</version>
+        <version>25.2</version>
     </parent>
 
     <name>Tsugi LTI Utilities (lti-util variant)</name>
@@ -60,6 +60,10 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
 		</dependency>
         <dependency>
             <groupId>com.nimbusds</groupId>

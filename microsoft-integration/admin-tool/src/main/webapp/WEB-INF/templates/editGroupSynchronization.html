@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="fragments/common :: head" />
+<head th:replace="~{fragments/common :: head}" />
 <body>
-	<div th:replace="fragments/common :: bootstrap" />
-	<div th:include="fragments/common :: admin (${isAdmin})" />
+	<div th:replace="~{fragments/common :: bootstrap}" />
+	<div th:insert="~{fragments/common :: admin (${isAdmin})}" />
 
 	<div th:if="${isAdmin}">
 		<div class="portletBody">
-			<div id="menu" th:include="fragments/menus :: main (editGroup)" />
+			<div id="menu" th:insert="~{fragments/menus :: main (editGroup)}" />
 			<div class="page-header" style="display: flex;gap: 77px;align-content: center;align-items: center;">
 				<div>
 				<h1 class="header-title" th:text="#{group_synch.new_title}"></h1>
@@ -21,12 +21,12 @@
 							<input id="channelName" name="name" />
 						</label>
 						<input type="hidden" name="siteId" th:value="${siteSynchronizationId}" />
-						<button id="createChannelButton" type="submit" class="active">Create Channel</button>
+						<button id="createChannelButton" type="submit" class="active" th:text="#{create_channel}">Create Channel</button>
 					</form>
 				</div>
 			</div>
 
-			<div th:include="fragments/common :: error" />
+			<div th:insert="~{fragments/common :: error}" />
 			<div class="sak-banner-error hidden" id="delete_error" th:text="#{error.delete_group_synchronization}"></div>
 			<div id="error-banner"></div>
 
@@ -229,8 +229,10 @@
 
                    const parentDiv = document.querySelector('#row-container');
 
-                   parentDiv.addEventListener('click', handleButtonClick);
-                   parentDiv.addEventListener('keypress', handleButtonClick);
+                   if (parentDiv) {
+                       parentDiv.addEventListener('click', handleButtonClick);
+                       parentDiv.addEventListener('keypress', handleButtonClick);
+                   }
 		</script>
 	</div>
 </body>

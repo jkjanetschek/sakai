@@ -28,17 +28,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Predicate;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import org.apache.commons.lang3.Strings;
 import org.sakaiproject.authz.api.SecurityAdvisor;
 import org.sakaiproject.authz.api.SecurityService;
 import org.sakaiproject.component.cover.ComponentManager;
@@ -49,10 +54,12 @@ import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.InUseException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.exception.TypeException;
+import org.sakaiproject.grading.api.GradingService;
 import org.sakaiproject.samigo.util.SamigoConstants;
 import org.sakaiproject.tool.assessment.data.dao.assessment.AssessmentData;
 import org.sakaiproject.tool.assessment.data.dao.assessment.AssessmentTemplateData;
 import org.sakaiproject.tool.assessment.data.dao.assessment.AttachmentData;
+import org.sakaiproject.tool.assessment.data.dao.assessment.EvaluationModel;
 import org.sakaiproject.tool.assessment.data.dao.assessment.ItemData;
 import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAssessmentData;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AnswerIfc;
@@ -60,6 +67,7 @@ import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentAttachment
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentBaseIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AssessmentIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AttachmentIfc;
+import org.sakaiproject.tool.assessment.data.ifc.assessment.EvaluationModelIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.ItemAttachmentIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.ItemDataIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.ItemMetaDataIfc;
@@ -74,7 +82,9 @@ import org.sakaiproject.tool.assessment.facade.*;
 import org.sakaiproject.tool.assessment.services.ItemService;
 import org.sakaiproject.tool.assessment.services.PersistenceService;
 import org.sakaiproject.tool.assessment.services.QuestionPoolService;
+import org.sakaiproject.tool.assessment.util.TextFormat;
 import org.sakaiproject.tool.cover.ToolManager;
+import org.sakaiproject.tool.assessment.integration.context.IntegrationContextFactory;
 
 /**
  * The AssessmentService calls the service locator to reach the manager on the
@@ -86,27 +96,37 @@ import org.sakaiproject.tool.cover.ToolManager;
 public class AssessmentService {
 	public static final int UPDATE_SUCCESS = 0;
 	public static final int UPDATE_ERROR_DRAW_SIZE_TOO_LARGE = 1;
-	private SecurityService securityService = ComponentManager.get(SecurityService.class);
-
 	// versioning title string that it will look for/use, followed by a number
 	private static final String VERSION_START = "  - ";
 
-	/**
-	 * Creates a new QuestionPoolService object.
-	 */
+	private static final Predicate<Map.Entry<String, String>> ENTRY_IS_SAM_CORE = entry ->
+			Strings.CS.startsWith(entry.getKey(), CoreAssessmentEntityProvider.ENTITY_PREFIX + "/")
+					&& Strings.CS.startsWith(entry.getValue(), CoreAssessmentEntityProvider.ENTITY_PREFIX + "/");
+
+	private SecurityService securityService;
+	private GradingService gradingService;
+
 	public AssessmentService() {
+		this(ComponentManager.get(GradingService.class), ComponentManager.get(SecurityService.class));
 	}
 
-	public AssessmentTemplateFacade getAssessmentTemplate(
-			String assessmentTemplateId) {
+	public AssessmentService(GradingService gradingService, SecurityService securityService) {
+		this.gradingService = gradingService;
+		this.securityService = securityService;
+	}
+
+	public AssessmentTemplateFacade getAssessmentTemplate(String assessmentTemplateId) {
 		try {
-			return PersistenceService.getInstance()
-					.getAssessmentFacadeQueries().getAssessmentTemplate(
-							new Long(assessmentTemplateId));
+			Long id = Long.valueOf(assessmentTemplateId);
+			return PersistenceService.getInstance().getAssessmentFacadeQueries().getAssessmentTemplate(id);
+		} catch (NumberFormatException nfe) {
+			log.warn("assessment template id [{}] could not be parsed, {}", assessmentTemplateId, nfe.toString());
 		} catch (Exception e) {
-			log.error(e.getMessage(), e);
+			log.error("assessment template with id [{}] caused an error", assessmentTemplateId, e);
 			throw new RuntimeException(e);
 		}
+		log.debug("no assessment template with id [{}]", assessmentTemplateId);
+		return null;
 	}
 
 	public AssessmentFacade getAssessment(String assessmentId) {
@@ -705,6 +725,53 @@ public class AssessmentService {
 						Boolean.valueOf(isTemplate));
 	}
 
+	public AssessmentFacade ensureUniquePublishedTitleForPublish(AssessmentFacade assessment) {
+		if (assessment == null || StringUtils.isBlank(assessment.getTitle()) || assessment.getAssessmentBaseId() == null) {
+			return assessment;
+		}
+
+		Long assessmentBaseId = assessment.getAssessmentBaseId();
+		String currentTitle = assessment.getTitle();
+		String normalizedCurrentTitle = TextFormat.convertPlaintextToFormattedTextNoHighUnicode(currentTitle.trim());
+		String candidateTitle = currentTitle.trim();
+		String formattedCandidateTitle = TextFormat.convertPlaintextToFormattedTextNoHighUnicode(candidateTitle);
+
+		final int maxRenameAttempts = 100;
+
+		int count = 0;
+		while (!isTitleAvailableForPublish(assessmentBaseId, formattedCandidateTitle) && count < maxRenameAttempts) {
+			candidateTitle = renameDuplicate(candidateTitle);
+			formattedCandidateTitle = TextFormat.convertPlaintextToFormattedTextNoHighUnicode(candidateTitle);
+			count++;
+		}
+
+		if (!isTitleAvailableForPublish(assessmentBaseId, formattedCandidateTitle)) {
+			String exhaustedCandidate = formattedCandidateTitle;
+			candidateTitle = exhaustedCandidate + "-" + UUID.randomUUID();
+			formattedCandidateTitle = TextFormat.convertPlaintextToFormattedTextNoHighUnicode(candidateTitle);
+
+			log.warn("Publish title dedup exhausted AssessmentService.renameDuplicate and switched to UUID suffix; "
+					+ "assessment id='{}', original title='{}', fallback title='{}', attempt count={}",
+					assessmentBaseId, currentTitle, formattedCandidateTitle, count);
+		}
+
+		if (!StringUtils.equals(normalizedCurrentTitle, formattedCandidateTitle)) {
+			assessment.setTitle(formattedCandidateTitle);
+			saveAssessment(assessment);
+			log.debug("Renamed assessment title from '{}' to '{}' before publish for assessment id {}.",
+					currentTitle, formattedCandidateTitle, assessmentBaseId);
+		}
+
+		return assessment;
+	}
+
+	private boolean isTitleAvailableForPublish(Long assessmentBaseId, String title) {
+		return PersistenceService.getInstance().getPublishedAssessmentFacadeQueries()
+				.publishedAssessmentTitleIsUnique(assessmentBaseId, title)
+				&& PersistenceService.getInstance().getAssessmentFacadeQueries()
+				.assessmentTitleIsUnique(assessmentBaseId, title, Boolean.FALSE);
+	}
+
 	public List getAssessmentByTemplate(String templateId) {
 		return PersistenceService.getInstance().getAssessmentFacadeQueries()
 				.getAssessmentByTemplate(new Long(templateId));
@@ -1090,6 +1157,7 @@ public class AssessmentService {
 		try {
 			PersistenceService.getInstance().getAssessmentFacadeQueries()
 				.copyAllAssessments(fromContext, toContext, ids, transversalMap);
+			linkGradebookCategory(fromContext, toContext, transversalMap);
 			List<PublishedAssessmentFacade> publist =
 			    PersistenceService.getInstance().getPublishedAssessmentFacadeQueries()
 			    .getBasicInfoOfAllPublishedAssessments(PublishedAssessmentFacadeQueries.DUE, true, fromContext);
@@ -1109,6 +1177,75 @@ public class AssessmentService {
 		} finally {
 			securityService.popAdvisor(secAdv);
 		}
+	}
+
+	/**
+	 * This method maps assessments to their corresponding gradebook categories when importing
+	 * from one site to another, ensuring that gradebook integration is maintained.
+	 *
+	 * <p>This operation is skipped if:
+	 * <ul>
+	 *   <li>The transversal map is null or empty</li>
+	 *   <li>Gradebook integration is not enabled</li>
+	 *   <li>Either context has gradebook groups enabled</li>
+	 * </ul>
+	 * 
+	 * @param fromContext The source context (site) for gradebook categories
+	 * @param toContext The target context (site) for gradebook categories
+	 * @param transversalMap A map of entity references from source to target, used to identify
+	 *					   copied assessments and update their gradebook category associations
+	 */
+	private void linkGradebookCategory(String fromContext, String toContext, Map<String, String> transversalMap) {
+		if (transversalMap == null || transversalMap.isEmpty()
+				|| !IntegrationContextFactory.getInstance().isIntegrated()
+				|| gradingService.isGradebookGroupEnabled(fromContext)
+				|| gradingService.isGradebookGroupEnabled(toContext)
+		) {
+			return;
+		}
+
+		Map<Long, String> fromCategories = new HashMap<>();
+		Map<String, Long> toCategories = new HashMap<>();
+
+		try {
+			gradingService.getCategoryDefinitions(fromContext, fromContext).stream()
+					.filter(category -> category.getId() != null && StringUtils.isNotBlank(category.getName()))
+					.forEach(category -> fromCategories.put(category.getId(), category.getName()));
+
+			gradingService.getCategoryDefinitions(toContext, toContext).stream()
+					.filter(category -> category.getId() != null && StringUtils.isNotBlank(category.getName()))
+					.forEach(category -> toCategories.put(category.getName(), category.getId()));
+		} catch (Exception e) {
+			log.warn("Unable to load gradebook categories while linking imported assessments", e);
+			return;
+		}
+
+		transversalMap.entrySet().stream()
+				.filter(ENTRY_IS_SAM_CORE)
+				.forEach(entry -> {
+					String oldRef = entry.getKey();
+					String newRef = entry.getValue();
+					String sourceAssessmentId = StringUtils.substringAfterLast(oldRef, "/");
+					String copiedAssessmentId = StringUtils.substringAfterLast(newRef, "/");
+
+					try {
+						AssessmentFacade sourceAssessment = getAssessment(sourceAssessmentId);
+						AssessmentFacade copiedAssessment = getAssessment(copiedAssessmentId);
+						if (sourceAssessment != null && copiedAssessment != null) {
+							EvaluationModel sourceEvaluation = (EvaluationModel) sourceAssessment.getEvaluationModel();
+							if (sourceEvaluation != null && Strings.CS.equals(sourceEvaluation.getToGradeBook(), EvaluationModelIfc.TO_DEFAULT_GRADEBOOK.toString())) {
+
+								Long categoryId = toCategories.get(fromCategories.get(sourceAssessment.getCategoryId()));
+								if (!Objects.equals(categoryId, copiedAssessment.getCategoryId())) {
+									copiedAssessment.setCategoryId(categoryId);
+									saveAssessment(copiedAssessment);
+								}
+							}
+						}
+					} catch (Exception e) {
+						log.warn("Could not update gradebook category for assessment [{}]: ", copiedAssessmentId, e);
+					}
+				});
 	}
 
 	private static SecurityAdvisor getSecurityAdvisorForRubricEditing() {

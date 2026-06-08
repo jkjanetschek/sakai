@@ -42,15 +42,24 @@
     <script src="/samigo-app/js/naturalSort.js"></script>
     <script type="text/javascript" src="/samigo-app/js/sortHelper.js"></script>
     <script>
+        // Function to normalize search text
+        window.normalizeSearchText = function(text) {
+            return text
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+        };
+
         $(document).ready(function() {
+            const pageLengthStorageKey = `samigo-pageLength-${portal.user.id}`;
 
             function getPageLength() {
-                const pageLength = localStorage.getItem(`samigo-pageLength-\${portal.user.id}`);
-                return pageLength === null ? 20 : parseInt(pageLength);
+                const pageLength = localStorage.getItem(pageLengthStorageKey);
+                return pageLength === null ? 20 : parseInt(pageLength, 10);
             }
 
             function setPageLength(pageLength) {
-                localStorage.setItem(`samigo-pageLength-\${portal.user.id}`, pageLength);
+                localStorage.setItem(pageLengthStorageKey, pageLength);
             }
 
             const notEmptyTableTd = $("#authorIndexForm\\:coreAssessments td:not(:empty)").length;
@@ -96,8 +105,73 @@
                     "fnDrawCallback": function(oSettings) {
                         $(".select-checkbox").prop("checked", false);
                         updateRemoveButton();
-                    }
+                    },
+                    "stateSave": true,
+                    "stateDuration": -1
                 });
+
+                const searchInput = document.querySelector('#authorIndexForm\\:coreAssessments_filter input');
+                if (table && searchInput) {
+                    if (searchInput.hasCustomSearch) {
+                        return;
+                    }
+                    searchInput.hasCustomSearch = true;
+
+                    let lastSearchTerm = '';
+
+                    const savedState = table.state.loaded();
+                    if (savedState && savedState.search && savedState.search.search) {
+                        lastSearchTerm = savedState.search.search;
+                        searchInput.value = lastSearchTerm;
+                    }
+
+                    $(searchInput).off();
+                    searchInput.removeAttribute('data-dt-search');
+
+                    const customSearchFunction = function(settings, searchData, index, rowData, counter) {
+                        if (settings.nTable.id !== 'authorIndexForm:coreAssessments') {
+                            return true;
+                        }
+
+                        if (!lastSearchTerm || lastSearchTerm.trim() === '') {
+                            return true;
+                        }
+
+                        const normalizedSearch = window.normalizeSearchText(lastSearchTerm);
+
+                        return searchData.some(cellData => {
+                            if (cellData && typeof cellData === 'string') {
+                                const cleanCellData = cellData.replace(/<[^>]*>/g, '');
+                                const normalizedCell = window.normalizeSearchText(cleanCellData);
+                                return normalizedCell.includes(normalizedSearch);
+                            }
+                            return false;
+                        });
+                    };
+
+                    $.fn.dataTable.ext.search.push(customSearchFunction);
+
+                    const handleSearch = function() {
+                        lastSearchTerm = this.value;
+                        table.search(lastSearchTerm);
+                        table.draw();
+                    };
+
+                    const handleKeyDown = function(event) {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                        }
+                    };
+
+                    searchInput.addEventListener('input', handleSearch);
+                    searchInput.addEventListener('keyup', handleSearch);
+                    searchInput.addEventListener('keydown', handleKeyDown);
+
+                    if (searchInput.value) {
+                        lastSearchTerm = searchInput.value;
+                        table.draw();
+                    }
+                }
 
                 let spanClassName = "";
                 let filterGroups = [];
@@ -401,7 +475,7 @@
                         </h:panelGroup>
 
                         <h:panelGroup rendered="#{(author.isGradeable && assessment.hasAssessmentGradingData) && (author.isEditable && !(!author.editPubAssessmentRestricted || !assessment.hasAssessmentGradingData))}">
-                            <f:verbatim><button class="btn btn-pirmary btn-xs dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown" title="</f:verbatim>
+                            <f:verbatim><button class="btn btn-primary btn-xs dropdown-toggle" aria-expanded="false" data-bs-toggle="dropdown" title="</f:verbatim>
                                 <h:outputText value="#{authorMessages.actions_for} " />
                                 <h:outputText value="#{authorFrontDoorMessages.assessment_draft} - " rendered="#{assessment['class'].simpleName == 'AssessmentFacade'}" />
                                 <h:outputText value="#{assessment.title}" />

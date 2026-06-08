@@ -989,6 +989,18 @@ public class SimplePageToolDaoImpl extends HibernateDaoSupport implements Simple
 		}
 	}
 
+	/**
+	 * Find the main SimplePage for a LessonBuilder tool by its site page ID (toolId)
+	 * This method is used by the portal to check if a LessonBuilder page should be hidden from navigation
+	 * @param sitePageId the site page ID (which corresponds to toolId in LessonBuilder)
+	 * @return the SimplePage or null if not found
+	 */
+	@Override
+	public SimplePage findSimplePageBySitePageId(String sitePageId) {
+
+		return findPageWithToolId(sitePageId);
+	}
+
 	public List<ToolConfiguration> getSiteTools(String siteId) {
 
 		try {
@@ -1698,7 +1710,7 @@ public class SimplePageToolDaoImpl extends HibernateDaoSupport implements Simple
 	    Object [] fields = new Object[1];
 	    fields[0] = siteId;
 	    final Map<String,String> objectMap = new HashMap<String, String>();
-	    sqlService.dbRead("select a.sakaiId,a.alt from lesson_builder_items a, lesson_builder_pages b where a.pageId=b.pageId and b.siteId=? and a.type in (3,4,8)", fields, new SqlReader() {
+	    sqlService.dbRead("select a.sakaiId,a.alt from lesson_builder_items a, lesson_builder_pages b where a.pageId=b.pageId and b.siteId=? and a.type in (3,4,8,21)", fields, new SqlReader() {
 		    public Object readSqlResultRecord(ResultSet result) {
     			try {
 			    String newObject = result.getString(1);

@@ -1118,7 +1118,7 @@ public abstract class ScormApplicationServiceImpl implements ScormApplicationSer
 			case DMErrorCodes.DOES_NOT_HAVE_COUNT:
 				if (!iRequest.endsWith("._count"))
 				{
-					log.info("Strange error -- 'Does not have count' for data element " + iRequest);
+					log.info("Strange error -- 'Does not have count' for data element {}", iRequest);
 				}
 
 				break;
@@ -1217,17 +1217,51 @@ public abstract class ScormApplicationServiceImpl implements ScormApplicationSer
 		// (completed, incomplete, not_attempted, unknown)
 		String completionStatus = getValueAsString(CMI_COMPLETION_STATUS, dataManager);
 
-		if ("normal".equals(mode) && "completed".equals(completionStatus) && "credit".equals(credit))
+		if ("normal".equals(mode) && "credit".equals(credit))
 		{
-			String context = lms().currentContext();
-			String learnerID = sessionBean.getLearnerId();
-			String assessmentExternalId = "" + sessionBean.getContentPackage().getContentPackageId() + ":" + dataManager.getScoId();
+			// (passed, failed, unknown)
+			String successStatus = getValueAsString(CMI_SUCCESS_STATUS, dataManager);
 
-			// A real number with values that is accurate to seven significant decimal figures. The value shall be in the range of -1.0 to +1.0, inclusive.
 			OptionalDouble score = getRealValue(CMI_SCORE_SCALED, dataManager);
+			boolean hasScore = score.isPresent();
+			boolean hasCompletion = "completed".equals(completionStatus);
+			boolean hasFinalSuccessState = "passed".equals(successStatus) || "failed".equals(successStatus);
 
-			// Logic to update score and/or comment lives in below method, pass the necessary data
-			updateGradebook(score, context, learnerID, assessmentExternalId);
+			// If no numeric score, derive one from terminal success/completion signals.
+			if (!hasScore)
+			{
+				if ("passed".equals(successStatus))
+				{
+					score = OptionalDouble.of(1.0);
+				}
+				else if ("failed".equals(successStatus))
+				{
+					score = OptionalDouble.of(0.0);
+				}
+				else if (hasCompletion)
+				{
+					score = OptionalDouble.of(1.0);
+				}
+			}
+
+			if (hasCompletion || hasFinalSuccessState || score.isPresent())
+			{
+				String context = sessionBean.getContentPackage() != null ? sessionBean.getContentPackage().getContext() : null;
+				if (StringUtils.isBlank(context))
+				{
+					log.warn("Cannot synchronize gradebook: no context available for content package {}", sessionBean.getContentPackage() != null ? sessionBean.getContentPackage().getContentPackageId() : "unknown");
+					return;
+				}
+				String learnerID = sessionBean.getLearnerId();
+				String assessmentExternalId = "" + sessionBean.getContentPackage().getContentPackageId() + ":" + dataManager.getScoId();
+
+				log.debug("synchResultWithGradebook: updating gradebook score={}", score.isPresent() ? score.getAsDouble() : "none");
+				updateGradebook(score, context, learnerID, assessmentExternalId);
+			}
+		}
+		else
+		{
+			log.debug("synchResultWithGradebook: skipping — mode={} credit={}", mode, credit);
 		}
 	}
 
@@ -1333,6 +1367,18 @@ public abstract class ScormApplicationServiceImpl implements ScormApplicationSer
 					attempt.setNotExited(false);
 					attemptDao().save(attempt);
 				}
+				else if (!exitValue.equals("suspend") && event != SeqNavRequests.NAV_ABANDON && event != SeqNavRequests.NAV_ABANDONALL)
+				{
+					// Normal exit (empty string or "normal") - SCO terminated cleanly without suspending.
+					// Mark the attempt as properly exited so the next launch starts a new attempt (SAK-51829).
+					Attempt attempt = sessionBean.getAttempt();
+					if (attempt != null)
+					{
+						attempt.setSuspended(false);
+						attempt.setNotExited(false);
+						attemptDao().save(attempt);
+					}
+				}
 
 				// handle if sco set nav.request
 				if (!scoBean.isSuspended() && event != SeqNavRequests.NAV_NONE)
@@ -1379,13 +1425,6 @@ public abstract class ScormApplicationServiceImpl implements ScormApplicationSer
 		}
 	}
 
-	/**
-	 * Handles all aspects of updating the gradebook when a user completes a module.
-	 * @param score contains the scaled score if one was recorded, otherwise empty Optional
-	 * @param context the current site ID/gradebook ID
-	 * @param learnerID the ID of the user who completed the module
-	 * @param externalAssessmentID the ID of the gradebook item to sync with
-	 */
 	protected void updateGradebook(OptionalDouble score, String context, String learnerID, String externalAssessmentID)
 	{
 		GradingService gbService = gradingService();

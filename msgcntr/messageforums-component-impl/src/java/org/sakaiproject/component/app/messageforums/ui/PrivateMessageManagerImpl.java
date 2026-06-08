@@ -113,9 +113,6 @@ import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.util.api.FormattedText;
 import org.sakaiproject.util.ResourceLoader;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
 @Slf4j
 public class PrivateMessageManagerImpl extends HibernateDaoSupport implements PrivateMessageManager {
 
@@ -2270,7 +2267,9 @@ return topicTypeUuid;
 	  if (StringUtils.isBlank(msg.getSubject())) {
 		  rrepMsg.setTitle("[" + getResourceBundleString("pvt_no_subject") + "]");
 	  } else {
-		  rrepMsg.setTitle(msg.getSubject());
+		  String subject = msg.getSubject();
+		  String truncatedSubject = StringUtils.truncate(subject, 252) + (subject.length() > 255 ? "..." : "");
+		  rrepMsg.setTitle(truncatedSubject);
 	  }
 	  try {
 		  rrepMsg.setCreatedBy(userDirectoryService.getUserByEid(from).getId());

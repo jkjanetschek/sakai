@@ -24,13 +24,13 @@ package org.sakaiproject.lessonbuildertool.tool.producers;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.sakaiproject.component.cover.ServerConfigurationService;
+import org.sakaiproject.util.IframeUrlUtil;
 import org.sakaiproject.lessonbuildertool.SimplePageItem;
 import org.sakaiproject.lessonbuildertool.model.SimplePageToolDao;
 import org.sakaiproject.lessonbuildertool.service.LessonBuilderAccessService;
@@ -54,7 +54,6 @@ import uk.org.ponder.rsf.components.UIBranchContainer;
 import uk.org.ponder.rsf.components.UIComponent;
 import uk.org.ponder.rsf.components.UIContainer;
 import uk.org.ponder.rsf.components.UIInternalLink;
-import uk.org.ponder.rsf.components.UILink;
 import uk.org.ponder.rsf.components.UIOutput;
 import uk.org.ponder.rsf.components.UIVerbatim;
 import uk.org.ponder.rsf.components.decorators.UIFreeAttributeDecorator;
@@ -100,6 +99,11 @@ public class ShowItemProducer implements ViewComponentProducer, NavigationCaseRe
         public void setBltiEntity(Object e) {
 	    bltiEntity = (LessonEntity)e;
         }
+
+	private LessonEntity scormEntity = null;
+	public void setScormEntity(Object e) {
+		scormEntity = (LessonEntity)e;
+	}
 
 	static final String ICONSTYLE = "\n.portletTitle .action .help img {\n        background: url({}/help.gif) center right no-repeat !important;\n}\n.portletTitle .action .help img:hover, .portletTitle .action .help img:focus {\n        background: url({}/help_h.gif) center right no-repeat\n}\n.portletTitle .title img {\n        background: url({}/reload.gif) center left no-repeat;\n}\n.portletTitle .title img:hover, .portletTitle .title img:focus {\n        background: url({}/reload_h.gif) center left no-repeat\n}\n";
 
@@ -185,8 +189,8 @@ public class ShowItemProducer implements ViewComponentProducer, NavigationCaseRe
 	    if (available) {
 		if (type == SimplePageItem.RESOURCE || type == SimplePageItem.BLTI)
 		    simplePageBean.track(params.getItemId(), null);
-		else if (item.isPrerequisite() && (type == SimplePageItem.PAGE || type == SimplePageItem.ASSIGNMENT || type == SimplePageItem.ASSESSMENT || type == SimplePageItem.FORUM))
-		    simplePageBean.checkItemPermissions(item, true); // set acl, etc		
+		else if (item.isPrerequisite() && (type == SimplePageItem.PAGE || type == SimplePageItem.ASSIGNMENT || type == SimplePageItem.ASSESSMENT || type == SimplePageItem.FORUM || type == SimplePageItem.SCORM))
+		    simplePageBean.checkItemPermissions(item, true); // set acl, etc
 
 	    }
 
@@ -341,6 +345,12 @@ public class ShowItemProducer implements ViewComponentProducer, NavigationCaseRe
 		    List<UrlItem> createLinks = forumEntity.createNewUrls(simplePageBean);
 		    Integer i = new Integer(source.substring("CREATE/FORUM/".length()));
 		    source = createLinks.get(i).Url;
+		} else if (source.startsWith("CREATE/SCORM/")) {
+		    if (scormEntity == null) return;
+		    List<UrlItem> createLinks = scormEntity.createNewUrls(simplePageBean);
+		    int i = Integer.parseInt(source.substring("CREATE/SCORM/".length()));
+		    if (i < 0 || i >= createLinks.size()) return;
+		    source = createLinks.get(i).Url;
 		}
 	    } else if (item.getAttribute("multimediaUrl") != null)
 		source = item.getAttribute("multimediaUrl");
@@ -360,6 +370,7 @@ public class ShowItemProducer implements ViewComponentProducer, NavigationCaseRe
 			break;
 		case SimplePageItem.ASSIGNMENT:
 		case SimplePageItem.ASSESSMENT:
+		case SimplePageItem.SCORM:
 		case SimplePageItem.FORUM:
 		case SimplePageItem.BLTI:
 		    LessonEntity lessonEntity = null;
@@ -369,6 +380,9 @@ public class ShowItemProducer implements ViewComponentProducer, NavigationCaseRe
 			    break;
 		    case SimplePageItem.ASSESSMENT:
 			    lessonEntity = quizEntity.getEntity(item.getSakaiId(),simplePageBean);
+			    break;
+		    case SimplePageItem.SCORM:
+			    lessonEntity = scormEntity.getEntity(item.getSakaiId(), simplePageBean);
 			    break;
 		    case SimplePageItem.FORUM:
 			    lessonEntity = forumEntity.getEntity(item.getSakaiId());
@@ -386,21 +400,27 @@ public class ShowItemProducer implements ViewComponentProducer, NavigationCaseRe
 			source = (lessonEntity==null)?"dummy":lessonEntity.getUrl() + (params.getReviewAssessment() ? "&action=review" : "");
 
 			// Notify the Entity they are about to be launched from an item
-			lessonEntity.preShowItem(item);
+			if (lessonEntity != null) lessonEntity.preShowItem(item);
 		}
 
-	    UIComponent iframe = UILink.make(tofill, "iframe1", source)
-				.decorate(new UIFreeAttributeDecorator("allow", String.join(";",
-						Optional.ofNullable(ServerConfigurationService.getStrings("browser.feature.allow"))
-								.orElseGet(() -> new String[]{}))));
-	    if (item != null && item.getType() == SimplePageItem.BLTI) {
-		String height = item.getHeight();
-		if (height == null || height.equals(""))
-			iframe.decorate(new UIFreeAttributeDecorator("height", "1200"));
-		else
-		    iframe.decorate(new UIFreeAttributeDecorator("height", height));
-		iframe.decorate(new UIFreeAttributeDecorator("onload", ""));
-	    }
+		boolean isBlti = item != null && item.getType() == SimplePageItem.BLTI;
+		boolean isScorm = item != null && item.getType() == SimplePageItem.SCORM;
+		String allow = ServerConfigurationService.getBrowserFeatureAllowString();
+		String allowEscaped = StringEscapeUtils.escapeHtml4(allow);
+		String sourceEscaped = StringEscapeUtils.escapeHtml4(source);
+
+		if (isBlti) {
+			String rawHeight = item.getHeight();
+			String height = (rawHeight == null || rawHeight.isEmpty() || !rawHeight.matches("\\d+")) ? "1200" : rawHeight;
+			String iframeHtml = "<sakai-lti-iframe launch-url=\"" + sourceEscaped + "\" allow=\"" + allowEscaped + "\" height=\"" + height + "\" allow-resize=\"yes\"></sakai-lti-iframe>";
+			UIVerbatim.make(tofill, "iframe1-container", iframeHtml);
+		} else {
+			String classAttr = !IframeUrlUtil.isLocalToSakai(source, ServerConfigurationService.getServerUrl()) ? " class=\"sakai-iframe-force-light\"" : "";
+			String rawHeight = isScorm ? item.getHeight() : null;
+			String height = StringUtils.isBlank(rawHeight) ? (isScorm ? "600" : "350") : StringEscapeUtils.escapeHtml4(rawHeight.trim());
+			String iframeHtml = "<iframe id=\"iframe1\" name=\"iframe1\" role=\"main\" src=\"" + sourceEscaped + "\" allow=\"" + allowEscaped + "\" height=\"" + height + "\" width=\"100%\" frameborder=\"0\" marginwidth=\"0\" marginheight=\"0\" allowfullscreen=\"true\" webkitallowfullscreen=\"true\" mozallowfullscreen=\"true\" scrolling=\"auto\"" + classAttr + " onload=\"resizeiframe1()\"></iframe>";
+			UIVerbatim.make(tofill, "iframe1-container", iframeHtml);
+		}
 	}
 
 	public void setSimplePageBean(SimplePageBean simplePageBean) {

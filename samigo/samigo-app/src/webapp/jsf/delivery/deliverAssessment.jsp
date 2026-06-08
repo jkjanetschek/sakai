@@ -41,7 +41,6 @@
       <script src="/samigo-app/js/saveForm.js"></script>
       <script src="/samigo-app/js/deliveryQuestionCancellation.js"></script>
       <script type="module" src="/webcomponents/bundles/rubric-association-requirements.js<h:outputText value="#{questionScores.CDNQuery}" />"></script>
-      <script src="/library/webjars/bootstrap/5.2.0/js/bootstrap.min.js<h:outputText value="#{questionScores.CDNQuery}" />"></script>
 
     <h:outputText value="#{delivery.mathJaxHeader}" escape="false" rendered="#{(delivery.actionString=='takeAssessmentViaUrl' ||  delivery.actionString=='previewAssessment') and delivery.isMathJaxEnabled}"/>
       </head>
@@ -250,14 +249,15 @@ document.links[newindex].onclick();
 
 <!-- DONE BUTTON FOR PREVIEW -->
 <h:panelGroup rendered="#{delivery.actionString=='previewAssessment'}">
-  <div class="sak-banner-info">
-     <h:outputText value="#{deliveryMessages.ass_preview}" escape="false" />
-     <h:commandButton value="#{deliveryMessages.exit_preview}"
-        styleClass="exitPreviewButton"
-        action="#{person.cleanResourceIdListInPreview}"
-        type="submit"
-        onclick="return returnToHostUrl(\"#{delivery.selectURL}\");" />
-  </div>
+  <div class="sak-banner-info mb-5">
+    <h:outputText value="#{deliveryMessages.ass_preview}" escape="false" />
+    <br/>
+    <h:commandButton value="#{deliveryMessages.exit_preview}"
+      styleClass="exit-preview-button"
+      action="#{person.cleanResourceIdListInPreview}"
+      type="submit"
+      onclick="return returnToHostUrl(\"#{delivery.selectURL}\");" />
+    </div>
 </h:panelGroup>
 
 <div id="delivPageWrapper">
@@ -683,14 +683,6 @@ document.links[newindex].onclick();
 <f:verbatim></div>
 </f:verbatim>
 <%@ include file="/jsf/delivery/questionProgress.jspf" %>
-
-<!-- DONE BUTTON IN PREVIEW -->
-<h:panelGroup rendered="#{delivery.actionString=='previewAssessment'}">
-  <h:commandButton value="#{deliveryMessages.exit_preview}"
-     action="#{person.cleanResourceIdListInPreview}"
-     type="submit"
-     onclick="return returnToHostUrl(\"#{delivery.selectURL}\");" />
-</h:panelGroup>
 
 </h:form>
 <!-- end content -->

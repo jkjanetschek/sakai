@@ -322,7 +322,7 @@ button.btn.btn-default.multiselect-clear-filter{
 						<div class="form-inline">
 							<div class="col-lg-12">
 								<label class="form-check-label" for="hidden_false${DOT}$i">
-									<input type="radio" name="hidden${DOT}$i" id="hidden_false${DOT}$i" value="false" #if(!$model.isHidden())checked="checked" #end/>
+									<input type="radio" name="hidden${DOT}$i" id="hidden_false${DOT}$i" value="false" #if(!$model.isHidden() && (!$model.isCollection() || !$model.isHiddenWithAccessibleContent()))checked="checked" #end/>
 									#if($model.isCollection())
 										$tlang.getString("avail.show2")
 									#else
@@ -332,7 +332,7 @@ button.btn.btn-default.multiselect-clear-filter{
 								<div class="m-3">
 									<div class="row align-items-center">
 										<div class="col-auto">
-											<input class="form-check-input" class="form-check-input" type="checkbox" name="use_start_date${DOT}$i" id="use_start_date${DOT}$i" value="true" #if($!model.useReleaseDate())checked #end/>
+											<input class="form-check-input" type="checkbox" name="use_start_date${DOT}$i" id="use_start_date${DOT}$i" value="true" #if($!model.useReleaseDate())checked #end/>
 											<label class="form-check-label" for="use_start_date${DOT}$i">
 												$tlang.getString("avail.start1")
 											</label>
@@ -405,16 +405,16 @@ button.btn.btn-default.multiselect-clear-filter{
 							</div>
 						</div>
 					</div>
+					#if($model.isCollection())
 					<div class="row">
 						<div class="col-lg-12">
-							#if($model.isCollection())
-							<input type="radio" name="hidden${DOT}$i" id="hidden_with_accessible_content_true${DOT}$i" value="hidden_with_accessible_content" #if($model.isHiddenWithAccessibleContent())checked #end/>
-								<label class="form-check-label"for="hidden_with_accessible_content_true${DOT}$i">
-									$tlang.getString("avail.hide30")
-								</label>
-							#end
+							<input type="radio" name="hidden${DOT}$i" id="hidden_with_accessible_content_true${DOT}$i" value="hidden_with_accessible_content" #if($model.isHiddenWithAccessibleContent())checked="checked" #end/>
+							<label class="form-check-label" for="hidden_with_accessible_content_true${DOT}$i">
+								$tlang.getString("avail.hide30")
+							</label>
 						</div>
 					</div>
+					#end
 					<div class="row">
 						<div class="col-lg-12">
 							<input type="radio" name="hidden${DOT}$i" id="hidden_true${DOT}$i" value="true" #if($model.isHidden())checked #end/>

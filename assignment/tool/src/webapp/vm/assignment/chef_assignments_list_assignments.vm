@@ -112,7 +112,7 @@
 					<select id="filterByGroup" name="filterByGroup" onchange="SPNR.disableControlsAndSpin(this, null); ASN.submitForm( 'groupFilterForm', null, null, null ); return false;">
 						<option value="all" #if($!filterByGroup.equals('all'))selected="selected"#end>$!tlang.getString("listassig.allgroups")</option>
 						#foreach($group in $!filterGroupIterator)
-							<option value="$group.getId()" #if($!filterByGroup.equals($group.getId()))selected="selected"#end>$group.getTitle()</option>
+							<option value="$group.getId()" #if($!filterByGroup.equals($group.getId()))selected="selected"#end>$formattedText.escapeHtml($group.getTitle())</option>
 						#end
 					</select>
 					<input type="hidden" name="sakai_csrf_token" value="$sakai_csrf_token" />
@@ -166,7 +166,7 @@
 					</th>
 					#if ($!allowGradeSubmission)
 						<th id="$tlang.getString('gen.visible')" scope="col" class="d-none d-sm-table-cell">
-							#if (!$sortedBy.equalsIgnoreCase("$tlang.getString('gen.visible')"))
+							#if (!$sortedBy.equals("for"))
 								<a href="javascript:void(0)" onclick="location='#toolLinkParam("$action" "doSort" "criteria=for")'; return false;"   title="$tlang.getString('gen.sortbyfor')">$tlang.getString("gen.visible")</a>
 							#else
 								#if ($sortedAsc.equals("true"))

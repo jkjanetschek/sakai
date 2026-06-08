@@ -65,6 +65,7 @@ import org.sakaiproject.site.api.Site;
 import org.sakaiproject.site.api.SiteService;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.component.cover.ServerConfigurationService;
+import org.sakaiproject.util.IframeUrlUtil;
 import org.sakaiproject.util.StringUtil;
 import org.sakaiproject.util.api.FormattedText;
 import org.sakaiproject.exception.IdUnusedException;
@@ -263,6 +264,14 @@ public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 		org.tsugi.lti.LTIUtil.sendHTMLPage(res, body);
 	}
 
+	/**
+	 * Returns JavaScript to add or remove sakai-iframe-force-light based on destination.
+	 */
+	private String forceLightJsSnippet(boolean addClass) {
+		String op = addClass ? "add" : "remove";
+		return "try { if (window.frameElement) window.frameElement.classList." + op + "('sakai-iframe-force-light'); } catch(e) { }";
+	}
+
 	// Do a redirect in HTML + JavaScript instead of with a 302 so we have some recovery options inside an iframe
 	private void doRedirect(HttpServletRequest req, HttpServletResponse res, String redirectUrl, ResourceLoader rb)
 	{
@@ -274,8 +283,13 @@ public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 		body.append(rb.getString("error.redirect.timeout", "Having problems reaching remote tool"));
 		body.append("</p>\n");
 
+		// Add or remove force-light based on redirect destination
+		boolean forceLight = !IframeUrlUtil.isLocalToSakai(redirectUrl, ServerConfigurationService.getServerUrl());
+		String forceLightJs = forceLightJsSnippet(forceLight);
+
 		// We give this three chances - try to submit right away - submit 1/2 second from now and show the link 5 seconds from now
 		body.append("<script>\n");
+		body.append(forceLightJs);
 		body.append("parent.postMessage('{ \"subject\": \"org.sakailms.lti.prelaunch\" }', '*');console.log('access.doRedirect prelaunch request');");
 		body.append("setTimeout(function() {document.getElementById('lti-message-"+hash+"').style.display='block';}, 5000);\n");
 		body.append("setTimeout(function() {window.location='"+redirectUrl+"';}, 500);\n");
@@ -292,7 +306,7 @@ public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 					identifier the End-User might use to log in (if necessary).
 	*/
 	private void redirectOIDC(HttpServletRequest req, HttpServletResponse res,
-		Map<String, Object> content, Map<String, Object> tool, String oidc_endpoint, ResourceLoader rb)
+		Site site, Map<String, Object> content, Map<String, Object> tool, String oidc_endpoint, String launchSiteId, ResourceLoader rb)
 	{
 		// req.getRequestURL()=http://localhost:8080/access/lti/site/85fd092b-1755-4aa9-8abc-e6549527dce0/content:0
 		// req.getRequestURI()=/access/lti/site/85fd092b-1755-4aa9-8abc-e6549527dce0/content:0
@@ -320,7 +334,8 @@ public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 		}
 
 		String client_id = StringUtils.trimToNull((String) tool.get(LTIService.LTI13_CLIENT_ID));
-		String deployment_id = ServerConfigurationService.getString(SakaiLTIUtil.LTI13_DEPLOYMENT_ID, SakaiLTIUtil.LTI13_DEPLOYMENT_ID_DEFAULT);
+		String deployment_id = SakaiLTIUtil.resolveLaunchDeploymentId(site, launchSiteId,
+				LTIUtil.toLongNull(tool.get(LTIService.LTI_ID)), tool, ltiService);
 
 		// Use Base64DoubleUrlEncodeSafe to ensure proper URL-safe encoding
 		String encoded_login_hint = Base64DoubleUrlEncodeSafe.encode(login_hint);
@@ -377,6 +392,12 @@ public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 				}
 
 				String refId = ref.getId();
+				Site site = null;
+				try {
+					site = siteService.getSite(ref.getContext());
+				} catch (IdUnusedException e) {
+					throw new EntityNotDefinedException("Could not load site");
+				}
 				String [] retval = null;
 				if ( refId.startsWith("tool:") && refId.length() > 5 )
 				{
@@ -421,8 +442,8 @@ public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 					if ( ! sanityCheck(req, res, null, tool, rb) ) return;
 
 					if (SakaiLTIUtil.isLTI13(tool) && StringUtils.isNotBlank(oidc_endpoint) &&
-							( StringUtils.isEmpty(state) || StringUtils.isEmpty(state) ) ) {
-						redirectOIDC(req, res, null, tool, oidc_endpoint, rb);
+							( StringUtils.isEmpty(state) || StringUtils.isEmpty(nonce) ) ) {
+						redirectOIDC(req, res, site, null, tool, oidc_endpoint, ref.getContext(), rb);
 						return;
 					}
 
@@ -502,7 +523,7 @@ public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 
 						if (SakaiLTIUtil.isLTI13(tool) && StringUtils.isNotBlank(oidc_endpoint) &&
 								(StringUtils.isEmpty(state) || StringUtils.isEmpty(nonce) ) ) {
-							redirectOIDC(req, res, content, tool, oidc_endpoint, rb);
+							redirectOIDC(req, res, site, content, tool, oidc_endpoint, ref.getContext(), rb);
 							return;
 						}
 					}
@@ -577,11 +598,6 @@ public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 						{
 							// XSS Note: Only the Administrator can set overridesplash - so we allow HTML
 							String splash = StringUtils.trimToNull(SakaiLTIUtil.getCorrectProperty(config,"overridesplash", placement));
-							String send_session = StringUtils.trimToNull(SakaiLTIUtil.getCorrectProperty(config,"ext_sakai_encrypted_session", placement));
-							if ( splash == null && send_session != null && send_session.equals("true") && ! securityService.isSuperUser() )
-							{
-								splash = rb.getString("session.warning", "<p><span style=\"color:red\">Warning:</span> This tool makes use of your logged in session.  This means that the tool can access your data in this system.  Only continue to this tool if you are willing to share your data with this tool.</p>");
-							}
 							if ( splash == null )
 							{
 								// This may be user-set so no HTML
@@ -610,7 +626,10 @@ public class LTISecurityServiceImpl implements EntityProducer, HardDeleteAware {
 				try
 				{
 					if (retval != null) {
-						org.tsugi.lti.LTIUtil.sendHTMLPage(res, retval[0]);
+						String launchUrl = (retval.length > 1) ? (String) retval[1] : null;
+						boolean forceLight = launchUrl != null && !IframeUrlUtil.isLocalToSakai(launchUrl, ServerConfigurationService.getServerUrl());
+						String forceLightScript = "<script>" + forceLightJsSnippet(forceLight) + "</script>";
+						org.tsugi.lti.LTIUtil.sendHTMLPage(res, forceLightScript + retval[0]);
 					}
 					String refstring = ref.getReference();
 					if ( retval != null && retval.length > 1 ) refstring = retval[1];

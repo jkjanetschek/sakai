@@ -245,6 +245,8 @@ public class SimplePageBean {
 
 	public String selectedQuiz = null;
 
+	public String selectedScorm = null;
+
 	public String[] selectedChecklistItems = new String[] {};
 
 	private Map<Long, SubpageBulkEditHelper> subpageBulkEditTitleMap = new HashMap<>();
@@ -337,6 +339,9 @@ public class SimplePageBean {
 	private long youtubeId;
 
 	private boolean hidePage;
+	private boolean hidePageFromNavigation;
+	private String visibilityChoice = "visible";
+	private String visibilityChoice2 = "visible";
 	private Date releaseDate;
 	private boolean hasReleaseDate;
 	private boolean nodownloads;
@@ -505,6 +510,11 @@ public class SimplePageBean {
     	private LessonEntity bltiEntity = null;
     	public void setBltiEntity(Object e) {
     		bltiEntity = (LessonEntity)e;
+    	}
+
+    	private LessonEntity scormEntity = null;
+    	public void setScormEntity(Object e) {
+    		scormEntity = (LessonEntity)e;
     	}
 
         // End Injection
@@ -958,8 +968,76 @@ public class SimplePageBean {
 		this.buttonColor = buttonColor;
 	}
 
+	public boolean getHidePage() {
+		SimplePage currentPage = getCurrentPage();
+		if (currentPage != null) {
+			return currentPage.isHidden();
+		}
+		return hidePage;
+	}
+
 	public void setHidePage(boolean hide) {
 		hidePage = hide;
+	}
+
+	public boolean getHidePageFromNavigation() {
+		SimplePage currentPage = getCurrentPage();
+		if (currentPage != null) {
+			return currentPage.isHiddenFromNavigation();
+		}
+		return hidePageFromNavigation;
+	}
+
+	public void setHidePageFromNavigation(boolean hidePageFromNavigation) {
+		this.hidePageFromNavigation = hidePageFromNavigation;
+	}
+
+	public String getVisibilityChoice() {
+		SimplePage currentPage = getCurrentPage();
+		if (currentPage != null) {
+			if (currentPage.isHidden()) {
+				return "hide";
+			} else if (currentPage.isHiddenFromNavigation()) {
+				return "hideFromNav";
+			}
+		}
+		return "visible";
+	}
+
+	public void setVisibilityChoice(String visibilityChoice) {
+		if (visibilityChoice == null) {
+			visibilityChoice = "visible";
+		}
+
+		this.visibilityChoice = visibilityChoice;
+
+		this.hidePage = "hide".equals(visibilityChoice);
+		this.hidePageFromNavigation = "hideFromNav".equals(visibilityChoice);
+	}
+
+	public String getVisibilityChoice2() {
+		SimplePage currentPage = getCurrentPage();
+		if (currentPage != null) {
+			if (currentPage.isHidden()) {
+				return "hide";
+			} else if (currentPage.isHiddenFromNavigation()) {
+				return "hideFromNav";
+			}
+		}
+		return "visible";
+	}
+
+	public void setVisibilityChoice2(String visibilityChoice2) {
+		// Handle null values gracefully
+		if (visibilityChoice2 == null) {
+			visibilityChoice2 = "visible";
+		}
+		
+		this.visibilityChoice2 = visibilityChoice2;
+		
+		// Update the boolean flags based on the radio selection
+		this.hidePage = "hide".equals(visibilityChoice2);
+		this.hidePageFromNavigation = "hideFromNav".equals(visibilityChoice2);
 	}
 
     // argument is in ISO8601 format, which has -04:00 time zone.
@@ -2382,6 +2460,7 @@ public class SimplePageBean {
 			int itemType = nextItem.getType();
 			if (itemType == SimplePageItem.ASSIGNMENT ||
 					itemType == SimplePageItem.ASSESSMENT ||
+					itemType == SimplePageItem.SCORM ||
 					itemType == SimplePageItem.FORUM ||
 					itemType == SimplePageItem.PAGE ||
 			                itemType == SimplePageItem.BLTI ||
@@ -3312,8 +3391,11 @@ public class SimplePageBean {
 				i.setSameWindow(false);
 			    else
 				i.setSameWindow(true);
-
 			    i.setHeight(height);
+			} else if (i.getType() == SimplePageItem.SCORM) {
+			    String scormHeight = StringUtils.isBlank(height) ? "" : height.replace("px", "").trim();
+			    i.setHeight(scormHeight.matches("\\d+") ? scormHeight : "");
+			    i.setFormat("window".equals(format) ? "window" : "page");
 			}
 
 			if (i.getType() == SimplePageItem.PAGE) {
@@ -3325,6 +3407,7 @@ public class SimplePageBean {
 					else
 						page.setReleaseDate(null);
 					page.setHidden(hidePage);
+					page.setHiddenFromNavigation(hidePageFromNavigation);
 					update(page);
 				}
 			} else {
@@ -3505,6 +3588,10 @@ public class SimplePageBean {
 		this.selectedQuiz = selectedQuiz;
 	}
 
+	public void setSelectedScorm(String selectedScorm) {
+		this.selectedScorm = selectedScorm;
+	}
+
 	public void setSelectedBlti(String selectedBlti) {
 		this.selectedBlti = selectedBlti;
 	}
@@ -3556,8 +3643,6 @@ public class SimplePageBean {
 					i.setName(selectedObject.getTitle());
 				    }
 
-				    // reset assignment-specific stuff
-				    i.setDescription("");
 				    update(i);
 				}
 			    } else {
@@ -3888,6 +3973,8 @@ public class SimplePageBean {
 		   entity = assignmentEntity.getEntity(i.getSakaiId()); break;
 	       case SimplePageItem.ASSESSMENT:
 		   entity = quizEntity.getEntity(i.getSakaiId(),this); break;
+	       case SimplePageItem.SCORM:
+		   entity = (scormEntity != null) ? scormEntity.getEntity(i.getSakaiId(),this) : null; break;
 	       case SimplePageItem.FORUM:
 		   entity = forumEntity.getEntity(i.getSakaiId()); break;
 	       case SimplePageItem.MULTIMEDIA:
@@ -4123,6 +4210,8 @@ public class SimplePageBean {
 	       lessonEntity = assignmentEntity.getEntity(i.getSakaiId()); break;
 	   case SimplePageItem.ASSESSMENT:
 	       lessonEntity = quizEntity.getEntity(i.getSakaiId(),this); break;
+	   case SimplePageItem.SCORM:
+	       lessonEntity = (scormEntity != null) ? scormEntity.getEntity(i.getSakaiId(),this) : null; break;
 	   case SimplePageItem.FORUM:
 	       lessonEntity = forumEntity.getEntity(i.getSakaiId()); break;
 	   case SimplePageItem.MULTIMEDIA:
@@ -4383,9 +4472,6 @@ public class SimplePageBean {
 					i.setSakaiId(selectedQuiz);
 					i.setName(selectedObject.getTitle());
 				    }
-				    // reset quiz-specific stuff
-				    i.setDescription("");
-
 				    update(i);
 				}
 			    } else { // no, add new item
@@ -4398,6 +4484,62 @@ public class SimplePageBean {
 			    return "failure";
 			} finally {
 			    selectedQuiz = null;
+			}
+		}
+	}
+
+	public String addScorm() {
+		if (!itemOk(itemId))
+		    return "permission-failed";
+		if (!canEditPage())
+		    return "permission-failed";
+		if (!checkCsrf())
+		    return "permission-failed";
+
+		if (selectedScorm == null || scormEntity == null) {
+			return "failure";
+		} else {
+			try {
+			    LessonEntity selectedObject = scormEntity.getEntity(selectedScorm, this);
+			    if (selectedObject == null)
+				return "failure";
+
+			    SimplePageItem i;
+			    if (itemId != null && itemId != -1) {
+				i = findItem(itemId);
+				if (i == null) return "failure";
+				// normalize sakaiId in case it is in an old format
+				LessonEntity existing = scormEntity.getEntity(i.getSakaiId(), this);
+				String ref = (existing != null) ? existing.getReference() : null;
+				if (existing == null || !ref.equals(selectedScorm)) {
+				    // if access controlled, release restriction from old package and add to new
+				    if (i.isPrerequisite()) {
+					if (existing != null) {
+					    i.setPrerequisite(false);
+					    checkControlGroup(i, false);
+					}
+					i.setSakaiId(selectedScorm);
+					i.setName(selectedObject.getTitle());
+					i.setDescription("");
+					i.setPrerequisite(true);
+					checkControlGroup(i, true);
+				    } else {
+					i.setSakaiId(selectedScorm);
+					i.setName(selectedObject.getTitle());
+					i.setDescription("");
+				    }
+				}
+				update(i);
+			    } else {
+				i = appendItem(selectedScorm, selectedObject.getTitle(), SimplePageItem.SCORM);
+				saveItem(i);
+			    }
+			    return "success";
+			} catch (Exception ex) {
+			    log.warn("Could not add selected scorm item to page: {}, {}", selectedScorm, ex.toString());
+			    return "failure";
+			} finally {
+			    selectedScorm = null;
 			}
 		}
 	}
@@ -4631,6 +4773,7 @@ public class SimplePageBean {
 				}
 				page.setTitle(pageTitle);
 				page.setHidden(hidePage);
+				page.setHiddenFromNavigation(hidePageFromNavigation);
 				if (hasReleaseDate)
 					page.setReleaseDate(releaseDate);
 				else
@@ -4653,13 +4796,14 @@ public class SimplePageBean {
 		} else if (pageTitle != null) {
 			page.setTitle(pageTitle);
 			page.setHidden(hidePage);
+			page.setHiddenFromNavigation(hidePageFromNavigation);
 			if (hasReleaseDate)
 			    page.setReleaseDate(releaseDate);
 			else
 			    page.setReleaseDate(null);
 			update(page, !isOwner);
 		}
-		
+
 		if(pageTitle != null) {
 			if(pageItem.getType() == SimplePageItem.STUDENT_CONTENT) {
 				SimpleStudentPage student = simplePageToolDao.findStudentPageByPageId(page.getPageId());
@@ -4763,7 +4907,7 @@ public class SimplePageBean {
 				try {
 					ContentCollectionEdit edit = contentHostingService.addCollection(collectionId);
 					edit.getPropertiesEdit().addProperty(ResourceProperties.PROP_DISPLAY_NAME, "LB-CSS");
-					//this folder should be hidden from access user
+					//this folder should be hidden with access from access user
 					edit.getPropertiesEdit().addProperty(ResourceProperties.PROP_HIDDEN_WITH_ACCESSIBLE_CONTENT, "true");
 					contentHostingService.commitCollection(edit);
 				}catch(Exception e) {
@@ -5081,8 +5225,12 @@ public class SimplePageBean {
 
 		tool.setTitle(title);
 		
-		SimplePageItem item = simplePageToolDao.makeItem(0, 0, SimplePageItem.PAGE, Long.toString(page.getPageId()), title);
-		saveItem(item);
+		// Does the top-level page item already exist, as in the case of adding a pre-existing page? If so, don't create another item.
+		SimplePageItem existingTop = simplePageToolDao.findTopLevelPageItemBySakaiId(Long.toString(page.getPageId()));
+		if (existingTop == null) {
+			SimplePageItem item = simplePageToolDao.makeItem(0, 0, SimplePageItem.PAGE, Long.toString(page.getPageId()), title);
+			saveItem(item);
+		}
 
 		sitePage.setTitle(title);
 		sitePage.setTitleCustom(true);
@@ -5641,6 +5789,11 @@ public class SimplePageBean {
 				if (entity == null || entity.notPublished())
 				return false;
 			    break;
+			case SimplePageItem.SCORM:
+			    entity = (scormEntity != null) ? scormEntity.getEntity(item.getSakaiId(), this) : null;
+			    if (entity == null || entity.notPublished())
+				return false;
+			    break;
 			case SimplePageItem.FORUM:
 			    entity = forumEntity.getEntity(item.getSakaiId());
 			    if (entity == null || entity.notPublished())
@@ -5849,6 +6002,27 @@ public class SimplePageBean {
 			    	return false;
 			    }
 			}
+		} else if (item.getType() == SimplePageItem.SCORM) {
+			if (item.getSakaiId().equals(SimplePageItem.DUMMY)) {
+			    completeCache.put(itemId, false);
+			    return false;
+			}
+			if (scormEntity == null) { completeCache.put(itemId, false); return false; }
+			LessonEntity scorm = scormEntity.getEntity(item.getSakaiId(), this);
+			if (scorm == null) {
+			    completeCache.put(itemId, false);
+			    return false;
+			}
+			boolean scormComplete;
+			if (!item.getSubrequirement()) {
+			    // any attempt (visit) is sufficient
+			    scormComplete = scorm.getSubmissionCount(getCurrentUserId()) > 0;
+			} else {
+			    // must complete or pass the package
+			    scormComplete = scorm.getSubmission(getCurrentUserId()) != null;
+			}
+			completeCache.put(itemId, scormComplete);
+			return scormComplete;
 		} else if (item.getType() == SimplePageItem.COMMENTS) {
 			List<SimplePageComment>comments = simplePageToolDao.findCommentsOnItemByAuthor((long)itemId, getCurrentUserId());
 			boolean found = false;
@@ -6544,7 +6718,7 @@ public class SimplePageBean {
 	public String getCollectionId(boolean urls) {
 		String siteId = getCurrentPage().getSiteId();
 		String baseDir = ServerConfigurationService.getString("lessonbuilder.basefolder", null);
-		boolean hiddenDir = ServerConfigurationService.getBoolean("lessonbuilder.folder.hidden",false);
+		boolean hiddenWithAccessDir = ServerConfigurationService.getBoolean("lessonbuilder.folder.hidden.withaccess", true);
 		String pageOwner = getCurrentPage().getOwner();
 		String collectionId;
 		String folder;
@@ -6560,16 +6734,14 @@ public class SimplePageBean {
 			    if (!baseDir.endsWith("/"))
 				baseDir = baseDir + "/";
 			    collectionId = collectionId + baseDir;
-			    // basedir which is hidden; have to create it if it doesn't exist, so we can make hidden
-			    if (hiddenDir) {
-				hiddenDir = false; // hiding base, done hide actual folder
+			    // basedir which is hidden; have to create it if it doesn't exist, so we can make hidden with access
 				try {
 				    try {
 					contentHostingService.checkCollection(collectionId);
 				    } catch (IdUnusedException idex) {
 					ContentCollectionEdit edit = contentHostingService.addCollection(collectionId);
 					edit.getPropertiesEdit().addProperty(ResourceProperties.PROP_DISPLAY_NAME,  Validator.escapeResourceName(baseDir.substring(0,baseDir.length()-1)));
-					edit.setHidden();
+					edit.getPropertiesEdit().addProperty(ResourceProperties.PROP_HIDDEN_WITH_ACCESSIBLE_CONTENT, String.valueOf(hiddenWithAccessDir));
 					contentHostingService.commitCollection(edit);
 				    }
 				} catch (Exception ignore) {
@@ -6577,7 +6749,6 @@ public class SimplePageBean {
 				    // that will cause failure at a later stage where we can
 				    // return an error message. This may not be optimal.
 				}
-			    }
 			}
 			// actual folder. Use hierarchy of files
 			SimplePage page = getCurrentPage();
@@ -6645,8 +6816,7 @@ public class SimplePageBean {
 			try {
 				ContentCollectionEdit edit = contentHostingService.addCollection(root);
 				edit.getPropertiesEdit().addProperty(ResourceProperties.PROP_DISPLAY_NAME,  Validator.escapeResourceName(getPageTitle()));
-				if (hiddenDir)
-				    edit.setHidden();
+				edit.getPropertiesEdit().addProperty(ResourceProperties.PROP_HIDDEN_WITH_ACCESSIBLE_CONTENT, String.valueOf(hiddenWithAccessDir));
 				contentHostingService.commitCollection(edit);
 				
 				// well, we got that far anyway
@@ -6662,8 +6832,7 @@ public class SimplePageBean {
 	    		edit.getPropertiesEdit().addProperty(ResourceProperties.PROP_DISPLAY_NAME, "urls");
 	    	else {
 	    		edit.getPropertiesEdit().addProperty(ResourceProperties.PROP_DISPLAY_NAME, Validator.escapeResourceName(getPageTitle()));
-			if (hiddenDir)
-			    edit.setHidden();
+	    		edit.getPropertiesEdit().addProperty(ResourceProperties.PROP_HIDDEN_WITH_ACCESSIBLE_CONTENT, String.valueOf(hiddenWithAccessDir));
 		}		
 	    	contentHostingService.commitCollection(edit);
 	    	return folder; // worked. use it

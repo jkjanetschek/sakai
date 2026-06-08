@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.sakaiproject.lessonbuilder</groupId>
         <artifactId>lessonbuilder</artifactId>
-        <version>25-SNAPSHOT</version>
+        <version>25.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -129,10 +129,6 @@
             <artifactId>search-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.sakaiproject.search</groupId>
-            <artifactId>search-util</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.hibernate</groupId>
 	        <artifactId>hibernate-core</artifactId>
         </dependency>
@@ -189,6 +185,10 @@
             <artifactId>json-simple</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.sakaiproject.scorm</groupId>
+            <artifactId>scorm-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
             <version>3.7.0</version>
@@ -241,18 +241,6 @@
             </repositories>
 
             <dependencies>
-                <dependency>
-                    <groupId>org.sakaiproject.scorm</groupId>
-                    <artifactId>sakai-scorm-api</artifactId>
-                    <version>3.1.9</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.sakaiproject.scorm</groupId>
-                    <artifactId>sakai-scorm-tool</artifactId>
-                    <version>3.1.9</version>
-                    <scope>compile</scope>
-                </dependency>
                 <dependency>
                     <groupId>org.sakaiproject.yaft</groupId>
                     <artifactId>yaft-api</artifactId>

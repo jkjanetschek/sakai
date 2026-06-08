@@ -97,7 +97,7 @@ public class ScoResultsPage extends BaseResultsPage
 
 			IModel breadcrumbModel = new StringResourceModel("uberparent.breadcrumb", this, new Model(contentPackage));
 			addBreadcrumb(breadcrumbModel, ResultsListPage.class, uberparentParams, true);	
-			addBreadcrumb(new Model(learner.getDisplayName()), LearnerResultsPage.class, parentParams, true);
+			addBreadcrumb(new Model(learner.getSortName()), LearnerResultsPage.class, parentParams, true);
 
 			ActivityReport report = resultService.getActivityReport(contentPackage.getContentPackageId(), learner.getId(), attemptNumber, scoId);
 
@@ -116,8 +116,12 @@ public class ScoResultsPage extends BaseResultsPage
 			{
 				addBreadcrumb(new Model("[no module]"), ScoResultsPage.class, pageParams, false);
 
-				add(new ScorePanel("scorePanel", new Score()));
-				add(new ProgressPanel("progressPanel", new Progress()));
+				ScorePanel scorePanel = new ScorePanel("scorePanel", new Score());
+				scorePanel.setVisible(false);
+				add(scorePanel);
+				ProgressPanel progressPanel = new ProgressPanel("progressPanel", new Progress());
+				progressPanel.setVisible(false);
+				add(progressPanel);
 
 				interactions = new ArrayList<>();
 			}

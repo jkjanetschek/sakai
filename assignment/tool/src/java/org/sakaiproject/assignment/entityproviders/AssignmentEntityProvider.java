@@ -80,6 +80,8 @@ import org.sakaiproject.tool.api.ToolManager;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserDirectoryService;
 import org.sakaiproject.lti.api.LTIService;
+import org.sakaiproject.lti.util.SakaiLTIUtil;
+import org.tsugi.lti.LTIUtil;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.api.FormattedText;
@@ -683,7 +685,7 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             // it does not accept group IDs directly. For group assignments, we use
             // a representative user ID from the group.
 
-            if (submitters.size() >= 1) {
+            if (assignment.getTypeOfSubmission() == Assignment.SubmissionType.EXTERNAL_TOOL_SUBMISSION && submitters.size() >= 1) {
                 String submitterId = null;
                 Optional<AssignmentSubmissionSubmitter> submittee = assignmentService.getSubmissionSubmittee(as);
                 if (submittee.isPresent()) {
@@ -1083,44 +1085,51 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
         submissionMaps.removeAll(Collections.singleton(null));
 
         Integer contentKey = assignment.getContentId();
-        if (contentKey != null) {
+        if (assignment.getTypeOfSubmission() == Assignment.SubmissionType.EXTERNAL_TOOL_SUBMISSION && contentKey != null) {
             // Default assignment-wide launch to tool if there is not a SubmissionReview launch in a submission
             simpleAssignment.ltiGradableLaunch = "/access/lti/site/" + siteId + "/content:" + contentKey;
 
             Map<String, Object> content = ltiService.getContent(contentKey.longValue(), site.getId());
-            String contentItem = StringUtils.trimToEmpty((String) content.get(LTIService.LTI_CONTENTITEM));
+            if (content != null) {
+                Long toolKey = LTIUtil.toLongNull(content.get(LTIService.LTI_TOOL_ID));
+                Map<String, Object> tool = (toolKey != null) ? ltiService.getTool(toolKey, site.getId()) : null;
+                simpleAssignment.ltiFrameHeight = SakaiLTIUtil.getFrameHeight(tool, content, "1200px");
+                String contentItem = StringUtils.trimToEmpty((String) content.get(LTIService.LTI_CONTENTITEM));
 
-            for (Map<String, Object> submission : submissionMaps) {
-                if (!submission.containsKey("userSubmission")) continue;
-                String ltiSubmissionLaunch = null;
-                
-                try {
-                    String subId = (String) submission.get("id");
-                    if (StringUtils.isNotBlank(subId)) {
-                        AssignmentSubmission as = assignmentService.getSubmission(subId);
-                        
-                        String submitterId = null;
-                        Optional<AssignmentSubmissionSubmitter> submittee = assignmentService.getSubmissionSubmittee(as);
-                        if (submittee.isPresent()) {
-                            submitterId = submittee.get().getSubmitter();
-                            log.debug("LTI found submittee: {}", submitterId);
-                        }
-                        
-                        
-                        if (StringUtils.isNotBlank(submitterId)) {
-                            ltiSubmissionLaunch = "/access/lti/site/" + siteId + "/content:" + contentKey + "?for_user=" + submitterId;
-                            
-                            // Check for submission review capability
-                            if (contentItem.indexOf("\"submissionReview\"") > 0) {
-                                ltiSubmissionLaunch = ltiSubmissionLaunch + "&message_type=content_review";
+                for (Map<String, Object> submission : submissionMaps) {
+                    if (!submission.containsKey("userSubmission")) continue;
+                    String ltiSubmissionLaunch = null;
+
+                    try {
+                        String subId = (String) submission.get("id");
+                        if (StringUtils.isNotBlank(subId)) {
+                            AssignmentSubmission as = assignmentService.getSubmission(subId);
+
+                            String submitterId = null;
+                            Optional<AssignmentSubmissionSubmitter> submittee = assignmentService.getSubmissionSubmittee(as);
+                            if (submittee.isPresent()) {
+                                submitterId = submittee.get().getSubmitter();
+                                log.debug("LTI found submittee: {}", submitterId);
+                            }
+
+                            if (StringUtils.isNotBlank(submitterId)) {
+                                ltiSubmissionLaunch = "/access/lti/site/" + siteId + "/content:" + contentKey + "?for_user=" + submitterId;
+
+                                // Check for submission review capability
+                                if (contentItem.indexOf("\"submissionReview\"") > 0) {
+                                    ltiSubmissionLaunch = ltiSubmissionLaunch + "&message_type=content_review";
+                                }
                             }
                         }
+                    } catch (Exception e) {
+                        log.warn("Could not get submitter ID for LTI: {}", e.toString());
                     }
-                } catch (Exception e) {
-                    log.warn("Could not get submitter ID for LTI: {}", e.toString());
+
+                    if (ltiSubmissionLaunch != null && !ltiSubmissionLaunch.isBlank()
+                            && submission.get("ltiSubmissionLaunch") == null) {
+                        submission.put("ltiSubmissionLaunch", ltiSubmissionLaunch);
+                    }
                 }
-                
-                submission.put("ltiSubmissionLaunch", ltiSubmissionLaunch);
             }
         }
 
@@ -1881,6 +1890,8 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
 
         private String ltiGradableLaunch;
 
+        private String ltiFrameHeight;
+
         private List<SimpleSubmission> submissions;
 
         public SimpleAssignment() {
@@ -1958,8 +1969,9 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
                         }
                     }
                 }
-            } else {
-                log.debug("The property \"prop_new_assignment_add_to_gradebook\" is null for the assignment feed");
+            } else if (!GRADEBOOK_INTEGRATION_NO.equals(a.getProperties().get(NEW_ASSIGNMENT_ADD_TO_GRADEBOOK))) {
+                log.warn("Assignment has gradebook integration mode '{}' but PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT is null",
+                        a.getProperties().get(NEW_ASSIGNMENT_ADD_TO_GRADEBOOK));
             }
 
             this.attachments = a.getAttachments().stream().map(att -> {
@@ -2116,12 +2128,19 @@ public class AssignmentEntityProvider extends AbstractEntityProvider implements 
             Instant close = sa.getCloseTime();
             this.visible = Instant.now().isAfter(Optional.ofNullable(due).orElse(Instant.now()))
                 && Instant.now().isAfter(Optional.ofNullable(close).orElse(Instant.now()));
-            if (this.getDateSubmitted() != null || (this.draft && this.visible)) {
+
+            String currentUserId = userDirectoryService.getCurrentUser().getId();
+            boolean isCurrentUserSubmitter = as.getSubmitters().stream()
+                .anyMatch(ass -> currentUserId.equals(ass.getSubmitter()));
+
+            if (this.submitted || (this.draft && this.visible) || isCurrentUserSubmitter) {
                 this.submittedText = as.getSubmittedText();
                 if (this.submitted) {
-                    this.dateSubmitted
-                        = userTimeService.dateTimeFormat(as.getDateSubmitted(), null, null);
-                    this.dateSubmittedEpochSeconds = as.getDateSubmitted() != null ? as.getDateSubmitted().getEpochSecond() : 0;
+                    Instant dateSubmitted = as.getDateSubmitted();
+                    if (dateSubmitted != null) {
+                        this.dateSubmitted = userTimeService.dateTimeFormat(dateSubmitted, null, null);
+                        this.dateSubmittedEpochSeconds = dateSubmitted.getEpochSecond();
+                    }
                 }
                 if (as.getDateSubmitted() != null) {
                     this.late = as.getDateSubmitted().compareTo(as.getAssignment().getDueDate()) > 0;

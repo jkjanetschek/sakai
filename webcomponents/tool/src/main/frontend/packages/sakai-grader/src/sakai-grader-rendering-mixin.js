@@ -143,8 +143,10 @@ export const graderRenderingMixin = Base => class extends Base {
           <div class="sak-banner-info">${unsafeHTML(this._i18n.lti_grade_launch_instructions)}</div>
           <sakai-lti-iframe
             allow-resize="yes"
+            height="${this.ltiFrameHeight || "1200"}"
             new-window-text="${this._i18n.lti_grade_launch_button}"
-            launch-url="${this._submission.ltiSubmissionLaunch}">
+            launch-url="${this._submission.ltiSubmissionLaunch}"
+            allow="${ifDefined(this.allow)}">
           </sakai-lti-iframe>
         ` : nothing }
         ${this.ltiGradableLaunch && !this._submission.ltiSubmissionLaunch ? html`
@@ -152,8 +154,10 @@ export const graderRenderingMixin = Base => class extends Base {
           <div class="sak-banner-info">${unsafeHTML(this._i18n.lti_grade_launch_instructions)}</div>
           <sakai-lti-iframe
             allow-resize="yes"
+            height="${this.ltiFrameHeight || "1200"}"
             new-window-text="${this._i18n.lti_grade_launch_button}"
-            launch-url="${this.ltiGradableLaunch}">
+            launch-url="${this.ltiGradableLaunch}"
+            allow="${ifDefined(this.allow)}">
           </sakai-lti-iframe>
         ` : nothing }
         ${this._submission.ltiSubmissionLaunch ? nothing : html`

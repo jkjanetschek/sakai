@@ -239,6 +239,7 @@ public final class AssignmentConstants {
     public static final String PROP_INLINE_SUBMISSION = "assignment_submission_attachment_is_inline";
     public static final String ZIP_COMMENT_FILE_TYPE = ".txt";
     public static final String ZIP_SUBMITTED_TEXT_FILE_TYPE = ".html";
+    public static final String ZIP_PDF_FILE_TYPE = ".pdf";
 
     public static final String NEW_ASSIGNMENT_USE_REVIEW_SERVICE = "new_assignment_use_review_service";
     public static final String NEW_ASSIGNMENT_ALLOW_STUDENT_VIEW = "new_assignment_allow_student_view";
@@ -365,6 +366,7 @@ public final class AssignmentConstants {
     public static final String PROP_ASSIGNMENT_ASSOCIATE_GRADEBOOK_ASSIGNMENT = "prop_new_assignment_add_to_gradebook";
 
     public static final String NEW_ASSIGNMENT_ADD_TO_GRADEBOOK = "new_assignment_add_to_gradebook";
+    public static final String NEW_ASSIGNMENT_CATEGORY = "new_assignment_category";
 
 	/**
 	 * Sakai property key to change the default value for the 'Add due date to calendar' checkbox

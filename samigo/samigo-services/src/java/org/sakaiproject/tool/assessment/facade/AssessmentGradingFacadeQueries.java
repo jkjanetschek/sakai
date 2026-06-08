@@ -653,6 +653,9 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
                             mediaData.getMimeType(),
                             mediaData.getMedia());
                 }
+                if (chsMedia != null && StringUtils.isNotBlank(chsMedia.getContentType())) {
+                    mediaData.setMimeType(chsMedia.getContentType());
+                }
                 mediaData.setContentResource(chsMedia);
                 return mediaPath;
             } catch (PermissionException | IdUsedException | IdInvalidException | InconsistentException | ServerOverloadException | OverQuotaException | VirusFoundException | IdUnusedException | TypeException | InUseException e) {
@@ -2385,12 +2388,15 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
                                 AnswerIfc answer = (AnswerIfc) publishedAnswerHash.get(answerid);
                                 if (answer != null) {
                                     if (isOneSelectionType) {
-                                        if (!answer.getIsCorrect()) {
-                                            // For incorrect answers cases
-                                            responseList.set(emptyIndex-1, ((int) responseList.get(emptyIndex-1)) + 1);
-                                        } else {
+                                        Boolean answerCorrectness = resolveOneSelectionCorrectness(answer, grade);
+                                        if (Boolean.TRUE.equals(answerCorrectness)) {
                                             // For correct answers cases
-                                            responseList.set(emptyIndex-2, ((int) responseList.get(emptyIndex-2)) + 1);
+                                            responseList.set(emptyIndex - 2, ((int) responseList.get(emptyIndex - 2)) + 1);
+                                        } else if (Boolean.FALSE.equals(answerCorrectness)) {
+                                            // For incorrect answers cases
+                                            responseList.set(emptyIndex - 1, ((int) responseList.get(emptyIndex - 1)) + 1);
+                                        } else {
+                                            log.debug("Skipping one-selection tally for answer {} due to unknown correctness", answerid);
                                         }
                                     }
                                     String temptext = answer.getText();
@@ -2641,6 +2647,29 @@ public class AssessmentGradingFacadeQueries extends HibernateDaoSupport implemen
         finalList.add(dataList);
         finalList.add(headerList);
         return finalList;
+    }
+
+    /**
+     * Resolve correctness for one-selection export counters without null unboxing.
+     * Order of precedence:
+     * 1) Published answer correctness flag
+     * 2) Item grading correctness flag
+     * 3) Item grading auto score sign
+     */
+    Boolean resolveOneSelectionCorrectness(AnswerIfc answer, ItemGradingData grade) {
+        if (answer != null && answer.getIsCorrect() != null) {
+            return answer.getIsCorrect();
+        }
+
+        if (grade != null && grade.getIsCorrect() != null) {
+            return grade.getIsCorrect();
+        }
+
+        if (grade != null && grade.getAutoScore() != null) {
+            return grade.getAutoScore() > 0;
+        }
+
+        return null;
     }
 
 

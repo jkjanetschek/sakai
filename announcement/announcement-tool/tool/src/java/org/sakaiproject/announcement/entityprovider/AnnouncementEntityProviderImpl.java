@@ -24,7 +24,6 @@ package org.sakaiproject.announcement.entityprovider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -238,15 +237,22 @@ public class AnnouncementEntityProviderImpl extends AbstractEntityProvider imple
 		//for each channel
 		for (String channel : channels) {
 			try {
-				announcements.addAll(announcementService.getMessages(channel, new ViewableFilter(null, t, numberOfAnnouncements, announcementService), announcementSortAsc, false));
+				List<AnnouncementMessage> channelMessages = announcementService.getMessages(channel, new ViewableFilter(null, t, numberOfAnnouncements, announcementService), announcementSortAsc, false);
+				// Filter out draft messages explicitly since ViewableFilter might not be doing it properly for instructors
+				for (AnnouncementMessage msg : channelMessages) {
+					if (!msg.getHeader().getDraft()) {
+						announcements.add(msg);
+					}
+				}
 			} catch (PermissionException | IdUnusedException | NullPointerException ex) {
+				log.warn("Falling back to public messages for channel {} due to {}: {}", channel, ex.getClass().getSimpleName(), ex.getMessage(), ex);
 				//user may not have access to view the channel but get all public messages in this channel
 				AnnouncementChannel announcementChannel = (AnnouncementChannel) announcementService.getChannelPublic(channel);
 				if (announcementChannel != null) {
 					List<Message> publicMessages = announcementChannel.getMessagesPublic(null, true);
 					for (Message message : publicMessages) {
-						//Add message only if it is within the time range
-						if (isMessageWithinPastNDays(message, numberOfDaysInThePast) && announcementService.isMessageViewable((AnnouncementMessage) message)) {
+						//Add message only if it is within the time range and not a draft
+						if (isMessageWithinPastNDays(message, numberOfDaysInThePast) && announcementService.isMessageViewable((AnnouncementMessage) message) && !((AnnouncementMessage) message).getHeader().getDraft()) {
 							announcements.add(message);
 						}
 					}
@@ -366,12 +372,17 @@ public class AnnouncementEntityProviderImpl extends AbstractEntityProvider imple
 		//get attachments
 		List<DecoratedAttachment> attachments = new ArrayList<DecoratedAttachment>();
 		for (Reference attachment : (List<Reference>) a.getHeader().getAttachments()) {
-			String url = attachment.getUrl();
-			String name = attachment.getProperties().getPropertyFormatted(attachment.getProperties().getNamePropDisplayName());
 			String attachId = attachment.getId();
-			String type = attachment.getProperties().getProperty(attachment.getProperties().getNamePropContentType());
-			String attachRef = attachment.getReference();								
-			DecoratedAttachment decoratedAttachment = new DecoratedAttachment(attachId,name,type,url,attachRef);
+			String url = attachment.getUrl();
+			String attachRef = attachment.getReference();
+			String name = "";
+			String type = "";
+			ResourceProperties props = attachment.getProperties();
+			if (props != null) {
+				name = props.getPropertyFormatted(props.getNamePropDisplayName());
+				type = props.getProperty(props.getNamePropContentType());
+			}
+			DecoratedAttachment decoratedAttachment = new DecoratedAttachment(attachId, name, type, url, attachRef);
 			attachments.add(decoratedAttachment);
 		}
 		da.setAttachments(attachments);
@@ -615,9 +626,45 @@ public class AnnouncementEntityProviderImpl extends AbstractEntityProvider imple
 	@EntityCustomAction(action="motd",viewKey=EntityView.VIEW_LIST)
 	public List<?> getMessagesOfTheDay(EntityView view, Map<String, Object> params) {
 
-		//MOTD announcements are published to a special site
-		List<?> l = getAnnouncements(MOTD_SITEID, params, false);
-		return l;
+		// Keep existing API params behavior:
+		// n = max items, d = days in the past, a = ascending sort (1 = true).
+		int numberOfAnnouncements = NumberUtils.toInt((String) params.get("n"), 0);
+		int numberOfDaysInThePast = NumberUtils.toInt((String) params.get("d"), 0);
+		boolean announcementSortAsc = NumberUtils.toInt((String) params.get("a"), 0) == 1;
+
+		if (numberOfAnnouncements == 0) {
+			numberOfAnnouncements = DEFAULT_NUM_ANNOUNCEMENTS;
+		}
+		if (numberOfDaysInThePast == 0) {
+			numberOfDaysInThePast = DEFAULT_DAYS_IN_PAST;
+		}
+
+		Time afterDate = timeService.newTime(getTimeForDaysInPast(numberOfDaysInThePast).getTime());
+		String siteTitle = rb.getString("motd.title");
+
+		List<AnnouncementMessage> motdMessages;
+		try {
+			motdMessages = announcementService.getVisibleMessagesOfTheDay(
+				afterDate,
+				numberOfAnnouncements,
+				announcementSortAsc);
+		} catch (Exception e) {
+			String currentUserId = sessionManager.getCurrentSessionUserId();
+			log.warn("Failed to load MOTD announcements for user: {}. Returning no MOTD announcements.", currentUserId, e);
+			return Collections.emptyList();
+		}
+
+		List<DecoratedAnnouncement> decoratedAnnouncements = new ArrayList<>();
+		for (AnnouncementMessage message : motdMessages) {
+			try {
+				decoratedAnnouncements.add(createDecoratedAnnouncement(message, siteTitle));
+			} catch (Exception e) {
+				String currentUserId = sessionManager.getCurrentSessionUserId();
+				log.info("Exception caught processing MOTD announcement: {} for user: {}. Skipping...", message.getId(), currentUserId);
+			}
+		}
+
+		return decoratedAnnouncements;
 	}
 	
 	// The reason this is EntityView.VIEW_LIST, is we want the URL pattern to be /announcement/channel/.... rather

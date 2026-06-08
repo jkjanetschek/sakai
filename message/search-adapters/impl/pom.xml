@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.sakaiproject.message</groupId>
         <artifactId>message</artifactId>
-        <version>25-SNAPSHOT</version>
+        <version>25.2</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -39,11 +39,6 @@
         <dependency>
             <groupId>org.sakaiproject.search</groupId>
             <artifactId>search-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.sakaiproject.search</groupId>
-            <artifactId>search-util</artifactId>
-            <type>jar</type>
         </dependency>
     </dependencies>
 

@@ -703,6 +703,10 @@ public class PublishedAssessmentFacadeQueries extends HibernateDaoSupport implem
 
 	public PublishedAssessmentFacade getPublishedAssessment(Long assessmentId, boolean withGroupsInfo) {
 		PublishedAssessmentData a = loadPublishedAssessment(assessmentId);
+		if (a == null) {
+			log.debug("Published assessment not found for assessmentId: {}", assessmentId);
+			return null;
+		}
 		a.setSectionSet(getSectionSetForAssessment(a)); // this is making things slow -pbd
 		Map<String, String> releaseToGroups = new HashMap<>();
 		Set<String> groupReferences = new HashSet<>();
@@ -1862,6 +1866,10 @@ public class PublishedAssessmentFacadeQueries extends HibernateDaoSupport implem
 		int retryCount = PersistenceService.getInstance().getPersistenceHelper().getRetryCount();
 		while (retryCount > 0) {
 			try {
+				ExtendedTimeFacade extendedTimeFacade = PersistenceService.getInstance().getExtendedTimeFacade();
+				if (extendedTimeFacade != null) {
+					extendedTimeFacade.deleteEntriesForPub(data);
+				}
 				getHibernateTemplate().delete(data);
 				retryCount = 0;
 			} catch (Exception e) {

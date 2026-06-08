@@ -112,6 +112,7 @@ import org.sakaiproject.tool.assessment.services.PersistenceService;
 import org.sakaiproject.user.api.PreferencesService;
 import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.api.FormattedText;
+import org.sakaiproject.util.api.LocaleService;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -142,6 +143,7 @@ public class DateManagerServiceImpl implements DateManagerService {
 	@Setter private UserTimeService userTimeService;
 	@Setter private SamigoAvailableNotificationService samigoAvailableNotificationService;
 	@Setter private FormattedText formattedText;
+	@Setter private LocaleService localeService;
 
 	private final Map<String, Calendar> calendarMap = new HashMap<>();
 	private final DateTimeFormatter inputDateFormatter;
@@ -233,25 +235,9 @@ public class DateManagerServiceImpl implements DateManagerService {
 		return locale;
 	}
 
+	@Override
 	public Locale getLocaleForCurrentSiteAndUser() {
-		Locale locale = null;
-
-		// First try to get site locale
-		Optional<Site> currentSite = getCurrentSite();
-		if (currentSite.isPresent()) {
-			ResourceProperties siteProperties = currentSite.get().getProperties();
-			String siteLocale = (String) siteProperties.get("locale_string");
-			if (StringUtils.isNotBlank(siteLocale)) {
-				locale = serverConfigurationService.getLocaleFromString(siteLocale);
-			}
-		}
-
-		// If there is not site locale defined, get user default locale
-		if (locale == null) {
-			locale = getUserLocale();
-		}
-
-		return locale;
+		return localeService.getLocaleForSiteAndUser(getCurrentSiteId(), getCurrentUserId());
 	}
 
 	@Override
@@ -806,7 +792,7 @@ public class DateManagerServiceImpl implements DateManagerService {
 				String dueDateRaw = (String) jsonItem.get(DateManagerConstants.JSON_DUEDATE_PARAM_NAME);
 				Instant dueDate = null;
 				if (StringUtils.isNotBlank(dueDateRaw)) {
-					dueDateRaw = dueDateRaw.replaceAll("\"", "").replace("/", "-");
+					dueDateRaw = dueDateRaw.replaceAll("\"", "");
 					try {
 
 						LocalDate date;
@@ -1430,7 +1416,9 @@ public class DateManagerServiceImpl implements DateManagerService {
 
                                 String entityType = (String)jsonForum.get(DateManagerConstants.JSON_EXTRAINFO_PARAM_NAME);
                                 DateManagerUpdate update;
-                                if(resourceLoader.getString("itemtype.forum").equals(entityType)) {
+                                // Check if this is a forum (including draft forums) by checking if entityType starts with the forum type
+                                final String forumType = StringUtils.defaultString(resourceLoader.getString("itemtype.forum"));
+                                if (StringUtils.startsWith(StringUtils.trimToEmpty(entityType), forumType)) {
                                         BaseForum forum = forumManager.getForumById(true, forumId);
                                         if (forum == null) {
                                                 errors.add(new DateManagerError("forum", resourceLoader.getFormattedMessage("error.item.not.found", resourceLoader.getString("tool.forums.item.name")), "forums", toolTitle, idx));
@@ -1489,7 +1477,7 @@ public class DateManagerServiceImpl implements DateManagerService {
                                                 forum.setCloseDate(closeDateTemp);
                                         }
                                 }
-                                forumManager.saveDiscussionForum(forum);
+                                forumManager.saveDiscussionForum(forum, Boolean.TRUE.equals(forum.getDraft()));
                         } else {
                                 DiscussionTopic topic = (DiscussionTopic) update.object;
                                 if(topic.getAvailabilityRestricted()) {
@@ -1558,7 +1546,7 @@ public class DateManagerServiceImpl implements DateManagerService {
 
 		String anncRef = announcementService.channelReference(siteId, SiteService.MAIN_CONTAINER);
 		String toolTitle = toolManager.getTool(DateManagerConstants.COMMON_ID_ANNOUNCEMENTS).getTitle();
-		AnnouncementMessageEdit announcement = null;
+		AnnouncementMessage announcement;
 		for (int i = 0; i < announcements.size(); i++) {
 			JSONObject jsonAnnouncement = (JSONObject)announcements.get(i);
 			int idx = Integer.parseInt(jsonAnnouncement.get(DateManagerConstants.JSON_IDX_PARAM_NAME).toString());
@@ -1594,7 +1582,7 @@ public class DateManagerServiceImpl implements DateManagerService {
 				}
 
 				AnnouncementChannel aChannel = announcementService.getAnnouncementChannel(anncRef);
-				announcement = aChannel.editAnnouncementMessage(announcementId);
+				announcement = aChannel.getAnnouncementMessage(announcementId);
 				if (announcement == null) {
 					errors.add(new DateManagerError("announcement", resourceLoader.getFormattedMessage("error.item.not.found", resourceLoader.getString("tool.announcements.item.name")), "announcements", toolTitle, idx));
 					continue;
@@ -1604,11 +1592,6 @@ public class DateManagerServiceImpl implements DateManagerService {
 			} catch(Exception e) {
 				errors.add(new DateManagerError(DateManagerConstants.JSON_OPENDATE_PARAM_NAME, resourceLoader.getString("error.uncaught"), "announcements", toolTitle, idx));
 				log.error("Error trying to validate Announcements {}", e.toString());
-
-				// Clear out the lock
-				if (announcement != null) {
-					announcementService.cancelMessage(announcement);
-				}
 			}
 		}
 		announcementValidate.setErrors(errors);
@@ -1627,29 +1610,40 @@ public class DateManagerServiceImpl implements DateManagerService {
                 }
 	}
 
-	@Override
-	public void updateAnnouncements(DateManagerValidation announcementValidate) {
-		String anncRef = announcementService.channelReference(getCurrentSiteId(), SiteService.MAIN_CONTAINER);
-                try {
-                        AnnouncementChannel aChannel = announcementService.getAnnouncementChannel(anncRef);
-                        for (DateManagerUpdate update : announcementValidate.getUpdates()) {
-                                AnnouncementMessageEdit msg = (AnnouncementMessageEdit) update.object;
-                                if (update.openDate != null) {				
-                                        msg.getPropertiesEdit().addProperty(AnnouncementService.RELEASE_DATE, timeService.newTime(Date.from(update.openDate).getTime()).toString());
-                                } else {
-                                        msg.getPropertiesEdit().removeProperty(AnnouncementService.RELEASE_DATE);
-                                }	
-                                if (update.dueDate != null) {
-                                        msg.getPropertiesEdit().addProperty(AnnouncementService.RETRACT_DATE, timeService.newTime(Date.from(update.dueDate).getTime()).toString());
-                                } else {
-                                        msg.getPropertiesEdit().removeProperty(AnnouncementService.RETRACT_DATE);		
-                                }				
-                                aChannel.commitMessage(msg, NotificationService.NOTI_IGNORE);
-                        }
-                } catch (Exception e) {
-                        log.warn("Announcement channel {} doesn't exist. {}", anncRef, e.toString());
+    @Override
+    public void updateAnnouncements(DateManagerValidation announcementValidate) {
+        String anncRef = announcementService.channelReference(getCurrentSiteId(), SiteService.MAIN_CONTAINER);
+
+        AnnouncementChannel aChannel;
+        try {
+            aChannel = announcementService.getAnnouncementChannel(anncRef);
+        } catch (Exception e) {
+            log.warn("Could not get announcement channel for update, {}", e.toString());
+            return;
+        }
+
+        for (DateManagerUpdate update : announcementValidate.getUpdates()) {
+            AnnouncementMessage announcement = (AnnouncementMessage) update.object;
+            AnnouncementMessageEdit edit = null;
+            try {
+                edit = aChannel.editAnnouncementMessage(announcement.getId());
+                if (update.openDate != null) {
+                    edit.getPropertiesEdit().addProperty(AnnouncementService.RELEASE_DATE, timeService.newTime(Date.from(update.openDate).getTime()).toString());
+                } else {
+                    edit.getPropertiesEdit().removeProperty(AnnouncementService.RELEASE_DATE);
                 }
-	}
+                if (update.dueDate != null) {
+                    edit.getPropertiesEdit().addProperty(AnnouncementService.RETRACT_DATE, timeService.newTime(Date.from(update.dueDate).getTime()).toString());
+                } else {
+                    edit.getPropertiesEdit().removeProperty(AnnouncementService.RETRACT_DATE);
+                }
+                aChannel.commitMessage(edit, NotificationService.NOTI_IGNORE);
+            } catch (Exception e) {
+                log.warn("Could not update announcement message {}, {}", announcement.getId(), e.toString());
+                if (edit != null) aChannel.cancelMessage(edit);
+            }
+        }
+    }
 
 	@Override
 	public JSONArray getLessonsForContext(String siteId) {
@@ -1998,9 +1992,7 @@ public class DateManagerServiceImpl implements DateManagerService {
 	 * Function that detect if there is any change or not in the sent tool
 	 * 
 	 * @param toolId - String - the tool Id
-	 * @param dateManagerValidation - DateManagerValidation - the validator used to update the object
-	 * 
-	 * @return boolean
+	 * @param columns - String[] - the columns
 	 */
 	public boolean isChanged(String toolId, String[] columns) {
 		String id = columns[0].replaceAll("\"", "");
@@ -2063,7 +2055,7 @@ public class DateManagerServiceImpl implements DateManagerService {
 		} else if (DateManagerConstants.COMMON_ID_GRADEBOOK.equals(toolId.replaceAll("\"", ""))) {
 			org.sakaiproject.grading.api.Assignment gbitem = gradingService.getAssignment(getCurrentSiteId(), getCurrentSiteId(), Long.parseLong(id));
 			if (columns[2] != null && columns[2].matches(".*\\d.*")) {
-				columns[2] = columns[2].replaceAll("\"", "").replace("/", "-");
+				columns[2] = columns[2].replaceAll("\"", "");
 				try {
 					LocalDate date;
 					if (columns[2].contains("T")) {

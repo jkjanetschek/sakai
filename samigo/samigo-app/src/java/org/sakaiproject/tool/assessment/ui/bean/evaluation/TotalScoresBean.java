@@ -24,12 +24,15 @@ package org.sakaiproject.tool.assessment.ui.bean.evaluation;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.faces.bean.ManagedBean;
@@ -66,12 +69,18 @@ import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedSectionData
 import org.sakaiproject.tool.assessment.data.dao.grading.AssessmentGradingData;
 import org.sakaiproject.tool.assessment.data.dao.grading.ItemGradingData;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.AnswerIfc;
+import org.sakaiproject.tool.assessment.data.ifc.assessment.PublishedAssessmentIfc;
+import org.sakaiproject.tool.assessment.data.ifc.assessment.SectionDataIfc;
+import org.sakaiproject.tool.assessment.data.ifc.assessment.ItemTextIfc;
 import org.sakaiproject.tool.assessment.data.ifc.assessment.EvaluationModelIfc;
-import org.sakaiproject.tool.assessment.data.ifc.shared.TypeIfc;
 import org.sakaiproject.tool.assessment.facade.AgentFacade;
 import org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacade;
+import org.sakaiproject.samigo.util.SamigoConstants;
 import org.sakaiproject.tool.assessment.services.GradingService;
+import org.sakaiproject.tool.assessment.services.PersistenceService;
 import org.sakaiproject.tool.assessment.services.assessment.PublishedAssessmentService;
+import org.sakaiproject.tool.assessment.services.assessment.StatisticsService;
+import org.sakaiproject.tool.assessment.services.assessment.StatisticsService.SubmissionOutcome;
 import org.sakaiproject.tool.assessment.shared.api.grading.GradingSectionAwareServiceAPI;
 import org.sakaiproject.tool.assessment.shared.impl.grading.GradingSectionAwareServiceImpl;
 import org.sakaiproject.tool.assessment.ui.bean.util.TotalScoresExportBean;
@@ -243,22 +252,31 @@ public class TotalScoresBean implements Serializable, PhaseAware {
 	}
 
   public boolean getIsOneSelectionType() {
-    if (this.getPublishedAssessment() == null) {
-      return false;
+    PublishedAssessmentData currentPublishedAssessment = this.getPublishedAssessment();
+    if (currentPublishedAssessment == null) {
+      String currentPublishedId = StringUtils.trimToNull(getPublishedId());
+      if (currentPublishedId != null && !"0".equals(currentPublishedId)) {
+        PublishedAssessmentFacade publishedAssessmentFacade = new PublishedAssessmentService().getPublishedAssessment(currentPublishedId);
+        if (publishedAssessmentFacade != null && publishedAssessmentFacade.getData() instanceof PublishedAssessmentData) {
+          currentPublishedAssessment = (PublishedAssessmentData) publishedAssessmentFacade.getData();
+          this.publishedAssessment = currentPublishedAssessment;
+        }
+      }
+    }
+
+    if (currentPublishedAssessment == null) {
+      return isOneSelectionType;
     } else {
-      for (Object sectionObject : this.getPublishedAssessment().getSectionArray()) {
+      for (Object sectionObject : currentPublishedAssessment.getSectionArray()) {
         PublishedSectionData sectionData = (PublishedSectionData) sectionObject;
         for (Object itemObject : sectionData.getItemArray()) {
           PublishedItemData item = (PublishedItemData) itemObject;
-          boolean isMultipleChoice = item.getTypeId().equals(TypeIfc.MULTIPLE_CHOICE);
-          boolean isSingleSelection = item.getTypeId().equals(TypeIfc.MULTIPLE_CORRECT_SINGLE_SELECTION);
-          boolean isTrueFalseQuestionType = item.getTypeId().equals(TypeIfc.TRUE_FALSE);
-          if (!isMultipleChoice && !isSingleSelection && !isTrueFalseQuestionType) {
-            return false;
+          if (isTallyableItemType(item.getTypeId())) {
+            return true;
           }
         }
       }
-      return true;
+      return false;
     }
   }
 
@@ -277,30 +295,41 @@ public class TotalScoresBean implements Serializable, PhaseAware {
       this.setResultsAlreadyCalculated(true);
       // Instance a new PublishedAssessmentService to get all the published Answer for each student
       PublishedAssessmentService pubAssessmentService = new PublishedAssessmentService();
-      Map publishedAnswerHash = pubAssessmentService.preparePublishedAnswerHash(pubAssessmentService.getPublishedAssessment(this.getPublishedId()));
+      PublishedAssessmentIfc publishedAssessmentData = pubAssessmentService.getPublishedAssessment(this.getPublishedId());
+      Map publishedAnswerHash = pubAssessmentService.preparePublishedAnswerHash(publishedAssessmentData);
       // Instance a new GradingService to get all the student responses
       GradingService gradingService = new GradingService();
+      StatisticsService statisticsService = new StatisticsService();
       Map<Long, List<Integer>> resultsByUser = new HashMap<>();
+      List<PublishedItemData> tallyableItems = getTallyableItems(publishedAssessmentData);
+      Map<Long, AnswerIfc> answersById = new HashMap<>();
+      for (Object answerObject : publishedAnswerHash.values()) {
+        AnswerIfc answer = (AnswerIfc) answerObject;
+        if (answer != null && answer.getId() != null) {
+          answersById.put(answer.getId(), answer);
+        }
+      }
       // For each agent (student) we will search the correct/incorrect/empty responses
       for (Object object : agents) {
         AgentResults agentResults = (AgentResults) object;
         if (agentResults.getAssessmentGradingId() != -1) {
-          // Getting the responses for that student (agentResults)
-          AssessmentGradingData assessmentGradingAux = gradingService.load(agentResults.getAssessmentGradingId().toString());
+          // Tallying needs item gradings only; skip attachment loading to avoid extra per-student DB work.
+          AssessmentGradingData assessmentGradingAux = gradingService.load(agentResults.getAssessmentGradingId().toString(), false);
           List<Integer> resultsAux = new ArrayList<>(Collections.nCopies(3, 0));
-          for (ItemGradingData item : assessmentGradingAux.getItemGradingSet()) {
-            if (item.getPublishedAnswerId() == null) { // If it does not have publishedAnswerId that means it is empty
+          Map<Long, List<ItemGradingData>> gradingByItem = groupGradingsByItem(assessmentGradingAux);
+          for (PublishedItemData item : tallyableItems) {
+            Long itemId = item.getItemId();
+            List<ItemGradingData> gradingList = gradingByItem.get(itemId);
+            if (hasRandomDrawPart && gradingList == null) {
+              continue;
+            }
+            SubmissionOutcome submissionOutcome = statisticsService.classifySubmission(item, gradingList, answersById);
+            if (submissionOutcome == SubmissionOutcome.CORRECT) {
+              resultsAux.set(0, resultsAux.get(0) + 1);
+            } else if (submissionOutcome == SubmissionOutcome.INCORRECT) {
+              resultsAux.set(1, resultsAux.get(1) + 1);
+            } else if (submissionOutcome == SubmissionOutcome.BLANK) {
               resultsAux.set(2, resultsAux.get(2) + 1);
-            } else { // If it has publishedAnswerId that means has response
-              // If it has response we will get the answer from publishedAnswerHash and if it is correct or incorrect
-              AnswerIfc answer = (AnswerIfc) publishedAnswerHash.get(item.getPublishedAnswerId());
-              if (!answer.getIsCorrect()) {
-                // For incorrect answers cases
-                resultsAux.set(1, ((int) resultsAux.get(1)) + 1);
-              } else {
-                // For correct answers cases
-                resultsAux.set(0, ((int) resultsAux.get(0)) + 1);
-              }
             }
           }
           resultsByUser.put(agentResults.getAssessmentGradingId(), resultsAux);
@@ -309,6 +338,50 @@ public class TotalScoresBean implements Serializable, PhaseAware {
       results = resultsByUser;
     }
     return results;
+  }
+
+  private boolean isTallyableItemType(Long typeId) {
+    return StatisticsService.supportsTotalScoresTally(typeId);
+  }
+
+  private List<PublishedItemData> getTallyableItems(PublishedAssessmentIfc publishedAssessmentData) {
+    List<PublishedItemData> tallyableItems = new ArrayList<>();
+    if (publishedAssessmentData == null) {
+      return tallyableItems;
+    }
+    for (Object sectionObject : publishedAssessmentData.getSectionArray()) {
+      SectionDataIfc sectionData = (SectionDataIfc) sectionObject;
+      for (Object itemObject : sectionData.getItemArray()) {
+        PublishedItemData item = (PublishedItemData) itemObject;
+        if (isTallyableItemType(item.getTypeId())) {
+          tallyableItems.add(item);
+        }
+      }
+    }
+    return tallyableItems;
+  }
+
+  private Map<Long, List<ItemGradingData>> groupGradingsByItem(AssessmentGradingData assessmentGradingData) {
+    Map<Long, List<ItemGradingData>> gradingByItem = new HashMap<>();
+    if (assessmentGradingData == null || assessmentGradingData.getItemGradingSet() == null) {
+      return gradingByItem;
+    }
+    for (ItemGradingData gradingData : (Set<ItemGradingData>) assessmentGradingData.getItemGradingSet()) {
+      if (gradingData == null) {
+        continue;
+      }
+      Long itemId = gradingData.getPublishedItemId();
+      if (itemId == null) {
+        continue;
+      }
+      List<ItemGradingData> gradingList = gradingByItem.get(itemId);
+      if (gradingList == null) {
+        gradingList = new ArrayList<>();
+        gradingByItem.put(itemId, gradingList);
+      }
+      gradingList.add(gradingData);
+    }
+    return gradingByItem;
   }
  
 	// Following three methods are for interface PhaseAware
@@ -921,21 +994,27 @@ public class TotalScoresBean implements Serializable, PhaseAware {
 
   private List getEnrollmentListForSelectedSections(int calledFrom, String siteId) {
     List enrollments;
+    
+    // Check if current user has privilege to assess all groups - if so, they should see all student submissions regardless of group restrictions
+    boolean hasAllGroupsPrivilege = PersistenceService.getInstance()
+        .getAuthzQueriesFacade()
+        .hasPrivilege(SamigoConstants.AUTHZ_ASSESSMENT_ALL_GROUPS, siteId);
+    
     if (calledFrom==CALLED_FROM_HISTOGRAM_LISTENER_STUDENT){
     	enrollments = getAvailableEnrollments(true, siteId);
     }
-    else if (this.getSelectedSectionFilterValue().trim().equals(this.ALL_SECTIONS_SELECT_VALUE)
-    		|| (calledFrom==CALLED_FROM_TOTAL_SCORE_LISTENER 
-    				&& "true".equalsIgnoreCase(anonymous)) 
-	    	|| (calledFrom==CALLED_FROM_QUESTION_SCORE_LISTENER 
-    	    		&& "true".equalsIgnoreCase(anonymous))
-    		|| (calledFrom==CALLED_FROM_HISTOGRAM_LISTENER 
-    	    		&& "true".equalsIgnoreCase(anonymous)) 
-    		|| (calledFrom==CALLED_FROM_NOTIFICATION_LISTENER
-	    	        && "true".equalsIgnoreCase(anonymous))
-    	    || (calledFrom==CALLED_FROM_EXPORT_LISTENER
-    	    	    && "true".equalsIgnoreCase(anonymous))) {
+    else if (calledFrom==CALLED_FROM_HISTOGRAM_LISTENER
+      || getSelectedSectionFilterValue().trim().equals(ALL_SECTIONS_SELECT_VALUE)
+      || (calledFrom==CALLED_FROM_TOTAL_SCORE_LISTENER && "true".equalsIgnoreCase(anonymous))
+      || (calledFrom==CALLED_FROM_QUESTION_SCORE_LISTENER && "true".equalsIgnoreCase(anonymous))
+      || (calledFrom==CALLED_FROM_NOTIFICATION_LISTENER && "true".equalsIgnoreCase(anonymous))
+      || (calledFrom==CALLED_FROM_EXPORT_LISTENER && "true".equalsIgnoreCase(anonymous))) {
+      // For instructors who have all groups privilege, get all available enrollments without group filtering
+      if (hasAllGroupsPrivilege) {
+        enrollments = getAvailableEnrollments(false, siteId);
+      } else {
         enrollments = getAllGroupsReleaseEnrollments(siteId);
+      }
     }
     else if (getSelectedSectionFilterValue().trim().equals(RELEASED_SECTIONS_GROUPS_SELECT_VALUE)) {
     	enrollments = getGroupReleaseEnrollments(siteId);
@@ -1198,27 +1277,26 @@ public class TotalScoresBean implements Serializable, PhaseAware {
         return !StringUtils.equals(searchString, defaultSearchString);
 	}
 	
+	/**
+	 * Normalize text for accent-insensitive search
+	 */
+	private String normalizeSearchText(String text) {
+		if (text == null) return null;
+		return java.text.Normalizer.normalize(text.toLowerCase(), java.text.Normalizer.Form.NFD)
+				.replaceAll("[\\u0300-\\u036f]", "");
+	}
+
 	public List findMatchingAgents(final String pattern) {
 		List filteredList = new ArrayList();
-		// name1 example: John Doe
-		StringBuilder name1;
-		// name2 example: Doe, John
-		StringBuilder name2;
+		String normalizedPattern = normalizeSearchText(pattern);
+
 		for(Iterator iter = allAgents.iterator(); iter.hasNext();) {
 			AgentResults result = (AgentResults)iter.next();
-			// name1 example: John Doe
-			name1 = new StringBuilder(result.getFirstName());
-			name1.append(" ");
-			name1.append(result.getLastName());
-			// name2 example: Doe, John
-			name2 = new StringBuilder(result.getLastName());
-			name2.append(", ");
-			name2.append(result.getFirstName());
-			if (result.getFirstName().toLowerCase().startsWith(pattern.toLowerCase()) ||
-				result.getLastName().toLowerCase().startsWith(pattern.toLowerCase()) ||
-				result.getAgentEid().toLowerCase().startsWith(pattern.toLowerCase()) ||
-				name1.toString().toLowerCase().startsWith(pattern.toLowerCase()) ||
-				name2.toString().toLowerCase().startsWith(pattern.toLowerCase())) {
+			String normalizedDisplayName = normalizeSearchText(result.getDisplayName());
+			String normalizedAgentEid = normalizeSearchText(result.getAgentEid());
+
+			if (normalizedDisplayName.contains(normalizedPattern) ||
+				normalizedAgentEid.startsWith(normalizedPattern)) {
 				filteredList.add(result);
 			}
 		}

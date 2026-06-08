@@ -8,7 +8,7 @@
     <parent>
         <artifactId>rubrics-base</artifactId>
         <groupId>org.sakaiproject.rubrics</groupId>
-        <version>25-SNAPSHOT</version>
+        <version>25.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -61,10 +61,6 @@
             <groupId>org.thymeleaf</groupId>
             <artifactId>thymeleaf-spring5</artifactId>
         </dependency>
-		<dependency>
-			<groupId>org.thymeleaf.extras</groupId>
-			<artifactId>thymeleaf-extras-java8time</artifactId>
-		</dependency>
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
