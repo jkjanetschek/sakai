@@ -285,6 +285,17 @@
             </tr>
             #end
 
+		#if ($isLessonsScrollEnabled)
+			<tr class="summary-lessonsscroll-enabled">
+				<th>
+					$tlang.getString("sinfo.lessonsscroll.name")
+				</th>
+				<td>
+					$tlang.getString("sinfo.lessonsscroll.enabled")
+				</td>
+			</tr>
+		#end
+
 		#if ($siteJoinable && $allowUnjoin)
 			<tr>
 				<th>

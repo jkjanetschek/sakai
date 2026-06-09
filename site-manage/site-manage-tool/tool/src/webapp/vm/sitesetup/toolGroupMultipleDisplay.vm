@@ -199,6 +199,15 @@
           <input type="checkbox" name="isSubPageNavEnabled" class="onoffswitch-checkbox" id="isSubPageNavEnabled" #if($isSubPageNavEnabled)checked="checked"#end>
       </div>
     </div>
+        <div class="lessonsScrollToggleArea">
+            <label class="onoffswitch-label" for="isLessonsScrollEnabled">
+                $tlang.getString("sinfo.lessonsscroll.allowForSite")
+            </label>
+            <div class="onoffswitch">
+                <input type="checkbox" name="isLessonsScrollEnabled" class="onoffswitch-checkbox"
+                       id="isLessonsScrollEnabled" #if($isLessonsScrollEnabled)checked="checked"#end>
+            </div>
+        </div>
     </div>
   </div> <!-- row -->
 </div> <!-- toolHolderWW -->

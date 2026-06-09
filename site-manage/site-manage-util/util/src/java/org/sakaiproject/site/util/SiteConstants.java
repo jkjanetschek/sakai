@@ -122,4 +122,12 @@ public class SiteConstants {
 
 	public static final String SAK_PROP_CLEAN_IMPORT_SITE = "clean.import.site";
 	public static final boolean SAK_PROP_CLEAN_IMPORT_SITE_DEFAULT = true;
+
+
+	//SAK-52363
+	public static final String LESSONS_SCROLL_SAKAI_PROP = "lessonbuilder.scrolltoitem.default";
+	public static final boolean LESSONS_SCROLL_ENABLED_DEFAULT = true;
+	public static final String LESSONS_SCROLL_SITE_PROP = "lessonbuilder-scroll-to-item";
+
+
 }

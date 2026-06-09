@@ -14,6 +14,24 @@ const ONE_KB = 1024;
 // give them a way out. Handler is set up in the html file.
 // Unload it once the page is fully loaded.
 
+// SAK-52363 per-site toggle
+const lessonsScrollToItemEnabled = !!document.getElementById('lessonsScrollToItemEnabled');
+
+function scrollToItemWhere(predicate) {
+  const item = [...document.querySelectorAll('.itemid')]
+    .find(predicate)
+      ?.closest('.item');
+  if (!item) return;
+
+  const section = item.closest('div.section');
+  if (section && section.offsetParent === null) {
+    $(section).show();
+    setCollapsedStatus($(section).prev('.sectionHeader'), false);
+    doIndents();
+  }
+  item.scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
 $(window).load(function () {
 
   window.onbeforeunload = null;
@@ -31,6 +49,25 @@ $(window).load(function () {
   if (questionToScrollTo) {
     sessionStorage.removeItem('question-submit-return-id');
     document.getElementById(questionToScrollTo).scrollIntoView(true);
+  }
+
+  // Scroll to last-edited item (item ID captured before form submit)
+  const scrollToItemId = sessionStorage.getItem('lessons-scroll-to-itemid');
+  if (scrollToItemId) {
+    sessionStorage.removeItem('lessons-scroll-to-itemid');
+      if (lessonsScrollToItemEnabled) {
+          scrollToItemWhere(el => el.textContent.trim() === scrollToItemId);
+      }
+  }
+
+  // Scroll to newly added item by diffing item IDs captured before the add submit
+  const existingIdsJson = sessionStorage.getItem('lessons-existing-itemids');
+  if (existingIdsJson) {
+    sessionStorage.removeItem('lessons-existing-itemids');
+      if (lessonsScrollToItemEnabled) {
+          const existingIds = new Set(JSON.parse(existingIdsJson));
+          scrollToItemWhere(el => !existingIds.has(el.textContent.trim()));
+      }
   }
 
   // Print the current page
@@ -161,6 +198,62 @@ $(document).ready(function () {
       // Store the question the student just answered and jump to it on new page load
       const qEl = e.target.parentElement.closest('[id]');
       qEl && sessionStorage.setItem('question-submit-return-id', qEl.id);
+    });
+  });
+
+  function storeEditTarget(inputId) {
+      if (!lessonsScrollToItemEnabled) return;
+    const itemId = document.getElementById(inputId)?.value?.trim();
+    if (itemId) sessionStorage.setItem('lessons-scroll-to-itemid', itemId);
+  }
+
+  function snapshotItemIds() {
+      if (!lessonsScrollToItemEnabled) return;
+    const ids = [...document.querySelectorAll('.itemid')].map(el => el.textContent.trim());
+    sessionStorage.setItem('lessons-existing-itemids', JSON.stringify(ids));
+  }
+
+  // Edit-only dialogs: hidden input always holds a real item ID when save is clicked.
+  const editButtonMap = {
+    'edit-item':            'item-id',
+    'edit-multimedia-item': 'multimedia-item-id',
+    'update-movie':         'movieEditId',
+    'update-question':      'questionEditId',
+    'update-comments':      'commentsEditId',
+    'update-student':       'studentEditId',
+  };
+
+  Object.entries(editButtonMap).forEach(([btnId, inputId]) => {
+    document.getElementById(btnId)?.addEventListener('click', () => storeEditTarget(inputId));
+  });
+
+  // Add-or-edit dialogs: hidden input is -1 for new items, real ID when editing.
+  const addOrEditButtonMap = {
+    'forum-summary-add-item': 'forumSummaryEditId',
+    'announcements-add-item': 'announcementsEditId',
+    'twitter-add-item':       'twitterEditId',
+  };
+
+  Object.entries(addOrEditButtonMap).forEach(([btnId, inputId]) => {
+    document.getElementById(btnId)?.addEventListener('click', () => {
+      const itemId = document.getElementById(inputId)?.value?.trim();
+      if (itemId && itemId !== '-1' && itemId !== '0') storeEditTarget(inputId);
+      else snapshotItemIds();
+    });
+  });
+
+  // Text items and checklists navigate to EditPage via .itemLink links rather than
+  // submitting a modal form. Capture the itemId from the link URL before leaving.
+  document.querySelectorAll('.itemLink').forEach(link => {
+    link.addEventListener('click', () => {
+        if (!lessonsScrollToItemEnabled) return;
+      try {
+        const itemId = new URL(link.href).searchParams.get('itemId');
+        if (itemId && itemId !== '0' && itemId !== '-1') {
+          sessionStorage.setItem('lessons-scroll-to-itemid', itemId);
+        }
+      } catch {
+      }
     });
   });
 
@@ -1073,7 +1166,14 @@ $(document).ready(function () {
     $(".add-before-param").click(function () {
 
       $(this).attr('href', fixAddBefore($(this).attr('href')));
+      snapshotItemIds();
       return true;
+    });
+
+    // Hidden-form adds (calendar, comments, student content) are triggered by
+    // programmatic .click() on the hidden submit button; capture on those clicks.
+    ['add-calendar', 'add-comments', 'add-student'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', snapshotItemIds);
     });
 
     /* RU Rubrics ********************************************* */

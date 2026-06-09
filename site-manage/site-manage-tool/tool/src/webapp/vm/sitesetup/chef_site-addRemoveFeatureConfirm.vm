@@ -246,6 +246,16 @@
         </p>
     #end
 
+    #if($!lessonsScrollStateKnown)
+        <p class="instruction">
+            #if($isLessonsScrollEnabled)
+                $tlang.getString("sinfo.lessonsscroll.confirmEnabled")
+            #else
+                $tlang.getString("sinfo.lessonsscroll.confirmDisabled")
+            #end
+        </p>
+    #end
+
     <form name="addRemoveFeaturnConfirmForm" id="addRemoveFeaturnConfirmForm" action="#toolForm("$action")" method="post">
 		<input type="hidden" name="cancelIndex" value="$continueIndex" />
 		<input type="hidden" name="back" value="$!backIndex" />

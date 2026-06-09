@@ -15,69 +15,19 @@
  */
 package org.sakaiproject.site.tool;
 
-import static org.sakaiproject.site.util.SiteConstants.*;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.Year;
-import java.time.ZoneId;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.Vector;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.velocity.tools.generic.SortTool;
 import org.sakaiproject.alias.api.Alias;
@@ -85,55 +35,21 @@ import org.sakaiproject.alias.api.AliasService;
 import org.sakaiproject.api.privacy.PrivacyManager;
 import org.sakaiproject.archive.api.ArchiveService;
 import org.sakaiproject.archive.api.ImportMetadata;
-import org.sakaiproject.authz.api.AuthzGroup;
-import org.sakaiproject.authz.api.AuthzGroupService;
-import org.sakaiproject.authz.api.AuthzPermissionException;
-import org.sakaiproject.authz.api.AuthzRealmLockException;
-import org.sakaiproject.authz.api.GroupFullException;
-import org.sakaiproject.authz.api.GroupNotDefinedException;
-import org.sakaiproject.authz.api.GroupProvider;
-import org.sakaiproject.authz.api.Member;
-import org.sakaiproject.authz.api.PermissionsHelper;
-import org.sakaiproject.authz.api.Role;
-import org.sakaiproject.authz.api.RoleAlreadyDefinedException;
-import org.sakaiproject.authz.api.SecurityAdvisor;
-import org.sakaiproject.authz.api.SecurityAdvisor.SecurityAdvice;
-import org.sakaiproject.authz.api.SecurityService;
-import org.sakaiproject.cheftool.Context;
-import org.sakaiproject.cheftool.JetspeedRunData;
-import org.sakaiproject.cheftool.PagedResourceActionII;
-import org.sakaiproject.cheftool.PortletConfig;
-import org.sakaiproject.cheftool.RunData;
-import org.sakaiproject.cheftool.VelocityPortlet;
+import org.sakaiproject.authz.api.*;
+import org.sakaiproject.cheftool.*;
 import org.sakaiproject.component.api.ServerConfigurationService;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.content.api.ContentCollection;
 import org.sakaiproject.content.api.ContentCollectionEdit;
 import org.sakaiproject.content.api.ContentHostingService;
-import org.sakaiproject.coursemanagement.api.AcademicSession;
-import org.sakaiproject.coursemanagement.api.CourseManagementService;
-import org.sakaiproject.coursemanagement.api.CourseOffering;
-import org.sakaiproject.coursemanagement.api.CourseSet;
-import org.sakaiproject.coursemanagement.api.Section;
+import org.sakaiproject.coursemanagement.api.*;
 import org.sakaiproject.coursemanagement.api.exception.IdNotFoundException;
-import org.sakaiproject.entity.api.ContentExistsAware;
-import org.sakaiproject.entity.api.Entity;
-import org.sakaiproject.entity.api.EntityManager;
-import org.sakaiproject.entity.api.EntityProducer;
-import org.sakaiproject.entity.api.EntityTransferrer;
-import org.sakaiproject.entity.api.Reference;
-import org.sakaiproject.entity.api.ResourceProperties;
-import org.sakaiproject.entity.api.ResourcePropertiesEdit;
+import org.sakaiproject.entity.api.*;
 import org.sakaiproject.entitybroker.DeveloperHelperService;
 import org.sakaiproject.event.api.EventTrackingService;
 import org.sakaiproject.event.api.NotificationService;
 import org.sakaiproject.event.api.SessionState;
-import org.sakaiproject.exception.IdInvalidException;
-import org.sakaiproject.exception.IdUnusedException;
-import org.sakaiproject.exception.IdUsedException;
-import org.sakaiproject.exception.ImportException;
-import org.sakaiproject.exception.InUseException;
-import org.sakaiproject.exception.PermissionException;
+import org.sakaiproject.exception.*;
 import org.sakaiproject.grading.api.GradingService;
 import org.sakaiproject.id.api.IdManager;
 import org.sakaiproject.importer.api.ImportDataSource;
@@ -149,67 +65,46 @@ import org.sakaiproject.rubrics.api.RubricsService;
 import org.sakaiproject.scoringservice.api.ScoringAgent;
 import org.sakaiproject.scoringservice.api.ScoringService;
 import org.sakaiproject.shortenedurl.api.ShortenedUrlService;
-import org.sakaiproject.site.api.Group;
-import org.sakaiproject.site.api.Site;
-import org.sakaiproject.site.api.SitePage;
-import org.sakaiproject.site.api.SiteService;
+import org.sakaiproject.site.api.*;
 import org.sakaiproject.site.api.SiteService.SelectionType;
 import org.sakaiproject.site.api.SiteService.SiteTitleValidationStatus;
 import org.sakaiproject.site.api.SiteService.SortType;
-import org.sakaiproject.site.api.ToolConfiguration;
 import org.sakaiproject.site.tool.MenuBuilder.SiteInfoActiveTab;
-import org.sakaiproject.site.util.Participant;
-import org.sakaiproject.site.util.SiteComparator;
-import org.sakaiproject.site.util.SiteConstants;
-import org.sakaiproject.site.util.SiteParticipantHelper;
-import org.sakaiproject.site.util.SiteSetupQuestionFileParser;
-import org.sakaiproject.site.util.SiteTextEditUtil;
-import org.sakaiproject.site.util.SiteTypeUtil;
-import org.sakaiproject.sitemanage.api.AffiliatedSectionProvider;
-import org.sakaiproject.sitemanage.api.PublishingSiteScheduleService;
-import org.sakaiproject.sitemanage.api.SectionField;
-import org.sakaiproject.sitemanage.api.SectionFieldProvider;
-import org.sakaiproject.sitemanage.api.SiteHelper;
-import org.sakaiproject.sitemanage.api.SiteManageConstants;
-import org.sakaiproject.sitemanage.api.SiteManageService;
-import org.sakaiproject.sitemanage.api.SiteTypeProvider;
-import org.sakaiproject.sitemanage.api.UnpublishingSiteScheduleService;
-import org.sakaiproject.sitemanage.api.UserNotificationProvider;
-import org.sakaiproject.sitemanage.api.model.SiteSetupQuestion;
-import org.sakaiproject.sitemanage.api.model.SiteSetupQuestionAnswer;
-import org.sakaiproject.sitemanage.api.model.SiteSetupQuestionService;
-import org.sakaiproject.sitemanage.api.model.SiteSetupUserAnswer;
-import org.sakaiproject.sitemanage.api.model.SiteTypeQuestions;
+import org.sakaiproject.site.util.*;
+import org.sakaiproject.sitemanage.api.*;
+import org.sakaiproject.sitemanage.api.model.*;
 import org.sakaiproject.thread_local.api.ThreadLocalManager;
 import org.sakaiproject.time.api.UserTimeService;
-import org.sakaiproject.tool.api.SessionManager;
-import org.sakaiproject.tool.api.Tool;
-import org.sakaiproject.tool.api.ToolException;
-import org.sakaiproject.tool.api.ToolManager;
-import org.sakaiproject.tool.api.ToolSession;
-import org.sakaiproject.user.api.Preferences;
-import org.sakaiproject.user.api.PreferencesService;
-import org.sakaiproject.user.api.User;
-import org.sakaiproject.user.api.UserDirectoryService;
-import org.sakaiproject.user.api.UserNotDefinedException;
+import org.sakaiproject.tool.api.*;
+import org.sakaiproject.user.api.*;
 import org.sakaiproject.userauditservice.api.UserAuditRegistration;
 import org.sakaiproject.userauditservice.api.UserAuditService;
-import org.sakaiproject.util.BaseResourcePropertiesEdit;
-import org.sakaiproject.util.FileItem;
-import org.sakaiproject.util.ParameterParser;
-import org.sakaiproject.util.RequestFilter;
-import org.sakaiproject.util.ResourceLoader;
-import org.sakaiproject.util.SortedIterator;
-import org.sakaiproject.util.Validator;
+import org.sakaiproject.util.*;
 import org.sakaiproject.util.api.FormattedText;
 import org.sakaiproject.util.api.LinkMigrationHelper;
 import org.sakaiproject.util.comparator.AlphaNumericComparator;
 import org.sakaiproject.util.comparator.GroupTitleComparator;
 import org.sakaiproject.util.comparator.ToolTitleComparator;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.extern.slf4j.Slf4j;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static org.sakaiproject.site.util.SiteConstants.*;
 
 /**
  * <p>
@@ -1309,6 +1204,8 @@ public class SiteAction extends PagedResourceActionII {
 
 		SubNavEnabler.removeFromState(state);
 
+        LessonsScrollEnabler.removeFromState(state);
+
 		state.removeAttribute(STATE_CREATE_FROM_ARCHIVE);
 
 	} // cleanState
@@ -1857,6 +1754,7 @@ public class SiteAction extends PagedResourceActionII {
 
 				MathJaxEnabler.addMathJaxSettingsToEditToolsContext(context, site, state);  // SAK-22384
 				SubNavEnabler.addToContext(context, site);
+                LessonsScrollEnabler.addToContext(context, site);
 				context.put("SiteTitle", site.getTitle());
 				context.put("existSite", Boolean.TRUE);
 				context.put("backIndex", SITE_INFO_TEMPLATE_INDEX);	// back to site info list page
@@ -2401,6 +2299,7 @@ public class SiteAction extends PagedResourceActionII {
 			MathJaxEnabler.addMathJaxSettingsToSiteInfoContext(context, site, state);
 			context.put("isGradebookGroupEnabledForSite", GradebookGroupEnabler.isEnabledForSite(site));
 			SubNavEnabler.addToContext(context, site);
+            LessonsScrollEnabler.addToContext(context, site);
 
 			return (String) getContext(data).get("template") + TEMPLATE[12];
 
@@ -2559,6 +2458,7 @@ public class SiteAction extends PagedResourceActionII {
 			context.put("isGradebookGroupEnabledForSite", GradebookGroupEnabler.isEnablingForSite(state));
 
 			SubNavEnabler.addToContext(context, site);
+            LessonsScrollEnabler.addToContext(context, site);
 
 			return (String) getContext(data).get("template") + TEMPLATE[13];
 		case 14:
@@ -2630,6 +2530,7 @@ public class SiteAction extends PagedResourceActionII {
 			// SAK-22384 mathjax support
 			MathJaxEnabler.addMathJaxSettingsToSiteInfoContext(context, site, state);
 			SubNavEnabler.addToContext(context, site);
+            LessonsScrollEnabler.addToContext(context, site);
 
 			return (String) getContext(data).get("template") + TEMPLATE[14];
 		case 15:
@@ -2653,6 +2554,7 @@ public class SiteAction extends PagedResourceActionII {
 			MathJaxEnabler.addMathJaxSettingsToEditToolsConfirmationContext(context, site, state, STATE_TOOL_REGISTRATION_TITLE_LIST);  // SAK-22384
 			GradebookGroupEnabler.addSettingsToEditToolsConfirmationContext(context, site, state);
 			SubNavEnabler.addStateToEditToolsConfirmationContext(context, state);
+            LessonsScrollEnabler.addStateToEditToolsConfirmationContext(context, state);
 
 			return (String) getContext(data).get("template") + TEMPLATE[15];
 		case 18:
@@ -7992,6 +7894,7 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 			state.setAttribute(STATE_TEMPLATE_INDEX, SiteConstants.SITE_INFO_TEMPLATE_INDEX);
 			GradebookGroupEnabler.removeFromState(state);
 			SubNavEnabler.removeFromState(state);
+            LessonsScrollEnabler.removeFromState(state);
 		} else if ("15".equals(currentIndex)) {
 			params = data.getParameters();
 			state.setAttribute(STATE_TEMPLATE_INDEX, params
@@ -8854,6 +8757,8 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 		GradebookGroupEnabler.prepareSiteForSave(Site, state);
 
 		SubNavEnabler.prepareSiteForSave(Site, state);
+
+        LessonsScrollEnabler.prepareSiteForSave(Site, state);
 
 		if (state.getAttribute(STATE_MESSAGE) == null) {
 			try {
@@ -12243,6 +12148,7 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 		updateSite = MathJaxEnabler.prepareMathJaxToolSettingsForSave(site, state);
 		updateSite = GradebookGroupEnabler.prepareSiteForSave(site, state) || updateSite;
 		updateSite = SubNavEnabler.prepareSiteForSave(site, state) || updateSite;
+        updateSite = LessonsScrollEnabler.prepareSiteForSave(site, state) || updateSite;
 		if (updateSite) {
 			commitSite(site);
 		}
@@ -13128,6 +13034,7 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 		state.removeAttribute(STATE_TOOL_REGISTRATION_SELECTED_LIST);
 		GradebookGroupEnabler.removeFromState(state);
 		SubNavEnabler.removeFromState(state);
+        LessonsScrollEnabler.removeFromState(state);
 	}
 
 	private List orderToolIds(SessionState state, String type, List<String> toolIdList, boolean synoptic) {
@@ -13336,6 +13243,7 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 			// continue
 			MathJaxEnabler.applySettingsToState(state, params);  // SAK-22384
 			SubNavEnabler.applySettingsToState(state, params);
+            LessonsScrollEnabler.applySettingsToState(state, params);
 
 			doContinue(data);
 		} else if (option.equalsIgnoreCase("back")) {

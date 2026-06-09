@@ -32,20 +32,15 @@
 
 package org.sakaiproject.lessonbuildertool.tool.producers;
 
-import org.sakaiproject.lessonbuildertool.api.AcknowledgeService;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.sakaiproject.authz.api.AuthzGroup;
-import org.sakaiproject.authz.api.AuthzGroupService;
-import org.sakaiproject.authz.api.Member;
-import org.sakaiproject.authz.api.SecurityService;
+import org.sakaiproject.authz.api.*;
 import org.sakaiproject.component.cover.ComponentManager;
 import org.sakaiproject.component.cover.ServerConfigurationService;
-import org.sakaiproject.util.IframeUrlUtil;
-import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.content.api.ContentCollection;
+import org.sakaiproject.content.api.ContentHostingService;
 import org.sakaiproject.content.api.ContentResource;
 import org.sakaiproject.entity.api.ResourceProperties;
 import org.sakaiproject.event.api.UsageSession;
@@ -53,39 +48,23 @@ import org.sakaiproject.event.cover.UsageSessionService;
 import org.sakaiproject.exception.IdUnusedException;
 import org.sakaiproject.exception.PermissionException;
 import org.sakaiproject.exception.TypeException;
-import org.sakaiproject.lessonbuildertool.ChecklistItemStatus;
-import org.sakaiproject.lessonbuildertool.ChecklistItemStatusImpl;
-import org.sakaiproject.lessonbuildertool.SimpleChecklistItem;
-import org.sakaiproject.lessonbuildertool.SimplePage;
-import org.sakaiproject.lessonbuildertool.SimplePageComment;
-import org.sakaiproject.lessonbuildertool.SimplePageItem;
-import org.sakaiproject.lessonbuildertool.SimplePageLogEntry;
-import org.sakaiproject.lessonbuildertool.SimplePagePeerEvalResult;
-import org.sakaiproject.lessonbuildertool.SimplePageQuestionAnswer;
-import org.sakaiproject.lessonbuildertool.SimplePageQuestionResponse;
-import org.sakaiproject.lessonbuildertool.SimplePageQuestionResponseTotals;
-import org.sakaiproject.lessonbuildertool.SimpleStudentPage;
+import org.sakaiproject.lessonbuildertool.*;
+import org.sakaiproject.lessonbuildertool.api.AcknowledgeService;
 import org.sakaiproject.lessonbuildertool.model.SimplePageToolDao;
-import org.sakaiproject.lessonbuildertool.service.BltiInterface;
-import org.sakaiproject.lessonbuildertool.service.GradebookIfc;
-import org.sakaiproject.lessonbuildertool.service.LessonBuilderAccessService;
-import org.sakaiproject.lessonbuildertool.service.LessonEntity;
+import org.sakaiproject.lessonbuildertool.service.*;
 import org.sakaiproject.lessonbuildertool.tool.beans.SimplePageBean;
 import org.sakaiproject.lessonbuildertool.tool.beans.SimplePageBean.GroupEntry;
 import org.sakaiproject.lessonbuildertool.tool.beans.SimplePageBean.Status;
 import org.sakaiproject.lessonbuildertool.tool.evolvers.SakaiFCKTextEvolver;
-import org.sakaiproject.lessonbuildertool.tool.view.CommentsGradingPaneViewParameters;
-import org.sakaiproject.lessonbuildertool.tool.view.CommentsViewParameters;
-import org.sakaiproject.lessonbuildertool.tool.view.ExportCCViewParameters;
-import org.sakaiproject.lessonbuildertool.tool.view.FilePickerViewParameters;
-import org.sakaiproject.lessonbuildertool.tool.view.GeneralViewParameters;
-import org.sakaiproject.lessonbuildertool.tool.view.QuestionGradingPaneViewParameters;
+import org.sakaiproject.lessonbuildertool.tool.view.*;
 import org.sakaiproject.lessonbuildertool.util.LessonConditionUtil;
 import org.sakaiproject.lessonbuildertool.util.SimplePageItemUtilities;
 import org.sakaiproject.memory.api.Cache;
 import org.sakaiproject.memory.api.MemoryService;
 import org.sakaiproject.portal.util.PortalUtils;
+import org.sakaiproject.site.api.Group;
 import org.sakaiproject.site.api.SitePage;
+import org.sakaiproject.site.util.SiteConstants;
 import org.sakaiproject.time.api.UserTimeService;
 import org.sakaiproject.tool.api.Placement;
 import org.sakaiproject.tool.api.Session;
@@ -95,6 +74,7 @@ import org.sakaiproject.tool.cover.SessionManager;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.user.cover.UserDirectoryService;
+import org.sakaiproject.util.IframeUrlUtil;
 import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.api.FormattedText;
 import org.sakaiproject.util.comparator.UserSortNameComparator;
@@ -130,9 +110,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
-import org.sakaiproject.authz.api.SecurityAdvisor;
-import org.sakaiproject.lessonbuildertool.service.AssignmentEntity;
-import org.sakaiproject.site.api.Group;
 
 /**
  * This produces the primary view of the page. It also handles the editing of
@@ -1156,6 +1133,15 @@ public class ShowPageProducer implements ViewComponentProducer, DefaultView, Nav
 			.decorate(new UIFreeAttributeDecorator("value", String.valueOf(placement.getId())));
 		UIOutput.make(tofill, "lessonsSubnavItemId")
 			.decorate(new UIFreeAttributeDecorator("value", String.valueOf(pageItem.getId())));
+
+		// SAK-52363  per-site property overrides the instance default
+		String scrollProp = simplePageBean.getCurrentSite().getProperties().getProperty(SiteConstants.LESSONS_SCROLL_SITE_PROP);
+        boolean scrollEnabled = scrollProp != null ? Boolean.parseBoolean(scrollProp)
+				: ServerConfigurationService.getBoolean(SiteConstants.LESSONS_SCROLL_SAKAI_PROP, SiteConstants.LESSONS_SCROLL_ENABLED_DEFAULT);
+        if (scrollEnabled) {
+            UIOutput.make(tofill, "lessonsScrollToItemEnabled")
+                    .decorate(new UIFreeAttributeDecorator("value", "true"));
+        }
 
 		String currentPageId = String.valueOf(simplePageBean.getCurrentPage().getPageId());
 		UIOutput.make(tofill, "lessonsCurrentPageId")
