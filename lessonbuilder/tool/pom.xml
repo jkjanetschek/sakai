@@ -194,12 +194,7 @@
             <version>3.7.0</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>edu.mci.sakai</groupId>
-            <artifactId>mci-designer-gateway-api</artifactId>
-            <version>25-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
+
         <dependency>
             <groupId>org.sakaiproject.sitemanage</groupId>
             <artifactId>sakai-site-manage-util</artifactId>
