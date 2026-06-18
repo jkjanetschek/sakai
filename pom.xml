@@ -127,10 +127,10 @@
                 <module>webservices</module>
                 <module>wicket</module>
                 <module>admin-bulk-user-membership</module>
-<!--                <module>../sakai-mci-rss2</module>-->
-<!--                <module>../sakai-bbb-tool</module>-->
-<!--                <module>../sakai-designer-gateway</module>-->
-<!--                <module>../sakai-jupyterhub-api</module>-->
+                <module>../sakai-mci-rss2</module>
+                <module>../sakai-bbb-tool</module>
+                <module>../sakai-designer-gateway</module>
+                <module>../sakai-jupyterhub-api</module>
             </modules>
         </profile>
         <profile>
