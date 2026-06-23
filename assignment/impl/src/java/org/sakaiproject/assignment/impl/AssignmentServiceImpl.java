@@ -5909,31 +5909,35 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
             Assignment a = (org.sakaiproject.assignment.api.model.Assignment) it.next();
             removeAssociatedTaggingItem(a);
 
-            // remove rubric association if there is one
-            //noch notwendig??????  hard delete durch tool rubric selber
-            //        rubricsService.deleteRubricAssociation(RubricsConstants.RBCS_TOOL_ASSIGNMENT, a.getId());
-
-
             //release locks
             Collection<String> groups = a.getGroups();
             Site site = null;
-            try{
+            try {
                 site = siteService.getSite(siteId);
                 for (String reference : groups) {
                     Group group = site.getGroup(reference);
                     if (group != null) {
-                        group.setLockForReference("/assignment/a/"+siteId+"/"+a.getId(), AuthzGroup.RealmLockMode.NONE);
-                        authzGroupService.save(authzGroupService.getAuthzGroup(group.getReference()));
+                        try {
+                            AuthzGroup authzGroup = authzGroupService.getAuthzGroup(group.getReference());
+                            authzGroup.setLockForReference("/assignment/a/"+siteId+"/"+a.getId(), AuthzGroup.RealmLockMode.NONE);
+                            authzGroupService.save(authzGroup);
+                        } catch (GroupNotDefinedException | AuthzPermissionException e) {
+                            log.error("GroupNotDefinedException: " + String.valueOf(e));
+                        }
                     }
                 }
-                // siteService.save(siteService.getSite(a.getContext()));
             } catch (IdUnusedException e){
                 log.error("IdUnusedException: " + String.valueOf(e));
-            } catch (AuthzPermissionException e){
-                log.error("AuthzPermissionException: " + String.valueOf(e));
-            } catch (GroupNotDefinedException e){
-                log.error("GroupNotDefinedException: " + String.valueOf(e));
             }
+
+            // workaround: some assignments have orphaned authz groups locks TODO: remove if root cause is fixed & old data removed
+            List<AuthzGroup> potentialOrphanedAuthzGroups = authzGroupService.getAuthzGroups("/site/" + siteId + "/group/",null);
+            potentialOrphanedAuthzGroups.forEach(g -> {
+                g.getRealmLocks().stream().filter(l -> l[0].contains("/assignment/a/"+siteId+"/"))
+                        .forEach(l -> g.setLockForReference("/assignment/a/"+siteId+"/"+a.getId(), AuthzGroup.RealmLockMode.NONE));
+            });
+
+
 
 
             submissionAttachmentReferences.addAll(a.getSubmissions().stream()
@@ -5956,7 +5960,6 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
         }
 
         List<String> subAttachmentsNotlinkedToSiteId =  submissionAttachmentReferences.stream().filter(ref -> !ref.contains("/attachment/" + siteId + "/Assignments/")).collect(Collectors.toList());
-        //  deleteAssignmentAndAllReferences()
         //remove attachements
         List<ContentResource> resources = contentHostingService.getAllResources("/attachment/" + siteId + "/Assignments/");  // /attachment/Course-ID-SLVA-32936/Assignments/7e00e547-4357-4d81-86ec-3b77100f12dd/Peer Review_Assignment 2_Feedback rubric.xlsx
         List<String> combinedResourcesIds =  Stream.concat(
@@ -5977,7 +5980,8 @@ public class AssignmentServiceImpl implements AssignmentService, EntityTransferr
         cleanupCollection("/attachment/" + siteId + "/Assignments/");
         subAttachmentsNotlinkedToSiteId.forEach(this::cleanupCollection);
 
-    } //harddelete
+    }
+
 
 
     private void cleanupCollection(String id) {
