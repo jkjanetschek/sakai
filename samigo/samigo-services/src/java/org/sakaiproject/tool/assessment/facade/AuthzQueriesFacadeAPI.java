@@ -66,5 +66,5 @@ public interface AuthzQueriesFacadeAPI
 
   public boolean checkMembership(String siteId);
   public void hardDeleteAuthzData(String agentId);
-  public void hardDeleteAuthorizationByQualifierID(String qualifierId);
+
 }

@@ -1245,6 +1245,12 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
             try {
                 contentHostingService.removeResource( attachment.getAttachmentId());
             } catch  (PermissionException  | InUseException | TypeException | IdUnusedException e) {
+                // IdUnusedException can occur spuriously when an MFR_ATTACHMENT_T row has both
+                // m_surrogateKey (message FK) and t_surrogateKey (topic FK) set simultaneously.
+                // The same attachment then appears in both message.getAttachments() and
+                // topic.getAttachments(), so removeResource() is called twice for the same content
+                // resource ID. The first call succeeds; the second finds nothing and throws
+                // IdUnusedException. The forum/topic deletion itself still completes successfully.
                 log.warn("Could not delete attachment with id {} due to {}", attachment.getAttachmentId(), e.toString());
             }
         }

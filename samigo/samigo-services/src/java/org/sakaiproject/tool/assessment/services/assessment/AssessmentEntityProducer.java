@@ -963,14 +963,16 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
 			log.info("assessment-Title: " + data.getAgentIdString() + " id: " + data.getQualifierId());
 			//	AssessmentIfc assessment = assessmentService.getAssessment(data.getQualifierId());
 			assessmentService.hardDeleteAssessment(data.getQualifierId());
-			assessmentService.getAuthzQueriesFacade().hardDeleteAuthorizationByQualifierID(data.getQualifierId());
+
 		}
 		List<AuthorizationData> authData2 = assessmentService.getAuthzQueriesFacade().getAuthorizationByAgentAndFunction(siteId, "OWN_PUBLISHED_ASSESSMENT");
 		for(AuthorizationData data: authData2){
 			log.info("publishedAssessemnt-Title: " + data.getAgentIdString() + " id: " + data.getQualifierId());
 			//delete grading data
 			gradingService.hardDeleteGradingData(data.getQualifierId());
-			//release locks
+			// Release  locks
+			// Note: getPublishedAssessment() may log a "No site for id" WARN from getGroupsForSite(). This
+			// is expected during hard delete for older data: groups may have been deleted for a assessment with access control = release to group
 			try{
 				PublishedAssessmentFacade pubAss = publishedAssessmentService.getPublishedAssessment(data.getQualifierId());
 				Map<String,String> map = pubAss.getReleaseToGroups();
@@ -982,23 +984,7 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
 						}
 					}
 				}
-/*
-				map.forEach((k, v) -> {
-					Group group = finalSite.getGroup(k.toString());
-					log.info("get Group: " + k);
-					if (group != null) {
-						log.info("set lock for pubAss " + pubAss.getPublishedAssessmentId().toString());
-						group.setLockForReference(pubAss.getPublishedAssessmentId().toString(), AuthzGroup.RealmLockMode.NONE);
-						try {
-							authzGroupService.save(authzGroupService.getAuthzGroup(group.getReference()));
-						} catch (GroupNotDefinedException e) {
-							log.error("GroupNotDefinedException: " + e);
-						} catch (AuthzPermissionException e) {
-							log.error("AuthzPermissionException: " + e);
-						}
-					}
-				});
-				*/
+
 				Optional.ofNullable(pubAss.getStartDate())
 						.filter(date -> date.after(new Date()))
 						.ifPresent(date->{
@@ -1020,7 +1006,6 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
 
 
 			publishedAssessmentService.hardDeletePublishedAssessment(data.getQualifierId());
-			assessmentService.getAuthzQueriesFacade().hardDeleteAuthorizationByQualifierID(data.getQualifierId());
 		}
 
 
@@ -1030,18 +1015,14 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
 		//delete Favorite Col choices
 		assessmentService.hardDeleteFavoriteColChoices(siteId);
 
-		//delete authz data
-		/*
+		//delete any authz data for the site and its groups
 		assessmentService.getAuthzQueriesFacade().hardDeleteAuthzData(siteId);
-        Collection<org.sakaiproject.site.api.Group> groups = site.getGroups();
-		if (groups !=  null){
-            for(org.sakaiproject.site.api.Group group : groups){
+		Collection<org.sakaiproject.site.api.Group> groups = site.getGroups();
+		if (groups != null) {
+			for (org.sakaiproject.site.api.Group group : groups) {
 				assessmentService.getAuthzQueriesFacade().hardDeleteAuthzData(group.getId());
 			}
 		}
-
-		 */
-
 
 		//delete attachments
 		String attachments = "/attachment/" + siteId + "/Tests _ Quizzes/";
@@ -1049,12 +1030,8 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
 		String attachments3 = "/content/private/samigoDocs/" +  siteId + "/";
 		String attachments4 = "/private/samigoDocs/" + siteId + "/";
 
-
-
 		//TODO where does this come from? sakai 12? german translation?
 		String attachmentsGermanPrefix = "/attachment/" + siteId + "/Prüfungen _ Tests/";
-
-
 
 
 		contentHostingService.hardDeleteResources(attachments);
@@ -1069,11 +1046,6 @@ public class AssessmentEntityProducer implements EntityTransferrer, EntityProduc
 		contentHostingService.removeCollectionRecursive(attachments3);
 		contentHostingService.removeCollectionRecursive(attachments4);
 		contentHostingService.removeCollectionRecursive(attachmentsGermanPrefix);
-
-
-
-
-
 
 	}
 }

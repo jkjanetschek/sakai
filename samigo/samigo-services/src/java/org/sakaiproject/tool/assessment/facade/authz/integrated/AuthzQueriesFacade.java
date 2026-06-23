@@ -318,38 +318,6 @@ public class AuthzQueriesFacade extends HibernateDaoSupport implements AuthzQuer
     }
 
 
-  public void hardDeleteAuthorizationByQualifierID(String qualifierId) {
-    Session session = getHibernateTemplate().getSessionFactory().getCurrentSession();
-    CriteriaBuilder cb = session.getCriteriaBuilder();
-    CriteriaDelete<AuthorizationData> delete = cb.createCriteriaDelete(AuthorizationData.class);
-    Root<AuthorizationData> authorizationData = delete.from(AuthorizationData.class);
-    delete.where(cb.equal(authorizationData.get("qualifierId"),qualifierId));
-    try {
-      session.createQuery(delete).executeUpdate();
-    } catch (HibernateException e) {
-      log.warn("Could not delete samigo authz data for qualifierId: {}; {}", qualifierId, e.getMessage());
-    }
-
-  }
-
-
-// TODO REMOVE
- // same as hardDeleteAuthzData?
-  /*
-  public void hardDeleteGroupAuthzData(String groupId) {
-    Session session = getHibernateTemplate().getSessionFactory().getCurrentSession();
-
-    try {
-      session.createQuery("delete from AuthorizationData where agentId = :id")
-              .setString("id", groupId)
-              .executeUpdate();
-      session.flush();
-    } catch (HibernateException e) {
-      log.error("Error hard delete samigo group Authz Data " + e);
-    }
-  }
-   */
-
 
 
 }
