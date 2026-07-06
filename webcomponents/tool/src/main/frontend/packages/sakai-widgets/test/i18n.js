@@ -37,3 +37,15 @@ grades=Grades
 announcments=Announcements
 widget_title=Add a widget here
 `;
+
+export const onboardingI18nUrl = /getI18nProperties.*onboarding-courses$/;
+
+export const onboardingI18n = `
+widget_title=Onboarding Courses
+no_courses=You have no onboarding courses assigned.
+no_course=This site is not part of your onboarding courses.
+due_date=Due
+status_not_started=Not Started
+status_in_progress=In Progress
+status_completed=Completed
+`;
