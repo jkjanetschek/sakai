@@ -1,0 +1,547 @@
+<title>Web Components, Sakai Widgets &amp; the Onboarding Courses Widget</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --code-bg: #070c16;
+    --text: #e2e8f0;
+    --text-mid: #94a3b8;
+    --text-dim: #64748b;
+    --accent-blue: #2496ed;
+    --accent-bright: #277fe0;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+    --sans: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0 0 80px;
+  }
+
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(17, 24, 39, 0.97);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; gap: 6px;
+    height: 46px;
+    overflow-x: auto;
+    backdrop-filter: blur(8px);
+  }
+  nav a {
+    font-family: var(--sans); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); white-space: nowrap;
+    padding: 4px 10px; border-radius: 4px;
+    transition: color 0.15s, background 0.15s; text-decoration: none;
+  }
+  nav a:hover, nav a.active { color: var(--text); background: var(--surface2); }
+  .nav-brand {
+    color: var(--text) !important; font-size: 12px !important; background: none !important;
+    margin-right: 12px; border-right: 1px solid var(--border); padding-right: 16px !important;
+    font-weight: 800 !important;
+  }
+
+  .hero { padding: 52px 24px 36px; }
+  .hero h1 {
+    font-family: var(--sans); font-weight: 800; letter-spacing: -0.01em;
+    font-size: clamp(26px, 4vw, 42px); color: var(--text); margin: 0 0 14px;
+    text-wrap: balance; max-width: 850px;
+  }
+  .hero-sub { color: var(--text-mid); font-size: 15px; margin: 0 0 18px; max-width: 700px; }
+  .hero-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 4px 10px;
+    border-radius: 3px; text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .badge-blue  { background: #0d2035; color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+  .badge-yellow { background: #1a1a0d; color: #facc15; border: 1px solid #facc15; }
+  .badge-green { background: #0d1a0d; color: var(--green); border: 1px solid var(--green); }
+
+  main { padding: 0 24px; display: flex; flex-direction: column; gap: 40px; max-width: 1200px; margin: 0 auto; }
+
+  section {
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    scroll-margin-top: 60px;
+  }
+  section[id]:target { animation: target-flash 1s ease-out; }
+  @keyframes target-flash { from { background: rgba(36,150,237,0.12); } to { background: transparent; } }
+
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 20px;
+  }
+  .section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .section-header h2 {
+    font-family: var(--sans); font-size: 13px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.1em; margin: 0;
+  }
+  .section-header .section-tag {
+    margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+  }
+
+  .section-body { background: var(--surface); padding: 20px; display: grid; gap: 16px; grid-template-columns: 1fr; }
+  .cols-2 { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+  @media (max-width: 860px) { .cols-2 { grid-template-columns: minmax(0,1fr); } }
+
+  .card {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px; min-width: 0; overflow: hidden;
+  }
+  .card h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-mid);
+    margin: 0 0 12px; font-weight: 700;
+  }
+  .card p { color: var(--text-mid); margin: 0 0 10px; font-size: 13px; }
+  .card p:last-child { margin-bottom: 0; }
+  .card code:not(pre code) {
+    font-family: var(--mono); font-size: 11.5px; background: #0d1525; color: #93c5fd;
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 14px 16px; overflow-x: auto; max-width: 100%; box-sizing: border-box;
+    font-family: var(--mono); font-size: 12px; line-height: 1.6; margin: 0;
+  }
+  pre + p, p + pre { margin-top: 10px; }
+  .kw { color: #c4b5fd; } .ty { color: #7dd3fc; } .fn { color: #86efac; }
+  .st { color: #fca5a5; } .cm { color: #4a5a6a; } .nu { color: #fde68a; }
+  .path { font-family: var(--mono); font-size: 11.5px; color: #7dd3fc; }
+
+  table { border-collapse: collapse; width: 100%; }
+  thead th {
+    text-align: left; color: var(--text-dim); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.07em; text-transform: uppercase; border-bottom: 1px solid var(--border);
+    padding: 7px 8px;
+  }
+  tbody td { padding: 7px 8px; border-bottom: 1px solid #131c2e; font-size: 12.5px; color: var(--text-mid); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: #7dd3fc; font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+
+  .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .flow-box {
+    padding: 6px 12px; border-radius: 5px; font-weight: 600; font-size: 12px;
+    font-family: var(--mono); white-space: nowrap;
+  }
+  .flow-arrow { color: var(--text-dim); font-size: 15px; }
+
+  .hier { display: flex; flex-direction: column; gap: 0; font-family: var(--mono); font-size: 12.5px; }
+  .hier-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .hier-indent { color: var(--text-dim); }
+  .hier-name { color: var(--text); font-weight: 600; }
+  .hier-note { color: var(--text-dim); font-family: var(--sans); font-size: 11.5px; }
+
+  .steps { counter-reset: step; display: flex; flex-direction: column; gap: 0; }
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .step:last-child { border-bottom: none; padding-bottom: 0; }
+  .step:first-child { padding-top: 0; }
+  .step::before {
+    counter-increment: step; content: counter(step);
+    width: 28px; height: 28px; border-radius: 50%; background: var(--surface2);
+    border: 1px solid var(--green); color: var(--green); font-family: var(--mono); font-weight: 700;
+    font-size: 12px; display: flex; align-items: center; justify-content: center;
+  }
+  .step-body h4 { margin: 3px 0 8px; font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .step-body p { color: var(--text-mid); font-size: 13px; margin: 0 0 10px; }
+  .step-body p:last-child { margin-bottom: 0; }
+
+  .pill {
+    font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; display: inline-block;
+  }
+  .pill-info  { background: #0c1a3a; color: #7dd3fc; border: 1px solid #1d4070; }
+  .pill-warn  { background: #1c1204; color: var(--yellow); border: 1px solid #713f12; }
+
+  footer { padding: 40px 24px 0; text-align: center; color: var(--text-dim); font-size: 12px; }
+  footer a { color: var(--accent-bright); }
+
+  ::selection { background: rgba(36,150,237,0.35); }
+</style>
+
+<nav>
+  <span class="nav-brand">Onboarding Widget Guide</span>
+  <a href="#components-101">Web Components 101</a>
+  <a href="#widget-architecture">Widget Architecture</a>
+  <a href="#build-guide">Build Your Own</a>
+</nav>
+
+<header class="hero">
+  <h1>Web components, Sakai's widget system, and the Onboarding Courses widget</h1>
+  <p class="hero-sub">A from-scratch introduction to custom elements and Lit, an accurate map of how Sakai's dashboard widgets actually work today, and a numbered walkthrough of the real "Onboarding Courses" widget shipped alongside this guide.</p>
+  <div class="hero-badges">
+    <span class="badge badge-yellow">Lit 3</span>
+    <span class="badge badge-blue">Sakai webapi</span>
+    <span class="badge badge-green">Worked example: onboarding-courses</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ SECTION A ============ -->
+  <section id="components-101">
+    <div class="section-header" style="background:#1a1a0d;border-bottom:1px solid #3a3a10;">
+      <span class="section-dot" style="background:#facc15;"></span>
+      <h2 style="color:#facc15;">A · Web Components 101</h2>
+      <span class="section-tag">for developers new to custom elements</span>
+    </div>
+    <div class="section-body">
+
+      <div class="card">
+        <h3>Custom Elements — a tag you defined</h3>
+        <p>A custom element is a class that extends <code>HTMLElement</code> (or a subclass of it) and is registered with the browser under a hyphenated tag name. Once registered, the browser instantiates your class every time it parses that tag — same as it does for <code>&lt;video&gt;</code> or <code>&lt;select&gt;</code>.</p>
+        <pre><span class="kw">class</span> <span class="ty">HelloBadge</span> <span class="kw">extends</span> <span class="ty">HTMLElement</span> {
+  <span class="fn">connectedCallback</span>() {
+    <span class="kw">this</span>.innerHTML = <span class="st">`&lt;strong&gt;Hello, ${<span class="kw">this</span>.getAttribute(<span class="st">"name"</span>)}&lt;/strong&gt;`</span>;
+  }
+}
+customElements.<span class="fn">define</span>(<span class="st">"hello-badge"</span>, HelloBadge);
+<span class="cm">// &lt;hello-badge name="Sakai"&gt;&lt;/hello-badge&gt; now renders itself</span></pre>
+        <p>The hyphen in the tag name is mandatory — it's how the HTML parser tells your element apart from a future native one.</p>
+      </div>
+
+      <div class="card">
+        <h3>Shadow DOM — style walls</h3>
+        <p>Calling <code>this.attachShadow({'{'} mode: "open" {'}'})</code> gives an element its own mini-DOM tree. CSS written inside a shadow root can't leak out, and page CSS can't leak in (except through inherited properties and CSS custom properties, which do cross the boundary on purpose — that's how Sakai widgets expose theme hooks like <code>--sakai-dashboard-widget-bg-color</code>).</p>
+        <pre><span class="kw">class</span> <span class="ty">HelloBadge</span> <span class="kw">extends</span> <span class="ty">HTMLElement</span> {
+  <span class="fn">constructor</span>() {
+    <span class="kw">super</span>();
+    <span class="kw">this</span>.attachShadow({ mode: <span class="st">"open"</span> });
+    <span class="kw">this</span>.shadowRoot.innerHTML = <span class="st">`&lt;style&gt;strong { color: teal; }&lt;/style&gt;&lt;strong&gt;Hi&lt;/strong&gt;`</span>;
+  }
+}</pre>
+      </div>
+
+      <div class="card">
+        <h3>Reactive properties &amp; lifecycle</h3>
+        <p>Vanilla custom elements give you <code>attributeChangedCallback</code>, <code>connectedCallback</code>, and <code>disconnectedCallback</code> — but you have to hand-write the "when a property changes, re-render" plumbing yourself, every time, for every element.</p>
+        <div class="flow">
+          <div class="flow-box" style="background:#1a1a0d;color:#facc15;">constructor</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="background:#1a1a0d;color:#facc15;">connectedCallback</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="background:#1a1a0d;color:#facc15;">attributeChangedCallback*</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="background:#1a1a0d;color:#facc15;">disconnectedCallback</div>
+        </div>
+        <p style="font-size:11.5px;">* fires once per observed attribute, any time it changes — you decide what to do about it.</p>
+      </div>
+
+      <div class="card">
+        <h3>Why Lit exists</h3>
+        <p>Lit (lit.dev) is a ~5&nbsp;KB base class that answers exactly one question the platform leaves open: <em>when a property changes, how do I re-render efficiently?</em> It gives you a declarative <code>render()</code> using tagged-template HTML, a reactive <code>static properties</code> map, and a diffing renderer that only touches the DOM nodes that actually changed.</p>
+        <pre><span class="kw">import</span> { LitElement, html, css } <span class="kw">from</span> <span class="st">"lit"</span>;
+
+<span class="kw">class</span> <span class="ty">Counter</span> <span class="kw">extends</span> <span class="ty">LitElement</span> {
+
+  <span class="kw">static</span> properties = { count: { type: Number } };
+  <span class="kw">static</span> styles = css<span class="st">`button { font: inherit; }`</span>;
+
+  <span class="fn">constructor</span>() { <span class="kw">super</span>(); <span class="kw">this</span>.count = <span class="nu">0</span>; }
+
+  <span class="fn">render</span>() {
+    <span class="kw">return</span> html<span class="st">`
+      &lt;button @click=${() =&gt; <span class="kw">this</span>.count++}&gt;
+        Clicked ${<span class="kw">this</span>.count} times
+      &lt;/button&gt;
+    `</span>;
+  }
+}
+customElements.<span class="fn">define</span>(<span class="st">"my-counter"</span>, Counter);</pre>
+        <p>Every <code>&lt;my-counter&gt;</code> on the page is isolated (shadow DOM), re-renders only its own template when <code>count</code> changes, and needs zero manual DOM manipulation. This is the exact pattern every Sakai widget builds on.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ SECTION B ============ -->
+  <section id="widget-architecture">
+    <div class="section-header" style="background:#0d2035;border-bottom:1px solid #1a3a5a;">
+      <span class="section-dot" style="background:#2496ed;"></span>
+      <h2 style="color:#2496ed;">B · Sakai's Widget Architecture</h2>
+      <span class="section-tag">verified against the current codebase</span>
+    </div>
+    <div class="section-body">
+
+      <div class="card">
+        <h3>Class hierarchy</h3>
+        <div class="hier">
+          <div class="hier-row"><span class="hier-name" style="color:#facc15;">LitElement</span><span class="hier-note">— from the <code style="background:#0d1525;">lit</code> package</span></div>
+          <div class="hier-row"><span class="hier-indent">└─</span><span class="hier-name" style="color:#7dd3fc;">SakaiShadowElement</span><span class="hier-note">— <code style="background:#0d1525;">@sakai-ui/sakai-element</code>: shared shadow-DOM base, <code style="background:#0d1525;">loadTranslations()</code></span></div>
+          <div class="hier-row"><span class="hier-indent">&nbsp;&nbsp;&nbsp;└─</span><span class="hier-name" style="color:#86efac;">SakaiDashboardWidget</span><span class="hier-note">— title bar, move/remove buttons, <code style="background:#0d1525;">content()</code> extension point</span></div>
+          <div class="hier-row"><span class="hier-indent">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─</span><span class="hier-name" style="color:#fca5a5;">SakaiOnboardingWidget</span><span class="hier-note">— our concrete widget (also: SakaiTasksWidget, SakaiGradesWidget, …)</span></div>
+        </div>
+        <p>Every dashboard widget is a two-line subclass: set <code>this.widgetId</code> in the constructor, override <code>content()</code>. Everything else — the card chrome, the up/down/left/right movers, the remove button, i18n loading — lives once in <code>SakaiDashboardWidget</code>.</p>
+      </div>
+
+      <div class="card">
+        <h3>i18n loading is keyed by <code>widgetId</code></h3>
+        <pre><span class="cm">// SakaiDashboardWidget.js</span>
+<span class="kw">set</span> <span class="fn">widgetId</span>(value) {
+  <span class="kw">this</span>._widgetId = value;
+  loadProperties(value).<span class="fn">then</span>(r =&gt; <span class="kw">this</span>.title = r.widget_title);
+}</pre>
+        <p>Setting <code>this.widgetId = "onboarding-courses"</code> fetches the bundle at <span class="path">onboarding-courses.properties</span> and pulls <code>widget_title</code> into the card's header — the bundle filename <em>is</em> the widget id, by convention, not by framework magic.</p>
+      </div>
+
+      <div class="card">
+        <h3 style="color:#f87171;">⚠ Rendering is not dynamic</h3>
+        <p><code>SakaiWidgetPanel.getWidget(r, index)</code> is a hardcoded <code>switch</code> — one <code>case</code> per widget id, each returning the widget's markup literally. Adding a widget always means adding a <code>case</code>, by design; this guide documents that as current-state rather than proposing to change it.</p>
+        <pre><span class="kw">switch</span> (id) {
+  <span class="kw">case</span> <span class="st">"onboarding-courses"</span>:
+    <span class="kw">return</span> html<span class="st">`&lt;sakai-onboarding-widget site-id=${...} user-id=${...}&gt;&lt;/sakai-onboarding-widget&gt;`</span>;
+  <span class="cm">// …one case per widget…</span>
+  <span class="kw">default</span>: <span class="kw">return</span> <span class="st">""</span>;
+}</pre>
+      </div>
+
+      <div class="card">
+        <h3>Catalog vs. switch vs. picker</h3>
+        <p><span class="pill pill-warn">Common misconception</span> — the catalog in <code>SakaiWidgets.js</code> (<code>getIds()</code> / <code>getWidgets()</code>) looks like a registry the whole system reads from. It isn't: it is consumed <em>only</em> by <code>SakaiWidgetPicker.js</code>, the "add a widget" UI. The panel's own idea of which widgets exist for a dashboard comes from the server, in the JSON returned by <code>DashboardController</code>.</p>
+        <table>
+          <thead><tr><th>File</th><th>Consumed by</th></tr></thead>
+          <tbody>
+            <tr><td>SakaiWidgets.js</td><td>Only <code>SakaiWidgetPicker</code> — the add-a-widget list</td></tr>
+            <tr><td>SakaiWidgetPanel.js</td><td>The dashboard itself — hardcoded switch, always current</td></tr>
+            <tr><td>DashboardController.java</td><td>Server-side source of truth for <em>which widgets a dashboard has</em></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="grid-column:1/-1;">
+        <h3>Request sequence — loading and saving a dashboard</h3>
+        <p>Both shells (<code>SakaiHomeDashboard</code>, <code>SakaiCourseDashboard</code>) nest a <code>sakai-widget-panel</code> one level down. Neither the panel nor the widgets it renders know anything about persistence — that's entirely the shell's + <code>DashboardController</code>'s job.</p>
+        <div class="flow">
+          <div class="flow-box" style="background:#0d2035;color:#2496ed;">SakaiHomeDashboard</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="background:#0d2035;color:#2496ed;">GET /api/users/{'{'}userId{'}'}/dashboard</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="background:#0d2035;color:#2496ed;">DashboardController</div>
+        </div>
+        <div class="flow">
+          <div class="flow-box" style="background:#0d1a0d;color:#4ade80;">.widgetIds = data.widgets</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="background:#0d1a0d;color:#4ade80;">.layout = data.widgetLayout</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="background:#0d1a0d;color:#4ade80;">sakai-widget-panel</div>
+        </div>
+        <div class="flow">
+          <div class="flow-box" style="background:#1a0d1a;color:#e879f9;">sakai-widget-panel</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="background:#1a0d1a;color:#e879f9;">getWidget() switch</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="background:#1a0d1a;color:#e879f9;">each &lt;sakai-*-widget&gt; fetches its own data</div>
+        </div>
+        <p style="margin-top:10px;"><strong style="color:var(--text);">Layout persistence</strong> happens through the same GET/PUT dashboard endpoints — there's no separate save-layout call. A user's layout is JSON under the <code>dashboard-config</code> preference key (<code>PreferencesService</code>); a site's layout is JSON under the <code>dashboard-config</code> site property (<code>SiteService.save()</code>). Course-dashboard widgets receive both <code>site-id</code> and <code>user-id</code> — data is scoped to that site but still filtered to the current user ("my tasks in this course").</p>
+      </div>
+
+      <div class="card">
+        <h3>webapi, not dashboard</h3>
+        <p>The Maven module named <code>dashboard</code> (<code>sakai-dashboard-tool</code>) only serves two Thymeleaf shells — <code>home_dashboard.html</code> / <code>course_dashboard.html</code> — chosen by <code>MainController</code> based on <code>siteService.isUserSite(siteId)</code>. It has no REST endpoints of its own. Every dashboard REST endpoint, including the new onboarding one, lives in the separate <code>webapi</code> module, package <code>org.sakaiproject.webapi.controllers</code>.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ SECTION C ============ -->
+  <section id="build-guide">
+    <div class="section-header" style="background:#0d1a0d;border-bottom:1px solid #1a3a1a;">
+      <span class="section-dot" style="background:#22c55e;"></span>
+      <h2 style="color:#22c55e;">C · Build-Your-Own-Widget Guide</h2>
+      <span class="section-tag">the real Onboarding Courses widget, step by step</span>
+    </div>
+    <div class="section-body">
+      <div class="card" style="grid-column:1/-1;">
+        <div class="steps">
+
+          <div class="step">
+            <div class="step-body">
+              <h4>Define the response shape</h4>
+              <p>An <code>OnboardingCourseStatus</code> enum and an <code>OnboardingCourse</code> DTO in <span class="path">webapi/.../beans/</span> — the JSON contract the frontend renders against.</p>
+              <pre><span class="kw">package</span> org.sakaiproject.webapi.beans;
+
+<span class="kw">public</span> <span class="kw">enum</span> OnboardingCourseStatus { NOT_STARTED, IN_PROGRESS, COMPLETED }</pre>
+              <pre>@Data @Builder @NoArgsConstructor @AllArgsConstructor
+<span class="kw">public</span> <span class="kw">class</span> <span class="ty">OnboardingCourse</span> {
+    <span class="kw">private</span> String id, title, siteId, dueDate;
+    <span class="kw">private</span> OnboardingCourseStatus status;
+    <span class="kw">private</span> <span class="kw">int</span> percentComplete;
+}</pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-body">
+              <h4>Add the data seam — <code>OnboardingService</code></h4>
+              <p>An explicit interface plus a deterministic (not random) sample-data impl, so a real data source can be swapped in later without touching the controller.</p>
+              <pre>@Service
+<span class="kw">public</span> <span class="kw">class</span> <span class="ty">OnboardingServiceImpl</span> <span class="kw">implements</span> OnboardingService {
+
+  <span class="kw">private</span> <span class="kw">static</span> <span class="kw">final</span> List&lt;OnboardingCourse&gt; CATALOG = List.<span class="fn">of</span>( <span class="cm">/* 5 hand-picked sample courses */</span> );
+
+  <span class="kw">public</span> List&lt;OnboardingCourse&gt; <span class="fn">getCoursesForUser</span>(String userId) {
+    <span class="kw">int</span> count = <span class="nu">3</span> + Math.<span class="fn">floorMod</span>(userId.<span class="fn">hashCode</span>(), <span class="nu">3</span>); <span class="cm">// 3–5, stable per user</span>
+    <span class="kw">return</span> CATALOG.<span class="fn">subList</span>(<span class="nu">0</span>, count);
+  }
+
+  <span class="kw">public</span> Optional&lt;OnboardingCourse&gt; <span class="fn">getCourseForUserAndSite</span>(String userId, String siteId) {
+    <span class="kw">return</span> <span class="fn">getCoursesForUser</span>(userId).<span class="fn">stream</span>()
+        .<span class="fn">filter</span>(c -&gt; c.<span class="fn">getSiteId</span>().<span class="fn">equals</span>(siteId)).<span class="fn">findFirst</span>();
+  }
+}</pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-body">
+              <h4>Expose the two REST endpoints</h4>
+              <p><code>OnboardingController</code> extends the package-private <code>AbstractSakaiApiController</code> (same base as <code>TasksController</code>) — session check, then delegate, nothing else.</p>
+              <pre>@RestController
+<span class="kw">public</span> <span class="kw">class</span> <span class="ty">OnboardingController</span> <span class="kw">extends</span> AbstractSakaiApiController {
+
+  @Resource <span class="kw">private</span> OnboardingService onboardingService;
+
+  @GetMapping(<span class="st">"/users/me/onboarding-courses"</span>)
+  <span class="kw">public</span> Map&lt;String, Object&gt; <span class="fn">getOnboardingCourses</span>() {
+    Session session = <span class="fn">checkSakaiSession</span>();
+    <span class="kw">return</span> Map.<span class="fn">of</span>(<span class="st">"courses"</span>, onboardingService.<span class="fn">getCoursesForUser</span>(session.<span class="fn">getUserId</span>()));
+  }
+
+  @GetMapping(<span class="st">"/sites/{siteId}/onboarding-courses"</span>)
+  <span class="kw">public</span> Map&lt;String, Object&gt; <span class="fn">getOnboardingCourseForSite</span>(@PathVariable String siteId) {
+    Session session = <span class="fn">checkSakaiSession</span>();
+    Map&lt;String, Object&gt; data = <span class="kw">new</span> <span class="ty">HashMap</span>&lt;&gt;();
+    onboardingService.<span class="fn">getCourseForUserAndSite</span>(session.<span class="fn">getUserId</span>(), siteId)
+        .<span class="fn">ifPresent</span>(course -&gt; data.<span class="fn">put</span>(<span class="st">"course"</span>, course));
+    <span class="kw">return</span> data; <span class="cm">// {} if the site isn't an onboarding course</span>
+  }
+}</pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-body">
+              <h4>Turn the widget on by default</h4>
+              <p>One line in each of <code>DashboardController.init()</code>'s two fallback lists — <code>dashboard.home.widgets</code> and <code>dashboard.course.widgets</code> — so a fresh install picks it up without any <span class="path">sakai.properties</span> edit.</p>
+              <pre>homeWidgets = <span class="kw">new</span> <span class="ty">ArrayList</span>&lt;&gt;(List.<span class="fn">of</span>(<span class="st">"courses"</span>, <span class="st">"tasks"</span>, <span class="st">"announcements"</span>,
+    <span class="st">"calendar"</span>,<span class="st">"forums"</span>, <span class="st">"grades"</span>, <span class="st">"onboarding-courses"</span>));</pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-body">
+              <h4>Write the widget's i18n bundle</h4>
+              <p><span class="path">webcomponents/bundle/src/main/bundle/onboarding-courses.properties</span> — the filename must equal the <code>widgetId</code> string exactly.</p>
+              <pre>widget_title=Onboarding Courses
+no_courses=You have no onboarding courses assigned.
+status_in_progress=In Progress
+due_date=Due</pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-body">
+              <h4>Build the Lit component</h4>
+              <p>Unlike <code>SakaiTasksWidget</code> (which just wraps a separate inner package), this one fetches and renders directly — the fetch branches on <code>siteId</code> exactly the way <code>SakaiTasks.loadAllData()</code> does.</p>
+              <pre><span class="kw">export</span> <span class="kw">class</span> <span class="ty">SakaiOnboardingWidget</span> <span class="kw">extends</span> <span class="ty">SakaiDashboardWidget</span> {
+
+  <span class="kw">static</span> properties = { _courses: { state: <span class="kw">true</span> }, _course: { state: <span class="kw">true</span> } };
+
+  <span class="fn">constructor</span>() {
+    <span class="kw">super</span>();
+    <span class="kw">this</span>.widgetId = <span class="st">"onboarding-courses"</span>;   <span class="cm">// drives the title bar</span>
+    <span class="kw">this</span>.loadTranslations(<span class="kw">this</span>.widgetId);    <span class="cm">// drives this._i18n</span>
+  }
+
+  <span class="fn">connectedCallback</span>() { <span class="kw">super</span>.<span class="fn">connectedCallback</span>(); <span class="kw">this</span>.<span class="fn">loadData</span>(); }
+
+  <span class="fn">loadData</span>() {
+    <span class="kw">const</span> url = <span class="kw">this</span>.siteId
+      ? <span class="st">`/api/sites/${<span class="kw">this</span>.siteId}/onboarding-courses`</span>
+      : <span class="st">"/api/users/me/onboarding-courses"</span>;
+
+    <span class="fn">fetch</span>(url).<span class="fn">then</span>(r =&gt; r.<span class="fn">json</span>()).<span class="fn">then</span>(data =&gt; {
+      <span class="kw">this</span>.siteId ? (<span class="kw">this</span>._course = data.course || <span class="kw">null</span>)
+                    : (<span class="kw">this</span>._courses = data.courses || []);
+    });
+  }
+
+  <span class="fn">content</span>() {
+    <span class="kw">return</span> <span class="kw">this</span>.siteId ? <span class="kw">this</span>.<span class="fn">renderCourse</span>() : <span class="kw">this</span>.<span class="fn">renderList</span>();
+  }
+}</pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-body">
+              <h4>Register it — catalog, switch, barrel</h4>
+              <p>Three mechanical additions, each following an existing sibling exactly:</p>
+              <pre><span class="cm">// sakai-onboarding-widget.js — barrel file</span>
+<span class="kw">import</span> { SakaiOnboardingWidget } <span class="kw">from</span> <span class="st">"./src/SakaiOnboardingWidget.js"</span>;
+customElements.<span class="fn">define</span>(<span class="st">"sakai-onboarding-widget"</span>, SakaiOnboardingWidget);</pre>
+              <pre><span class="cm">// SakaiWidgets.js — feeds the "add a widget" picker only</span>
+{ id: <span class="st">"onboarding-courses"</span>, roles: [<span class="st">"instructor"</span>, <span class="st">"student"</span>], tag: <span class="st">"sakai-onboarding-widget"</span> }</pre>
+              <pre><span class="cm">// SakaiWidgetPanel.js — the switch that actually renders it</span>
+<span class="kw">case</span> <span class="st">"onboarding-courses"</span>:
+  <span class="kw">return</span> html<span class="st">`&lt;sakai-onboarding-widget site-id=${...} user-id=${...} ...&gt;&lt;/sakai-onboarding-widget&gt;`</span>;</pre>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-body">
+              <h4>Test both layers, then bundle</h4>
+              <p>Java: a MockMvc test through <code>OnboardingController</code>'s public endpoints only (mirrors <code>ScormControllerTest</code> — <code>ReflectionTestUtils.setField</code> for the private <code>@Resource</code>, public setters for the inherited session fields). JS: a <code>web-test-runner</code> test asserting list-vs-single-course rendering with <code>fetch-mock</code>.</p>
+              <pre>mvn -pl webapi test -Dtest=OnboardingControllerTest,OnboardingServiceImplTest
+
+<span class="cm"># from webcomponents/tool/src/main/frontend</span>
+npx wtr <span class="st">'packages/sakai-widgets/test/*.test.js'</span>
+npm run bundle</pre>
+              <p><span class="pill pill-info">No Playwright test</span> — this adds a new dashboard tile rather than changing an existing navigation/dialog/submission flow, so no e2e test was added, per project convention.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Reflects the codebase as verified for this guide — the hardcoded widget-panel switch and the sample-data service seam are documented as current-state, not proposed for redesign.
+</footer>
+
+<script>
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      document.querySelector('nav a:not(.nav-brand)')?.focus();
+    }
+  });
+
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a[href^="#"]');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const active = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
