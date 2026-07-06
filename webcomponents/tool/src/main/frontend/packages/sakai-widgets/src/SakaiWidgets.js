@@ -1,6 +1,6 @@
 export const sakaiWidgets = {
 
-  getIds: () => [ "announcements", "calendar", "courses", "forums", "grades", "tasks" ],
+  getIds: () => [ "announcements", "calendar", "courses", "forums", "grades", "onboarding-courses", "tasks" ],
   getWidgets: () => {
 
     return [
@@ -27,6 +27,11 @@ export const sakaiWidgets = {
       { id: "grades",
         roles: [ "instructor" ],
         tag: "sakai-grades-widget",
+      },
+      {
+        id: "onboarding-courses",
+        roles: [ "instructor", "student" ],
+        tag: "sakai-onboarding-widget",
       },
       {
         id: "tasks",

@@ -8,6 +8,7 @@ import "../sakai-tasks-widget.js";
 import "../sakai-grades-widget.js";
 import "../sakai-announcements-widget.js";
 import "../sakai-forums-widget.js";
+import "../sakai-onboarding-widget.js";
 import "../sakai-widget-picker.js";
 
 export class SakaiWidgetPanel extends SakaiShadowElement {
@@ -274,6 +275,23 @@ export class SakaiWidgetPanel extends SakaiShadowElement {
               ?disable-right-and-down=${index === this.layout.length - 1}
               ?editing=${this.editing}>
             </sakai-forums-widget>
+          </div>
+        `;
+      case "onboarding-courses":
+        return html`
+          <div class="widget-col ${this.state === "add" ? "faded" : ""}">
+            <sakai-onboarding-widget
+              id="${r}"
+              site-id="${ifDefined(this.siteId ? this.siteId : undefined)}"
+              user-id="${ifDefined(this.userId ? this.userId : undefined)}"
+              class="widget"
+              state="${w.state}"
+              @remove=${this.removeWidget}
+              @move=${this.moveWidget}
+              ?disable-left-and-up=${index === 0}
+              ?disable-right-and-down=${index === this.layout.length - 1}
+              ?editing=${this.editing}>
+            </sakai-onboarding-widget>
           </div>
         `;
       case "picker":
