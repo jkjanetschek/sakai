@@ -104,12 +104,26 @@ public class AcknowledgeServiceImpl implements AcknowledgeService {
 			for (ChecklistItemStatus checklistItemStatus : checklistItemStatuses) {
 				if (checklistItemStatus.isDone()) {
 					String owner = checklistItemStatus.getOwner();
-					User userInSakai = userDirectoryService.getUser(owner);
+					if (owner == null || owner.isBlank()) {
+						log.warn("Skipping acknowledgement without owner. ChecklistItemStatus={}", checklistItemStatus);
+						continue;
+					}
+
+					User userInSakai;
+					try {
+						userInSakai = userDirectoryService.getUser(owner);
+					}
+					catch (UserNotDefinedException e) {
+						log.warn("Could not resolve Sakai user '{}'. Skipping acknowledgement.", owner);
+						continue;
+					}
+
 					result.add(new UserAcknowledgeInfo(
 							userInSakai,
-							// ZoneId of MariaDB is "System" which correlates to "CET"
 							checklistItemStatus.getCheckedAt() != null
-									? LocalDateTime.ofInstant(checklistItemStatus.getCheckedAt().toInstant(), ZoneId.systemDefault())
+									? LocalDateTime.ofInstant(
+									checklistItemStatus.getCheckedAt().toInstant(),
+									ZoneId.systemDefault())
 									: null,
 							simplePage.getSiteId()));
 				}
