@@ -29,7 +29,7 @@ public class UserAcknowledgeInfo {
 			String acknowledgementGivenOnSiteId) {
 		this.eid = user.getEid();
 		this.firstname = user.getFirstName();
-		this.lastname = user.getDisplayName();
+		this.lastname = user.getLastName();
 		if (timeOfLastAcknowledge != null) {
 			this.timeOfLastAcknowledge = timeOfLastAcknowledge.format(formatter);
 		} else {
