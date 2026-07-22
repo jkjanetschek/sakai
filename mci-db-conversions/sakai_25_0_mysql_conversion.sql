@@ -1,6 +1,7 @@
 /*
 run after
     sakai_23_3-23_4 script
+    sakai_23_4-23_5 script
     sakai_23_4-25_0_mci_03 script
  */
 
