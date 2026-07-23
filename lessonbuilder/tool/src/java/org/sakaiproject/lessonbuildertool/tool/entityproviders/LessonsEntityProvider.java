@@ -1168,12 +1168,17 @@ public class LessonsEntityProvider extends AbstractEntityProvider implements Ent
 			format = "json"; // Default to JSON if no suffix
 		if ("csv".equalsIgnoreCase(format)) {
 			StringBuilder sb = new StringBuilder();
-			sb.append("eid,firstname,lastname,emailAddress,acknowledgementGivenOnSiteId,timeOfLastAcknowledge\n");
+			sb.append("eid,firstname,lastname,fullname,emailAddress,acknowledgementGivenOnSiteId,timeOfLastAcknowledge\n");
+			list.sort(Comparator.comparing(
+					UserAcknowledgeInfo::getTimeOfLastAcknowledgeDate,
+					Comparator.nullsLast(Comparator.naturalOrder())
+			));
 			for (UserAcknowledgeInfo u : list) {
 				sb.append(String.join(",", Arrays.asList(
 						safe(u.getEid()),
 						safe(u.getFirstname()),
 						safe(u.getLastname()),
+						safe(u.getFullName()),
 						safe(u.getEmailAddress()),
 						safe(u.getAcknowledgementGivenOnSiteId()),
 						safe(u.getTimeOfLastAcknowledge())

@@ -10,13 +10,17 @@ import org.sakaiproject.user.api.User;
  */
 @Getter
 public class UserAcknowledgeInfo {
-	private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+	private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
 
 	private final String  eid;
 
 	private final String  firstname;
 
 	private final String  lastname;
+
+	private final String  fullName;
+
+	private final LocalDateTime timeOfLastAcknowledgeDate;
 
 	private final String timeOfLastAcknowledge;
 
@@ -30,11 +34,11 @@ public class UserAcknowledgeInfo {
 		this.eid = user.getEid();
 		this.firstname = user.getFirstName();
 		this.lastname = user.getLastName();
-		if (timeOfLastAcknowledge != null) {
-			this.timeOfLastAcknowledge = timeOfLastAcknowledge.format(formatter);
-		} else {
-			this.timeOfLastAcknowledge = "unknown";
-		}
+		this.fullName = user.getDisplayName();
+		this.timeOfLastAcknowledgeDate = timeOfLastAcknowledge;
+		this.timeOfLastAcknowledge = timeOfLastAcknowledge != null
+				? timeOfLastAcknowledge.format(FORMATTER)
+				: "unknown";
 		this.acknowledgementGivenOnSiteId = acknowledgementGivenOnSiteId;
 		this.emailAddress = user.getEmail();
 	}
