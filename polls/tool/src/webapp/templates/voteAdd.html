@@ -44,6 +44,8 @@
                     const maxVotesElem = document.getElementById('min-votes');
                     minVotesElem.setAttribute('max', optionCount);
                     maxVotesElem.setAttribute('max', optionCount);
+					minVotesElem.setAttribute('required', '');
+					maxVotesElem.setAttribute('required', '');
                     if (minVotesElem.value > optionCount) {
                         minVotesElem.value = optionCount;
                     }
