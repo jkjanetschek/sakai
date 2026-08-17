@@ -20,21 +20,9 @@
  **********************************************************************************/
 package org.sakaiproject.component.app.messageforums;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.hibernate.collection.internal.PersistentSet;
 import org.hibernate.query.Query;
@@ -43,15 +31,7 @@ import org.hibernate.type.StringType;
 import org.sakaiproject.api.app.messageforums.*;
 import org.sakaiproject.api.app.messageforums.cover.ForumScheduleNotificationCover;
 import org.sakaiproject.component.api.ServerConfigurationService;
-import org.sakaiproject.component.app.messageforums.dao.hibernate.ActorPermissionsImpl;
-import org.sakaiproject.component.app.messageforums.dao.hibernate.DiscussionForumImpl;
-import org.sakaiproject.component.app.messageforums.dao.hibernate.DiscussionTopicImpl;
-import org.sakaiproject.component.app.messageforums.dao.hibernate.MessageForumsUserImpl;
-import org.sakaiproject.component.app.messageforums.dao.hibernate.MessageImpl;
-import org.sakaiproject.component.app.messageforums.dao.hibernate.OpenTopicImpl;
-import org.sakaiproject.component.app.messageforums.dao.hibernate.PrivateForumImpl;
-import org.sakaiproject.component.app.messageforums.dao.hibernate.PrivateTopicImpl;
-import org.sakaiproject.component.app.messageforums.dao.hibernate.Util;
+import org.sakaiproject.component.app.messageforums.dao.hibernate.*;
 import org.sakaiproject.component.app.messageforums.dao.hibernate.util.comparator.ForumBySortIndexAscAndCreatedDateDesc;
 import org.sakaiproject.component.app.messageforums.dao.hibernate.util.comparator.TopicBySortIndexAscAndCreatedDateDesc;
 import org.sakaiproject.content.api.ContentHostingService;
@@ -68,14 +48,10 @@ import org.sakaiproject.tool.api.Placement;
 import org.sakaiproject.tool.api.SessionManager;
 import org.sakaiproject.tool.api.ToolManager;
 import org.sakaiproject.user.api.UserDirectoryService;
-import org.sakaiproject.util.ResourceLoader;
-import org.springframework.cglib.core.Local;
 import org.springframework.orm.hibernate5.HibernateCallback;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
+import java.util.*;
 
 /**
  * The forums are sorted by this java class.  The topics are sorted by the order-by in the hbm file.
@@ -1193,9 +1169,10 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
      */
     public void deleteDiscussionForum(DiscussionForum forum) {
         long id = forum.getId().longValue();
-        eventTrackingService.post(eventTrackingService.newEvent(DiscussionForumService.EVENT_FORUMS_FORUM_REMOVE, getEventMessage(forum), false));
-
         forum = (DiscussionForum) getForumById(true, id);
+        eventTrackingService.post(eventTrackingService.newEvent(DiscussionForumService.EVENT_FORUMS_FORUM_REMOVE,
+                getEventMessage(forum, getForumContext(forum)), false));
+
         List<Topic> topics = getTopicsByIdWithMessages(id);
         for (Topic topic : topics) {
             List<Message> messages = topic.getMessages();
@@ -1232,8 +1209,6 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
         area.removeDiscussionForum(forum);
         DiscussionForum forumTmp = getHibernateTemplate().merge(forum);
         getHibernateTemplate().merge(area);
-        getHibernateTemplate().delete(forumTmp);
-
         getHibernateTemplate().delete(forumTmp);
       //  getHibernateTemplate().delete(area);
 
@@ -1535,35 +1510,47 @@ public class MessageForumsForumManagerImpl extends HibernateDaoSupport implement
         return idManager.createUuid();
     }
 
-	private boolean isToolInSite(Site thisSite, String toolId) {
-		final Collection toolsInSite = thisSite.getTools(toolId);
+    private boolean isToolInSite(Site thisSite, String toolId) {
+        final Collection toolsInSite = thisSite.getTools(toolId);
 
-		return ! toolsInSite.isEmpty();		
-	}
-
-   private String getEventMessage(Object object) {
-	   return getEventMessage(object, getContextId());
+        return ! toolsInSite.isEmpty();
     }
-    
+
+    private String getForumContext(DiscussionForum forum) {
+        return Optional.ofNullable(forum)
+                .map(DiscussionForum::getArea)
+                .map(Area::getContextId)
+                .orElseGet(this::getContextId);
+    }
+
+    private String getEventMessage(Object object) {
+        return getEventMessage(object, getContextId());
+    }
+
     private String getEventMessage(Object object, String context) {
-    	String eventMessagePrefix = "";
-    	
-    	try {
-    		// TODO: How to determine what prefix to put on event message
-    		if (isToolInSite(siteService.getSite(context), DiscussionForumService.MESSAGE_CENTER_ID))
-    			eventMessagePrefix = "/messages&forums/site/";
-    		else if (isToolInSite(siteService.getSite(context), DiscussionForumService.MESSAGES_TOOL_ID))
-    			eventMessagePrefix = "/messages/site/";
-    		else
-    			eventMessagePrefix = "/forums/site/";
-    	}
-    	catch (IdUnusedException e) {
-    		log.debug("IdUnusedException attempting to get site with id: " + context);
-    		
-    		eventMessagePrefix = "/messages&forums/";
-    	}
-    	
-    	return eventMessagePrefix + context + "/" + object.toString() + "/" + getCurrentUser(); 
+        String eventMessagePrefix = "";
+
+        try {
+            // TODO: How to determine what prefix to put on event message
+            Site site = siteService.getSite(context);
+            if (site != null && isToolInSite(site, DiscussionForumService.MESSAGE_CENTER_ID))
+                eventMessagePrefix = "/messages&forums/site/";
+            else if (site != null && isToolInSite(site, DiscussionForumService.MESSAGES_TOOL_ID))
+                eventMessagePrefix = "/messages/site/";
+            else
+                eventMessagePrefix = "/forums/site/";
+        }
+        catch (IdUnusedException e) {
+            log.debug("IdUnusedException attempting to get site with id: " + context);
+
+            eventMessagePrefix = "/messages&forums/";
+        }
+        catch (RuntimeException e) {
+            log.warn("Could not determine forum event prefix for context {}", context, e);
+            eventMessagePrefix = "/forums/site/";
+        }
+
+        return eventMessagePrefix + context + "/" + object.toString() + "/" + getCurrentUser();
     }
     
     public List getForumByTypeAndContextWithTopicsAllAttachments(final String typeUuid)

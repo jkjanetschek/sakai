@@ -1003,8 +1003,6 @@ public interface GradingService extends EntityProducer {
     public Long getMatchingUserGradebookItemId(String siteId, String userId, String gradebookItemIdString);
     public List<String> getGradebookInstancesForUser(String siteId, String userId);
     public void initializeGradebooksForSite(String siteId);
-    public Double convertStringToDouble(final String doubleAsString);
-
     public String getUrlForAssignment(Assignment assignment);
     public void hardDeleteGradebook(String siteId);
 }

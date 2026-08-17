@@ -53,7 +53,6 @@ import org.sakaiproject.tool.api.ToolManager;
 import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.user.api.UserDirectoryService;
-import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.api.FormattedText;
 
 import lombok.extern.slf4j.Slf4j;
@@ -68,9 +67,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ErrorReporter
 {
-	/** messages. */
-	private static ResourceLoader rb = new ResourceLoader("portal-util");
-	private static final ResourceBundle rbDefault = ResourceBundle.getBundle("portal-util", Locale.getDefault());
 	private static final String TOMCAT_CLIENT_ABORT_EXCEPTION_CLASS = "org.apache.catalina.connector.ClientAbortException";
 	private static final Class<?> TOMCAT_CLIENT_ABORT_EXCEPTION = loadTomcatClientAbortException();
 
@@ -315,11 +311,9 @@ public class ErrorReporter
 			String requestDisplay, String placementDisplay, String userReport)
 	{
 		// logging and emailing should use the system default locale instead of the user's locale
-		ResourceBundle rb = rbDefault;
+		ResourceBundle rb = ResourceBundle.getBundle("portal-util", Locale.getDefault());
 
-
-		if (!shouldLogAndSendException(problem, placementDisplay)) return;
-
+        if (!shouldLogAndSendException(problem, placementDisplay)) return;
 		// log
 		log.warn(rb.getString("bugreport.bugreport") + " "
 				+ rb.getString("bugreport.bugid") + ": " + bugId + " "
@@ -473,8 +467,10 @@ public class ErrorReporter
 		String headInclude = (String) req.getAttribute("sakai.html.head");
 		String bodyOnload = (String) req.getAttribute("sakai.html.body.onload");
 		Instant reportTime = Instant.now();
+		Locale userLocale = req.getLocale();
+		ResourceBundle rb = ResourceBundle.getBundle("portal-util", userLocale);
 		UserTimeService userTimeService = ComponentManager.get(UserTimeService.class);
-		String time = userTimeService.shortPreciseLocalizedTimestamp(reportTime, rb.getLocale());
+		String time = userTimeService.shortPreciseLocalizedTimestamp(reportTime, userLocale);
 		String usageSessionId = ComponentManager.get(UsageSessionService.class).getSessionId();
 		String userId = ComponentManager.get(SessionManager.class).getCurrentSessionUserId();
 		boolean isAuthenticated = userId != null && userId.length() > 0 && usageSessionId != null;
@@ -614,13 +610,13 @@ public class ErrorReporter
 		}
 		catch (Throwable any)
 		{
-			log.warn(rbDefault.getString("bugreport.troublereporting"), any);
+			log.warn(rb.getString("bugreport.troublereporting"), any);
 		}
 	}
 
 	private String placementDisplay()
 	{
-		ResourceBundle rb = rbDefault;
+		ResourceBundle rb = ResourceBundle.getBundle("portal-util", Locale.getDefault());
 		StringBuilder sb = new StringBuilder();
 		try
 		{
@@ -653,7 +649,7 @@ public class ErrorReporter
 	@SuppressWarnings("rawtypes")
 	private String requestDisplay(HttpServletRequest request)
 	{
-		ResourceBundle rb = rbDefault;
+		ResourceBundle rb = ResourceBundle.getBundle("portal-util", request.getLocale());
 		StringBuilder sb = new StringBuilder();
 		try
 		{
@@ -794,7 +790,8 @@ public class ErrorReporter
 		}
 		catch (IOException e)
 		{
-			log.warn(rbDefault.getString("bugreport.troubleredirecting"), e);
+			ResourceBundle rb = ResourceBundle.getBundle("portal-util", Locale.getDefault());
+			log.warn(rb.getString("bugreport.troubleredirecting"), e);
 		}
 	}
 
@@ -819,6 +816,7 @@ public class ErrorReporter
 		{
 			bodyOnload = " onload=\"" + bodyOnload + "\"";
 		}
+		ResourceBundle rb = ResourceBundle.getBundle("portal-util", req.getLocale());
 		try
 		{
 			// headers
@@ -854,7 +852,7 @@ public class ErrorReporter
 		}
 		catch (Throwable any)
 		{
-			log.warn(rbDefault.getString("bugreport.troublethanks"), any);
+			log.warn(rb.getString("bugreport.troublethanks"), any);
 		}
 	}
 }

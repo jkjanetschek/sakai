@@ -79,9 +79,17 @@ import org.sakaiproject.tool.api.*;
 import org.sakaiproject.user.api.*;
 import org.sakaiproject.userauditservice.api.UserAuditRegistration;
 import org.sakaiproject.userauditservice.api.UserAuditService;
-import org.sakaiproject.util.*;
+import org.sakaiproject.userauditservice.api.model.UserAuditEntry;
+import org.sakaiproject.util.BaseResourcePropertiesEdit;
+import org.sakaiproject.util.FileItem;
+import org.sakaiproject.util.ParameterParser;
+import org.sakaiproject.util.RequestFilter;
+import org.sakaiproject.util.ResourceLoader;
+import org.sakaiproject.util.SortedIterator;
+import org.sakaiproject.util.Validator;
 import org.sakaiproject.util.api.FormattedText;
 import org.sakaiproject.util.api.LinkMigrationHelper;
+import org.sakaiproject.util.api.LocaleService;
 import org.sakaiproject.util.comparator.AlphaNumericComparator;
 import org.sakaiproject.util.comparator.GroupTitleComparator;
 import org.sakaiproject.util.comparator.ToolTitleComparator;
@@ -711,7 +719,7 @@ public class SiteAction extends PagedResourceActionII {
 	private Cache m_userSiteCache;
 	private ImportService importService;
 	private List prefLocales;
-	private Locale comparator_locale;
+	private Locale dateFormattingLocale;
 	private String libraryPath;
 	private String moreInfoPath;
 	private String showOrphanedMembers;
@@ -731,6 +739,7 @@ public class SiteAction extends PagedResourceActionII {
 	private IdManager idManager;
 	private LTIService ltiService;
 	private LinkMigrationHelper linkMigrationHelper;
+	private LocaleService localeService;
 	private MemoryService memoryService;
 	private PreferencesService preferencesService;
 	private PrivacyManager privacyManager;
@@ -769,6 +778,7 @@ public class SiteAction extends PagedResourceActionII {
 		groupProvider = ComponentManager.get(GroupProvider.class);
 		idManager = ComponentManager.get(IdManager.class);
 		linkMigrationHelper = (LinkMigrationHelper) ComponentManager.get("org.sakaiproject.util.api.LinkMigrationHelper");
+		localeService = ComponentManager.get(LocaleService.class);
 		ltiService = (LTIService) ComponentManager.get("org.sakaiproject.lti.api.LTIService");
 		memoryService = ComponentManager.get(MemoryService.class);
 		preferencesService = ComponentManager.get(PreferencesService.class);
@@ -795,7 +805,7 @@ public class SiteAction extends PagedResourceActionII {
 		gradingService = ComponentManager.get(GradingService.class);
 
 		importService = org.sakaiproject.importer.cover.ImportService.getInstance();
-		comparator_locale = rb.getLocale();
+		dateFormattingLocale = rb.getLocale();
 		prefLocales = new ArrayList<>();
 
 		SITE_DEFAULT_LIST = serverConfigurationService.getString("site.types");
@@ -2206,10 +2216,11 @@ public class SiteAction extends PagedResourceActionII {
 
 					context.put("viewMembershipGroups", viewMembershipGroups);
 
-					Collections.sort(filteredGroups, new GroupTitleComparator());
+					GroupTitleComparator groupTitleComparator = new GroupTitleComparator(localeService.getLocaleForCurrentSiteAndUser());
+					Collections.sort(filteredGroups, groupTitleComparator);
 					context.put("groups", filteredGroups);
 
-					Collections.sort(filteredSections, new GroupTitleComparator());
+					Collections.sort(filteredSections, groupTitleComparator);
 					context.put("sections", filteredSections);
 				}
 
@@ -2286,8 +2297,9 @@ public class SiteAction extends PagedResourceActionII {
 				}
 				context.put("joinedJoinableGroups", new ArrayList<>(joinedGroups));
 
+				AlphaNumericComparator joinableGroupTitleComparator = new AlphaNumericComparator(localeService.getLocaleForCurrentSiteAndUser());
 				List<JoinableGroup> sortedJoinableGroups = joinableGroups.stream()
-						.sorted((g1, g2) -> new AlphaNumericComparator().compare(g1.getTitle(), g2.getTitle()))
+						.sorted((g1, g2) -> joinableGroupTitleComparator.compare(g1.getTitle(), g2.getTitle()))
 						.collect(Collectors.toList());
 				context.put("joinableGroups", sortedJoinableGroups);
 				
@@ -3385,7 +3397,7 @@ public class SiteAction extends PagedResourceActionII {
 			// Sort the course offerings if necessary
 			List<CourseObject> courseList = (List) state.getAttribute(STATE_TERM_COURSE_LIST);
 			if (CollectionUtils.isNotEmpty(courseList)) {
-				courseList.sort(Comparator.comparing(CourseObject::getTitle, new AlphaNumericComparator()));
+				courseList.sort(Comparator.comparing(CourseObject::getTitle, new AlphaNumericComparator(localeService.getLocaleForCurrentSiteAndUser())));
 				state.setAttribute(STATE_TERM_COURSE_LIST, courseList);
 			}
 			context.put("termCourseList", state.getAttribute(STATE_TERM_COURSE_LIST));
@@ -5385,7 +5397,8 @@ public class SiteAction extends PagedResourceActionII {
 			String sortedAsc = (String) state.getAttribute(SORTED_ASC);
 			Iterator sortedParticipants;
 			if (sortedBy != null) {
-				sortedParticipants = new SortedIterator(participants.iterator(), new SiteComparator(sortedBy,sortedAsc,comparator_locale));
+				sortedParticipants = new SortedIterator(participants.iterator(), new SiteComparator(sortedBy,
+						sortedAsc, localeService.getLocaleForCurrentSiteAndUser()));
 				participants.clear();
 				while (sortedParticipants.hasNext()) {
 					participants.add(sortedParticipants.next());
@@ -9319,7 +9332,7 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 				HashSet<String>roles = new HashSet<String>();
 
 				// List used for user auditing
-				List<String[]> userAuditList = new ArrayList<String[]>();
+				List<UserAuditEntry> userAuditList = new ArrayList<UserAuditEntry>();
 
 				// remove all roles and then add back those that were checked
 				for (Participant participant : participants) {
@@ -9375,15 +9388,9 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 									fromProvider);
 							String currentUserId = (String) state.getAttribute(STATE_CM_CURRENT_USERID);
 							String internalUserId = userDirectoryService.getUserId(currentUserId);
-							String[] userAuditString = {
-									s.getId(),
-									id,
-									roleId,
+							userAuditList.add(UserAuditEntry.of(s.getId(), id, roleId,
 									userAuditService.USER_AUDIT_ACTION_UPDATE,
-									userAuditRegistration.getDatabaseSourceKey(),
-									internalUserId
-							};
-							userAuditList.add(userAuditString);
+									userAuditRegistration.getDatabaseSourceKey(), internalUserId));
 							
 								// construct the event string
 								String userUpdatedString = "uid=" + id;
@@ -9434,15 +9441,9 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 									usersDeleted.add("uid=" + userId);
 									String currentUserId = (String) state.getAttribute(STATE_CM_CURRENT_USERID);
 									String internalUserId = userDirectoryService.getUserId(currentUserId);
-									String[] userAuditString = {
-											s.getId(),
-											userId,
-											role.getId(),
+									userAuditList.add(UserAuditEntry.of(s.getId(), userId, role.getId(),
 											userAuditService.USER_AUDIT_ACTION_REMOVE,
-											userAuditRegistration.getDatabaseSourceKey(),
-											internalUserId
-									};
-									userAuditList.add(userAuditString);
+											userAuditRegistration.getDatabaseSourceKey(), internalUserId));
 								}
 							}
 						} catch (UserNotDefinedException e) {
@@ -9484,7 +9485,7 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 				// but seems to be a better solution than call this multiple time for every update
 				if (!userAuditList.isEmpty())
 				{
-					userAuditRegistration.addToUserAuditing(userAuditList);
+					userAuditService.addToUserAuditing(userAuditList);
 				}
 
 				// then update all related group realms for the role
@@ -16732,7 +16733,7 @@ private Map<String, List<MyTool>> getTools(SessionState state, String type, Site
 	}
 
 	private String getDateFormat(Date date) {
-		String f = userTimeService.shortPreciseLocalizedTimestamp(date.toInstant(), userTimeService.getLocalTimeZone(), comparator_locale);
+		String f = userTimeService.shortPreciseLocalizedTimestamp(date.toInstant(), userTimeService.getLocalTimeZone(), dateFormattingLocale);
 		return f;
 	}
 }
